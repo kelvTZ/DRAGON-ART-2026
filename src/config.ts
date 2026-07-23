@@ -4,7 +4,7 @@
  */
 export const CONFIG = {
   // LINK DA STRIPE (Substitua pelo seu link real do Stripe Payment Links)
-  STRIPE_PRO_LINK: "https://buy.stripe.com/test_4gM5kFeyk7YJ8cO4Pra3u00",
+  STRIPE_PRO_LINK: "https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00",
   
   // INFORMAÇÕES DA PLATAFORMA
   VERSION: "1.13.1",
