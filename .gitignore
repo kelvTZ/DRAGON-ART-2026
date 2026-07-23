@@ -12,3 +12,5 @@ android/capacitor.build.gradle
 *.apk
 Backups/
 Ferramentas/interno/download_server/*.apk
+
+.vercel
