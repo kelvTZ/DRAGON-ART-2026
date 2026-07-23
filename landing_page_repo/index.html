@@ -420,95 +420,242 @@
     </div>
 </section>
 
-<!-- 9. SELOS DE PERFIL (NOVO) -->
-<section id="badges" class="rv">
-    <div class="text-center max-w-3xl mx-auto mb-16">
-        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-6">
-            <span class="text-yellow-500 text-xl">👑</span>
-            <span class="text-yellow-500 font-bold tracking-widest text-[10px] uppercase">Identidade Visual</span>
-        </div>
-<!-- SEÇÃO COMPARATIVA DINÂMICA: GRÁTIS VS PRO VIP -->
-<section id="comparativo" class="rv py-12">
+<!-- SEÇÃO DE AVATARES INTERATIVOS (PADRÃO & PRO ANIMADOS) -->
+<section id="avatares" class="rv py-16">
     <div class="text-center max-w-3xl mx-auto mb-12">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 mb-4">
-            <span class="text-blue-400 font-bold tracking-widest text-[10px] uppercase">Experiência de Uso</span>
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-4">
+            <span class="text-yellow-400 font-bold tracking-widest text-[10px] uppercase">👑 Identidade Visual & Avatares</span>
         </div>
-        <h2 class="text-4xl md:text-5xl font-black mb-4">Versão <span class="text-gray-400">Grátis</span> vs <span class="tg">PRO VIP</span></h2>
-        <p class="text-gray-400 text-base font-medium">Veja na prática a diferença visual e os privilégios desbloqueados ao migrar para a versão completa do WyrmPIXEL.</p>
+        <h2 class="text-4xl md:text-5xl font-black mb-4">Fotos de Perfil <span class="tg">Profissionais & Animadas</span></h2>
+        <p class="text-gray-400 text-base font-medium">Personalize seu avatar de artista! Clique em qualquer avatar abaixo para testar no seu perfil em tempo real.</p>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto px-4">
-        <!-- Card Avatar Grátis -->
-        <div class="glass p-8 rounded-[36px] border-white/10 flex flex-col items-center text-center relative overflow-hidden group hover:border-white/20 transition-all">
-            <div class="w-28 h-28 rounded-full border-4 border-gray-500/50 bg-slate-900 p-1 mb-6 relative shadow-lg">
-                <div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-                    <svg class="w-14 h-14 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    <div class="grid lg:grid-cols-12 gap-8 max-w-6xl mx-auto px-4 items-start">
+        <!-- Preview em Tempo Real do Perfil (Coluna Esquerda) -->
+        <div class="lg:col-span-5 glass p-8 rounded-[36px] border-2 border-yellow-400/50 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/60 text-center relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.2)] sticky top-8">
+            <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[9px] font-black px-4 py-1 rounded-bl-2xl uppercase tracking-widest">
+                PREVIEW AO VIVO
+            </div>
+
+            <!-- Avatar Container Animado com Borda Dourada -->
+            <div class="relative w-36 h-36 mx-auto mb-6 group cursor-pointer">
+                <div id="live-avatar-ring" class="w-full h-full rounded-full border-4 border-yellow-400 p-1 bg-slate-950 shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform group-hover:scale-105">
+                    <img id="live-avatar-img" src="avatars/pro/0163e8951593014cb6f914cc9a4b9997.gif" alt="Avatar Ativo" class="w-full h-full object-cover rounded-full">
                 </div>
-                <div class="absolute -bottom-2 inset-x-0 mx-auto w-max px-3 py-0.5 bg-gray-700 text-gray-200 text-[9px] font-black rounded-full uppercase tracking-wider border border-gray-500">
-                    Nível Grátis
+                <div class="absolute -bottom-2 inset-x-0 mx-auto w-max px-3 py-1 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[9px] font-black rounded-full uppercase tracking-widest shadow-md flex items-center gap-1">
+                    <span id="live-avatar-tag">✨ PRO ANIMADO</span>
                 </div>
             </div>
 
-            <h3 class="text-2xl font-black text-white mb-2">Artista Iniciante</h3>
-            <p class="text-xs text-gray-400 mb-6 max-w-xs">Ideal para pequenos testes e estudos simples de pixel art no seu celular ou PC.</p>
+            <h3 id="live-avatar-title" class="text-2xl font-black text-amber-300 mb-1">Mestre do Pixel</h3>
+            <p id="live-avatar-desc" class="text-xs text-gray-400 mb-6">Avatar animado exclusivo desbloqueado no plano WyrmPIXEL PRO VIP.</p>
 
-            <div class="w-full space-y-3 text-xs text-left bg-black/30 p-5 rounded-2xl border border-white/5">
-                <div class="flex items-center justify-between text-gray-300">
-                    <span>📚 Limite de Camadas</span>
-                    <span class="font-bold text-amber-400">Até 3 Camadas</span>
+            <div class="p-4 bg-black/50 rounded-2xl border border-yellow-500/20 text-xs text-gray-300 space-y-2 text-left">
+                <div class="flex items-center justify-between">
+                    <span>Status da Conta:</span>
+                    <span id="live-status-badge" class="font-bold text-yellow-400 flex items-center gap-1">👑 VIP PRO</span>
                 </div>
-                <div class="flex items-center justify-between text-gray-300">
-                    <span>🎬 Limite de Quadros</span>
-                    <span class="font-bold text-amber-400">Até 4 Frames</span>
+                <div class="flex items-center justify-between">
+                    <span>Formato do Avatar:</span>
+                    <span id="live-avatar-format" class="font-bold text-emerald-400">GIF Animado 60fps</span>
                 </div>
-                <div class="flex items-center justify-between text-gray-300">
-                    <span>🖌️ Pincéis Avançados (Spray/Luz)</span>
-                    <span class="font-bold text-red-400">🔒 Bloqueado</span>
+            </div>
+
+            <p class="text-[10px] text-gray-500 mt-4 italic">💡 Dica: Clique em qualquer imagem ao lado para alterar este avatar.</p>
+        </div>
+
+        <!-- Grade Selecionável de Avatares (Coluna Direita) -->
+        <div class="lg:col-span-7 space-y-8">
+            <!-- Avatares Animados PRO -->
+            <div class="glass p-6 rounded-[32px] border-amber-500/30 bg-amber-500/[0.03]">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-black text-amber-300 flex items-center gap-2">
+                        <span>🌟 Avatares Animados PRO</span>
+                        <span class="text-[10px] bg-yellow-400 text-black px-2 py-0.5 rounded-full uppercase font-extrabold">VIP</span>
+                    </h3>
+                    <span class="text-xs text-amber-200/60 font-medium">10 GIFs Animados</span>
                 </div>
-                <div class="flex items-center justify-between text-gray-300">
-                    <span>📹 Gravação de Timelapse 4K</span>
-                    <span class="font-bold text-red-400">🔒 Bloqueado</span>
+                <div class="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/0163e8951593014cb6f914cc9a4b9997.gif" data-title="Dragão Flamejante" data-pro="true">
+                        <img src="avatars/pro/0163e8951593014cb6f914cc9a4b9997.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/0339983a96ad03b9eac740cc2e91f8e4.gif" data-title="Cyber Ninja" data-pro="true">
+                        <img src="avatars/pro/0339983a96ad03b9eac740cc2e91f8e4.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/1bf09baf6c26978e2bc031a5ff18d262.gif" data-title="Gato Cósmico" data-pro="true">
+                        <img src="avatars/pro/1bf09baf6c26978e2bc031a5ff18d262.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/555076dfc489b51a130e7ebc28900f2f.gif" data-title="Mago Pixel" data-pro="true">
+                        <img src="avatars/pro/555076dfc489b51a130e7ebc28900f2f.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/56a2d535b69a257a6f1ca28c428d1ad6.gif" data-title="Cavaleiro Sombra" data-pro="true">
+                        <img src="avatars/pro/56a2d535b69a257a6f1ca28c428d1ad6.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/6c62876ccccef57dd0377eb5f9d1af07.gif" data-title="Pixel Mech" data-pro="true">
+                        <img src="avatars/pro/6c62876ccccef57dd0377eb5f9d1af07.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/7a1d6f55ba4cfc1065e8095d52e4cc56.gif" data-title="Lobo Cósmico" data-pro="true">
+                        <img src="avatars/pro/7a1d6f55ba4cfc1065e8095d52e4cc56.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/8c07255e857006529ff2afb00ace29cc.gif" data-title="Fantasma Neon" data-pro="true">
+                        <img src="avatars/pro/8c07255e857006529ff2afb00ace29cc.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/91a5fc1eba717eb1ca8652575b2691bf.gif" data-title="Cachorro Gamer" data-pro="true">
+                        <img src="avatars/pro/91a5fc1eba717eb1ca8652575b2691bf.gif" class="w-full h-full object-cover">
+                    </div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border-2 border-yellow-400/80 hover:scale-105 cursor-pointer transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]" data-src="avatars/pro/f23c314c7bb9ce67cd1b4be16cd7b316.gif" data-title="Rei Wyrm" data-pro="true">
+                        <img src="avatars/pro/f23c314c7bb9ce67cd1b4be16cd7b316.gif" class="w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avatares Padrão Pixel Art -->
+            <div class="glass p-6 rounded-[32px] border-white/10">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-black text-gray-300 flex items-center gap-2">
+                        <span>👤 Avatares Padrão Pixel Art</span>
+                        <span class="text-[10px] bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-bold">Grátis</span>
+                    </h3>
+                    <span class="text-xs text-gray-500 font-medium">15 Avatares Inclusos</span>
+                </div>
+                <div class="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_1.jpg" data-title="Cachorro Pixel" data-pro="false"><img src="avatars/avatar_1.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_2.jpg" data-title="Pinguim Sereno" data-pro="false"><img src="avatars/avatar_2.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_3.jpg" data-title="Macaco Estiloso" data-pro="false"><img src="avatars/avatar_3.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_4.jpg" data-title="Perfil Silhueta" data-pro="false"><img src="avatars/avatar_4.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_5.jpg" data-title="Cavalo Surpreso" data-pro="false"><img src="avatars/avatar_5.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_6.jpg" data-title="Vaca Pixel" data-pro="false"><img src="avatars/avatar_6.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_7.jpg" data-title="Gato Olhar Fixo" data-pro="false"><img src="avatars/avatar_7.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_8.jpg" data-title="Garoto Anime" data-pro="false"><img src="avatars/avatar_8.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_9.jpg" data-title="Sapo Pixel" data-pro="false"><img src="avatars/avatar_9.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_10.jpg" data-title="Gojo Satoru" data-pro="false"><img src="avatars/avatar_10.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_11.jpg" data-title="Pássaro Expressivo" data-pro="false"><img src="avatars/avatar_11.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_12.jpg" data-title="Desenvolvedor Pixel" data-pro="false"><img src="avatars/avatar_12.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_13.jpg" data-title="Popcat" data-pro="false"><img src="avatars/avatar_13.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_14.jpg" data-title="Olho Sombrio" data-pro="false"><img src="avatars/avatar_14.jpg" class="w-full h-full object-cover"></div>
+                    <div class="avatar-option group relative aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all" data-src="avatars/avatar_15.jpg" data-title="Capivara Pixel" data-pro="false"><img src="avatars/avatar_15.jpg" class="w-full h-full object-cover"></div>
                 </div>
             </div>
         </div>
+    </div>
+</section>
 
-        <!-- Card Avatar PRO VIP (Dinâmico & Dourado) -->
-        <div class="glass p-8 rounded-[36px] border-2 border-yellow-400/80 bg-gradient-to-br from-yellow-500/10 via-amber-600/10 to-yellow-500/5 flex flex-col items-center text-center relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.15)] group hover:scale-[1.02] transition-all duration-300">
-            <div class="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[9px] font-black px-4 py-1.5 rounded-bl-2xl uppercase tracking-widest flex items-center gap-1 shadow-md">
-                <span>🔥 VIP UNLOCKED</span>
+<!-- SEÇÃO FEED DA COMUNIDADE (DEPOIMENTOS & AVALIAÇÕES) -->
+<section id="feed-comunidade" class="rv py-16">
+    <div class="text-center max-w-3xl mx-auto mb-12">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+            <span class="text-emerald-400 font-bold tracking-widest text-[10px] uppercase">💬 Feed dos Artistas & Comunidade</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-black mb-4">O que os <span class="tg">Criadores Dizem</span></h2>
+        <p class="text-gray-400 text-base font-medium">Depoimentos reais de quem usa o WyrmPIXEL diariamente para jogos, ilustrações e animações 2D.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto px-4">
+        <!-- Feed Item 1 -->
+        <div class="glass p-6 rounded-[32px] border-white/10 hover:border-emerald-500/40 transition-all flex flex-col justify-between group hover:scale-[1.02] duration-300">
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-full border-2 border-emerald-400 overflow-hidden shrink-0 shadow-md">
+                        <img src="avatars/avatar_10.jpg" alt="Gojo User" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h4 class="font-black text-white text-sm flex items-center gap-1">
+                            <span>@Lucas_Unity2D</span>
+                        </h4>
+                        <span class="text-[9px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 uppercase tracking-wider">🎮 Game Dev</span>
+                    </div>
+                </div>
+                <div class="text-amber-400 text-xs mb-3 flex items-center gap-1">
+                    ★★★★★ <span class="text-gray-500 text-[10px] ml-1">há 2 horas</span>
+                </div>
+                <p class="text-xs text-gray-300 leading-relaxed italic mb-6">
+                    "Incrível! O suporte total aos atalhos do teclado no PC com Ctrl+Z e Ctrl+Y e a gravação de timelapse 4K facilitaram demais o meu workflow para os meus jogos na Unity!"
+                </p>
             </div>
-
-            <div class="w-28 h-28 rounded-full border-4 border-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.5)] bg-slate-950 p-1 mb-6 relative animate-pulse">
-                <div class="w-full h-full rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center overflow-hidden">
-                    <span class="text-4xl">🐉</span>
-                </div>
-                <div class="absolute -bottom-2 inset-x-0 mx-auto w-max px-3 py-0.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[9px] font-black rounded-full uppercase tracking-widest shadow-md">
-                    WYRMPIXEL PRO
-                </div>
+            <div class="flex items-center justify-between pt-4 border-t border-white/5 text-[11px] text-gray-400">
+                <span class="hover:text-red-400 cursor-pointer flex items-center gap-1 font-bold">❤️ 184</span>
+                <span class="hover:text-amber-400 cursor-pointer flex items-center gap-1 font-bold">🔥 92</span>
             </div>
+        </div>
 
-            <h3 class="text-2xl font-black text-amber-300 mb-2 flex items-center gap-2">
-                <span>Mestre do Pixel</span> ✨
-            </h3>
-            <p class="text-xs text-amber-100/70 mb-6 max-w-xs">Poder total sem restrições para criar artes de nível profissional e animações completas.</p>
+        <!-- Feed Item 2 -->
+        <div class="glass p-6 rounded-[32px] border-2 border-yellow-400/60 bg-yellow-500/[0.04] transition-all flex flex-col justify-between group hover:scale-[1.02] duration-300 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-full border-2 border-yellow-400 overflow-hidden shrink-0 shadow-md">
+                        <img src="avatars/avatar_15.jpg" alt="Capybara User" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h4 class="font-black text-amber-300 text-sm flex items-center gap-1">
+                            <span>@CapyArtist_PRO</span> ✨
+                        </h4>
+                        <span class="text-[9px] font-black bg-yellow-400 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">👑 VIP UNLOCKED</span>
+                    </div>
+                </div>
+                <div class="text-amber-400 text-xs mb-3 flex items-center gap-1">
+                    ★★★★★ <span class="text-amber-200/50 text-[10px] ml-1">há 5 horas</span>
+                </div>
+                <p class="text-xs text-amber-100/90 leading-relaxed italic mb-6">
+                    "Os avatares animados no perfil e o envio de artes na comunidade são sensacionais. Comprei o plano vitalício por R$ 49,90 e uso todos os dias no meu tablet e notebook!"
+                </p>
+            </div>
+            <div class="flex items-center justify-between pt-4 border-t border-yellow-500/20 text-[11px] text-amber-200/70">
+                <span class="hover:text-red-400 cursor-pointer flex items-center gap-1 font-bold">❤️ 241</span>
+                <span class="hover:text-amber-400 cursor-pointer flex items-center gap-1 font-bold">🔥 115</span>
+            </div>
+        </div>
 
-            <div class="w-full space-y-3 text-xs text-left bg-black/50 p-5 rounded-2xl border border-yellow-500/20 shadow-inner">
-                <div class="flex items-center justify-between text-amber-100">
-                    <span>📚 Limite de Camadas</span>
-                    <span class="font-bold text-emerald-400">⚡ ILIMITADAS</span>
+        <!-- Feed Item 3 -->
+        <div class="glass p-6 rounded-[32px] border-white/10 hover:border-blue-500/40 transition-all flex flex-col justify-between group hover:scale-[1.02] duration-300">
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-full border-2 border-blue-400 overflow-hidden shrink-0 shadow-md">
+                        <img src="avatars/avatar_13.jpg" alt="Popcat User" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h4 class="font-black text-white text-sm flex items-center gap-1">
+                            <span>@PopCat_Pixel</span>
+                        </h4>
+                        <span class="text-[9px] font-bold bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/30 uppercase tracking-wider">📹 Creator 4K</span>
+                    </div>
                 </div>
-                <div class="flex items-center justify-between text-amber-100">
-                    <span>🎬 Limite de Quadros</span>
-                    <span class="font-bold text-emerald-400">⚡ ILIMITADOS</span>
+                <div class="text-amber-400 text-xs mb-3 flex items-center gap-1">
+                    ★★★★★ <span class="text-gray-500 text-[10px] ml-1">há 1 dia</span>
                 </div>
-                <div class="flex items-center justify-between text-amber-100">
-                    <span>🖌️ Pincéis Avançados (Spray/Luz)</span>
-                    <span class="font-bold text-emerald-400">✅ 100% Liberados</span>
+                <p class="text-xs text-gray-300 leading-relaxed italic mb-6">
+                    "Poder gravar o timelapse do meu processo de pintura em 4K sem marca d'água foi uma virada de chave para publicar meus vídeos no TikTok e Youtube Shorts."
+                </p>
+            </div>
+            <div class="flex items-center justify-between pt-4 border-t border-white/5 text-[11px] text-gray-400">
+                <span class="hover:text-red-400 cursor-pointer flex items-center gap-1 font-bold">❤️ 310</span>
+                <span class="hover:text-amber-400 cursor-pointer flex items-center gap-1 font-bold">🔥 140</span>
+            </div>
+        </div>
+
+        <!-- Feed Item 4 -->
+        <div class="glass p-6 rounded-[32px] border-2 border-yellow-400/60 bg-yellow-500/[0.04] transition-all flex flex-col justify-between group hover:scale-[1.02] duration-300 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-full border-2 border-yellow-400 overflow-hidden shrink-0 shadow-md">
+                        <img src="avatars/pro/0163e8951593014cb6f914cc9a4b9997.gif" alt="Dragon GIF User" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h4 class="font-black text-amber-300 text-sm flex items-center gap-1">
+                            <span>@DragonMaker</span> ✨
+                        </h4>
+                        <span class="text-[9px] font-black bg-gradient-to-r from-yellow-400 to-amber-500 text-black px-2 py-0.5 rounded-full uppercase tracking-wider">🐉 Mestre Pixel</span>
+                    </div>
                 </div>
-                <div class="flex items-center justify-between text-amber-100">
-                    <span>📹 Gravação de Timelapse 4K</span>
-                    <span class="font-bold text-emerald-400">✅ Gravação Liberada</span>
+                <div class="text-amber-400 text-xs mb-3 flex items-center gap-1">
+                    ★★★★★ <span class="text-amber-200/50 text-[10px] ml-1">há 2 dias</span>
                 </div>
+                <p class="text-xs text-amber-100/90 leading-relaxed italic mb-6">
+                    "Top 1 editor de Pixel Art de 2026. A resposta dos atalhos no PC, a moldura do perfil e a exportação em 16K sem perda de qualidade são perfeitos!"
+                </p>
+            </div>
+            <div class="flex items-center justify-between pt-4 border-t border-yellow-500/20 text-[11px] text-amber-200/70">
+                <span class="hover:text-red-400 cursor-pointer flex items-center gap-1 font-bold">❤️ 420</span>
+                <span class="hover:text-amber-400 cursor-pointer flex items-center gap-1 font-bold">🔥 210</span>
             </div>
         </div>
     </div>
@@ -646,6 +793,41 @@ document.addEventListener('DOMContentLoaded',()=>{
     window.closeLb=()=>{lb.classList.remove('on');document.body.style.overflow='auto';setTimeout(()=>{if(!lb.classList.contains('on'))lbi.src=''},300)};
     lb.addEventListener('click',closeLb);
     document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLb()});
+
+    // Avatar Interactive Gallery Logic
+    const avatarOptions = document.querySelectorAll('.avatar-option');
+    const liveImg = document.getElementById('live-avatar-img');
+    const liveTag = document.getElementById('live-avatar-tag');
+    const liveTitle = document.getElementById('live-avatar-title');
+    const liveDesc = document.getElementById('live-avatar-desc');
+    const liveRing = document.getElementById('live-avatar-ring');
+    const liveStatusBadge = document.getElementById('live-status-badge');
+    const liveAvatarFormat = document.getElementById('live-avatar-format');
+
+    avatarOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+            const src = opt.getAttribute('data-src');
+            const title = opt.getAttribute('data-title');
+            const isPro = opt.getAttribute('data-pro') === 'true';
+
+            if (liveImg) liveImg.src = src;
+            if (liveTitle) liveTitle.innerText = title;
+
+            if (isPro) {
+                if (liveTag) liveTag.innerText = '✨ PRO ANIMADO';
+                if (liveDesc) liveDesc.innerText = 'Avatar animado exclusivo em alta qualidade (60fps), liberado no WyrmPIXEL PRO VIP.';
+                if (liveRing) liveRing.className = 'w-full h-full rounded-full border-4 border-yellow-400 p-1 bg-slate-950 shadow-[0_0_30px_rgba(234,179,8,0.6)] animate-pulse';
+                if (liveStatusBadge) liveStatusBadge.innerHTML = '👑 VIP PRO UNLOCKED';
+                if (liveAvatarFormat) liveAvatarFormat.innerText = 'GIF Animado (PRO)';
+            } else {
+                if (liveTag) liveTag.innerText = '👤 AVATAR GRÁTIS';
+                if (liveDesc) liveDesc.innerText = 'Avatar pixel art padrão incluso para todos os usuários do WyrmPIXEL.';
+                if (liveRing) liveRing.className = 'w-full h-full rounded-full border-4 border-cyan-400 p-1 bg-slate-950 shadow-[0_0_20px_rgba(34,211,238,0.4)]';
+                if (liveStatusBadge) liveStatusBadge.innerHTML = '👤 Grátis';
+                if (liveAvatarFormat) liveAvatarFormat.innerText = 'PNG / JPG Pixel Art';
+            }
+        });
+    });
 
     // Music Logic
     const music = document.getElementById('bgMusic');
