@@ -1569,6 +1569,18 @@ export default function Editor({
     }
   }, [showTextInput]);
 
+  const handleUndoRef = useRef<() => void>(() => {});
+  const handleRedoRef = useRef<() => void>(() => {});
+  const saveProjectRef = useRef<() => void>(() => {});
+  const clearCurrentLayerRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    handleUndoRef.current = handleUndo;
+    handleRedoRef.current = handleRedo;
+    saveProjectRef.current = saveProject;
+    clearCurrentLayerRef.current = clearCurrentLayer;
+  });
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tagName = document.activeElement?.tagName.toLowerCase();
@@ -1615,25 +1627,26 @@ export default function Editor({
 
       // Ctrl/Meta combos (Desfazer / Refazer / Salvar)
       if (hasCtrl) {
-        if (key === "z" || compositeKey === shortcuts.undo || key === shortcuts.undo) {
+        if (e.code === "KeyZ" || key === "z" || compositeKey === shortcuts.undo || key === shortcuts.undo) {
           e.preventDefault();
           if (e.shiftKey) {
-            handleRedo();
+            handleRedoRef.current();
           } else {
-            handleUndo();
+            handleUndoRef.current();
           }
           handled = true;
-        } else if (key === "y" || compositeKey === shortcuts.redo || key === shortcuts.redo) {
+        } else if (e.code === "KeyY" || key === "y" || compositeKey === shortcuts.redo || key === shortcuts.redo) {
           e.preventDefault();
-          handleRedo();
+          handleRedoRef.current();
           handled = true;
         } else if (
+          e.code === "KeyS" ||
           key === "s" ||
           compositeKey === shortcuts.save ||
           compositeKey === "ctrl+s"
         ) {
           e.preventDefault();
-          saveProject();
+          saveProjectRef.current();
           setToolIndicator({ tool: "Salvo" as any, timestamp: Date.now() });
           handled = true;
         }
@@ -1680,9 +1693,9 @@ export default function Editor({
         } else if (key === shortcuts.play && e.code !== "Space") {
           e.preventDefault();
           setIsPlaying((prev) => !prev);
-        } else if (key === shortcuts.clear) {
+        } else if (key === shortcuts.clear || e.code === "Delete" || e.code === "Backspace") {
           e.preventDefault();
-          clearCurrentLayer();
+          clearCurrentLayerRef.current();
           closePanelsExceptFrames();
           setToolIndicator({ tool: "Limpar" as any, timestamp: Date.now() });
         } else if (key === shortcuts.sound) {
