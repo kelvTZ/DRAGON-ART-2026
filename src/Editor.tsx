@@ -5790,6 +5790,8 @@ export default function Editor({
         toggleBatchActions={toggleBatchActions}
         isRecording={isProcessRecording}
         onToggleTimelapse={() => togglePanel("timelapse")}
+        isPro={isPro}
+        setShowUpgradeModal={setShowUpgradeModal}
       />
       )}
 
@@ -7612,6 +7614,7 @@ export default function Editor({
                   setTransparentBackground={setTransparentBackground}
                   canvasBackgroundColor={canvasBackgroundColor}
                   setCanvasBackgroundColor={setCanvasBackgroundColor}
+                  setShowUpgradeModal={setShowUpgradeModal}
                 />
               )}
 
@@ -7636,6 +7639,8 @@ export default function Editor({
                   setOnionSkinFuture={setOnionSkinFuture}
                   deleteAllFrames={deleteAllFrames}
                   isPlaying={isPlaying}
+                  isPro={isPro}
+                  setShowUpgradeModal={setShowUpgradeModal}
                 />
               )}
 

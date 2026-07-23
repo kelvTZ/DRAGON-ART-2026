@@ -30,6 +30,8 @@ interface FramePanelProps {
   setOnionSkinFuture?: (val: number) => void;
   deleteAllFrames?: () => void;
   isPlaying?: boolean;
+  isPro?: boolean;
+  setShowUpgradeModal?: (show: boolean) => void;
 }
 
 export const FramePanel: React.FC<FramePanelProps> = ({
@@ -51,7 +53,9 @@ export const FramePanel: React.FC<FramePanelProps> = ({
   onionSkinFuture = 0,
   setOnionSkinFuture,
   deleteAllFrames,
-  isPlaying = false
+  isPlaying = false,
+  isPro = false,
+  setShowUpgradeModal
 }) => {
   // Functions for context menu
   const moveFrame = (idx: number, direction: 'left' | 'right') => {
@@ -112,17 +116,15 @@ export const FramePanel: React.FC<FramePanelProps> = ({
     <div className="flex flex-col gap-3">
       {/* Header Panel - More professional */}
       <div className="flex items-center justify-between pb-2 border-b border-white/10">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 text-[var(--accent-color)]">
-            <Film size={16} />
-            <span className="text-xs font-black uppercase tracking-tight">Timeline</span>
-          </div>
-          <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
-            {frames.length} {frames.length !== 1 ? 'Quadros' : 'Quadro'}
+        <div className="flex items-center gap-2">
+          <Film size={18} className="text-[var(--accent-color)]" />
+          <span className="font-bold text-sm text-white tracking-wider">LINHA DO TEMPO</span>
+          <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+            ({frames.length} {isPro ? 'quadros' : '/ 4 Grátis'})
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {deleteAllFrames && (
+          {deleteAllFrames && frames.length > 1 && (
             <button 
               onClick={deleteAllFrames}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg border border-red-500/20 transition-all active:scale-95 group"
@@ -133,11 +135,24 @@ export const FramePanel: React.FC<FramePanelProps> = ({
             </button>
           )}
           <button 
-            onClick={() => { sound.playClick(); addFrame(); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--accent-color)] text-white rounded-lg shadow-lg shadow-[var(--accent-color)]/20 hover:brightness-110 active:scale-95 transition-all"
+            onClick={() => {
+              sound.playClick();
+              if (!isPro && frames.length >= 4) {
+                if (setShowUpgradeModal) setShowUpgradeModal(true);
+                return;
+              }
+              addFrame();
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg shadow-lg transition-all active:scale-95 ${
+              !isPro && frames.length >= 4
+                ? 'bg-gradient-to-r from-yellow-500 to-amber-600 shadow-yellow-500/20'
+                : 'bg-[var(--accent-color)] shadow-[var(--accent-color)]/20 hover:brightness-110'
+            }`}
           >
-            <Plus size={14} strokeWidth={3} />
-            <span className="text-[10px] font-black uppercase tracking-tight">Novo</span>
+            {!isPro && frames.length >= 4 ? <Zap size={14} className="text-yellow-200 animate-pulse" /> : <Plus size={14} strokeWidth={3} />}
+            <span className="text-[10px] font-black uppercase tracking-tight">
+              {!isPro && frames.length >= 4 ? '🔒 PRO' : 'Novo'}
+            </span>
           </button>
         </div>
       </div>

@@ -55,7 +55,7 @@ function LoadingFallback() {
 
 export default function App() {
   const [config, setConfig] = useState<ProjectConfig | null>(null);
-  const [isPro, setIsPro] = useState(true);
+  const [isPro, setIsPro] = useState(() => localStorage.getItem('pixel_is_pro') === 'true');
   const [userName, setUserName] = useState('Artista Pixel');
   const [showSplash, setShowSplash] = useState(true);
   const [splashSequence, setSplashSequence] = useState(0);

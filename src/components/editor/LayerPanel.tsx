@@ -55,6 +55,7 @@ interface LayerPanelProps {
   canvasBackgroundColor?: string;
   setCanvasBackgroundColor?: (color: string) => void;
   isPro?: boolean;
+  setShowUpgradeModal?: (show: boolean) => void;
   setIsPreviewMode: (val: boolean) => void;
   setPreviousCanvasColor: (val: string) => void;
 }
@@ -82,7 +83,8 @@ export const LayerPanel: React.FC<LayerPanelProps> = React.memo(({
   setTransparentBackground,
   canvasBackgroundColor = '#ffffff',
   setCanvasBackgroundColor,
-  isPro = false
+  isPro = false,
+  setShowUpgradeModal
 }) => {
   const displayLayers = [...layers].reverse();
   const bgPresetColors = [
@@ -231,15 +233,30 @@ export const LayerPanel: React.FC<LayerPanelProps> = React.memo(({
           </div>
           <div className="flex flex-col">
             <span className="text-base font-black text-white uppercase tracking-tighter">Camadas</span>
-            <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{layers.length} no total</span>
+            <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+              {layers.length} {isPro ? 'no total' : '/ 3 (Grátis)'}
+            </span>
           </div>
         </div>
         <button 
-          onClick={() => { sound.playClick(); addLayer(); }}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/80 text-white rounded-xl shadow-lg shadow-[var(--accent-color)]/20 transition-all active:scale-95 group"
+          onClick={() => {
+            sound.playClick();
+            if (!isPro && layers.length >= 3) {
+              if (setShowUpgradeModal) setShowUpgradeModal(true);
+              return;
+            }
+            addLayer();
+          }}
+          className={`flex items-center gap-2 px-4 py-2 text-white rounded-xl shadow-lg transition-all active:scale-95 group ${
+            !isPro && layers.length >= 3
+              ? 'bg-gradient-to-r from-yellow-500 to-amber-600 shadow-yellow-500/20'
+              : 'bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/80 shadow-[var(--accent-color)]/20'
+          }`}
         >
-          <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" />
-          <span className="text-xs font-black uppercase tracking-tight">Nova</span>
+          {!isPro && layers.length >= 3 ? <Lock size={14} className="text-yellow-200 animate-pulse" /> : <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" />}
+          <span className="text-xs font-black uppercase tracking-tight">
+            {!isPro && layers.length >= 3 ? '🔒 PRO' : 'Nova'}
+          </span>
         </button>
       </div>
 

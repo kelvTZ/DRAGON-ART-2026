@@ -35,6 +35,8 @@ interface BottomBarProps {
   toggleBatchActions: () => void;
   isRecording: boolean;
   onToggleTimelapse: () => void;
+  isPro?: boolean;
+  setShowUpgradeModal?: (show: boolean) => void;
 }
 
 export const BottomBar: React.FC<BottomBarProps> = React.memo(({
@@ -68,6 +70,8 @@ export const BottomBar: React.FC<BottomBarProps> = React.memo(({
   toggleBatchActions,
   isRecording,
   onToggleTimelapse,
+  isPro = false,
+  setShowUpgradeModal
 }) => {
   const [draggingTool, setDraggingTool] = React.useState<string | null>(null);
   const [showEffectsGroup, setShowEffectsGroup] = React.useState(false);
@@ -232,7 +236,13 @@ export const BottomBar: React.FC<BottomBarProps> = React.memo(({
                   label="Mesclar" 
                   tooltip="Misture as cores."
                   active={currentTool === 'smudge'} 
-                  onClick={() => { selectTool('smudge'); setShowEffectsGroup(false); closePanelsExceptFrames(); }} 
+                  onClick={() => {
+                    if (!isPro) {
+                      if (setShowUpgradeModal) setShowUpgradeModal(true);
+                      return;
+                    }
+                    selectTool('smudge'); setShowEffectsGroup(false); closePanelsExceptFrames();
+                  }} 
                 />
                 <ToolButton 
                   id="airbrush" 
@@ -240,7 +250,13 @@ export const BottomBar: React.FC<BottomBarProps> = React.memo(({
                   label="Spray" 
                   tooltip="Pinte com spray."
                   active={currentTool === 'airbrush'} 
-                  onClick={() => { selectTool('airbrush'); setShowEffectsGroup(false); closePanelsExceptFrames(); }} 
+                  onClick={() => {
+                    if (!isPro) {
+                      if (setShowUpgradeModal) setShowUpgradeModal(true);
+                      return;
+                    }
+                    selectTool('airbrush'); setShowEffectsGroup(false); closePanelsExceptFrames();
+                  }} 
                 />
                 <ToolButton 
                   id="sun" 
@@ -248,7 +264,14 @@ export const BottomBar: React.FC<BottomBarProps> = React.memo(({
                   label="Luz" 
                   tooltip="Efeito de claridade."
                   active={lightingEffect === 'lighten'} 
-                  onClick={() => { sound.playClick(); selectEffect(lightingEffect === 'lighten' ? 'none' : 'lighten'); setShowEffectsGroup(false); }}
+                  onClick={() => {
+                    sound.playClick();
+                    if (!isPro) {
+                      if (setShowUpgradeModal) setShowUpgradeModal(true);
+                      return;
+                    }
+                    selectEffect(lightingEffect === 'lighten' ? 'none' : 'lighten'); setShowEffectsGroup(false);
+                  }}
                 />
                 <ToolButton 
                   id="moon" 
@@ -256,7 +279,14 @@ export const BottomBar: React.FC<BottomBarProps> = React.memo(({
                   label="Sombra" 
                   tooltip="Efeito de escuridão."
                   active={lightingEffect === 'darken'} 
-                  onClick={() => { sound.playClick(); selectEffect(lightingEffect === 'darken' ? 'none' : 'darken'); setShowEffectsGroup(false); }}
+                  onClick={() => {
+                    sound.playClick();
+                    if (!isPro) {
+                      if (setShowUpgradeModal) setShowUpgradeModal(true);
+                      return;
+                    }
+                    selectEffect(lightingEffect === 'darken' ? 'none' : 'darken'); setShowEffectsGroup(false);
+                  }}
                 />
               </motion.div>
             )}
@@ -304,9 +334,15 @@ export const BottomBar: React.FC<BottomBarProps> = React.memo(({
                   id="timelapse" 
                   icon={<Video size={20} />} 
                   label={isRecording ? "REC" : "Gravar"}
-                  tooltip="Grave o timelapse da sua arte."
+                  tooltip="Grave o timelapse da sua arte (Requer PRO)."
                   active={activePanel === 'timelapse'} 
-                  onClick={() => { onToggleTimelapse(); setShowMoreGroup(false); }} 
+                  onClick={() => {
+                    if (!isPro) {
+                      if (setShowUpgradeModal) setShowUpgradeModal(true);
+                      return;
+                    }
+                    onToggleTimelapse(); setShowMoreGroup(false);
+                  }} 
                 />
               </motion.div>
             )}
