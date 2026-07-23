@@ -1622,25 +1622,25 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Opção Mensal */}
                     <div 
-                      onClick={() => { sound.playClick(); setShowProModal(true); }}
-                      className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-yellow-400/50 transition-all cursor-pointer group flex items-center justify-between"
+                      onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00', '_blank'); }}
+                      className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-blue-400/50 transition-all cursor-pointer group flex items-center justify-between"
                     >
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black uppercase text-white/50 tracking-wider">Plano Mensal</span>
+                          <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Plano Mensal</span>
                           <span className="text-[10px] text-white/30 line-through font-bold">R$ 29,90</span>
                         </div>
-                        <div className="text-xl font-black text-white mt-0.5">R$ 14,90 <span className="text-xs text-white/40 font-normal">/ mês</span></div>
+                        <div className="text-xl font-black text-white mt-0.5">R$ 9,90 <span className="text-xs text-white/40 font-normal">/ mês</span></div>
                         <p className="text-[11px] text-white/50 mt-1">Cancele quando quiser</p>
                       </div>
-                      <button className="px-3.5 py-2 bg-white/10 group-hover:bg-yellow-400 group-hover:text-black text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider">
-                        Assinar
+                      <button className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider shadow-md">
+                        Assinar Stripe
                       </button>
                     </div>
 
                     {/* Opção Vitalícia - Destaque */}
                     <div 
-                      onClick={() => { sound.playClick(); setShowProModal(true); }}
+                      onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00', '_blank'); }}
                       className="p-4 bg-gradient-to-br from-yellow-400/10 via-amber-500/15 to-yellow-500/10 hover:from-yellow-400/20 rounded-2xl border-2 border-yellow-400/50 transition-all cursor-pointer group flex items-center justify-between relative overflow-hidden shadow-lg"
                     >
                       <div className="absolute top-0 right-0 bg-yellow-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-bl-xl uppercase tracking-widest">
@@ -1657,7 +1657,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                         <p className="text-[11px] text-amber-200/70 mt-1">Pague 1x e use PARA SEMPRE</p>
                       </div>
                       <button className="px-4 py-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black rounded-xl shadow-md group-hover:scale-105 transition-all uppercase tracking-wider">
-                        Garantir
+                        Garantir Stripe
                       </button>
                     </div>
                   </div>
