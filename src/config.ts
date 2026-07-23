@@ -13,7 +13,7 @@ export const CONFIG = {
   PLATFORM_NAME: "WyrmPIXEL Studio",
   
   // LINKS DE DOWNLOAD / REDES SOCIAIS
-  DOWNLOAD_APK_URL: "https://drive.google.com/uc?export=download&id=1TWz60_idJJy5mBWfi1Ng-l2s81_ZshdU",
+  DOWNLOAD_APK_URL: "https://drive.google.com/uc?export=download&id=1qXtmGOPGSjpTKeaNIrnNFGzHHVTiTnI8",
   INSTAGRAM_URL: "https://www.instagram.com/dragonart_pixel/",
   DISCORD_URL: "https://discord.gg/gFvckFY5",
   
