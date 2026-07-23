@@ -207,6 +207,20 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       setSavedProjects([]);
     }
 
+    // Payment Redirect Listener (Stripe Payment Auto-Unlock)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('payment') === 'success') {
+        const plan = urlParams.get('plan') || 'pro';
+        localStorage.setItem('wyrm_is_pro', 'true');
+        localStorage.setItem('wyrm_pro_plan', plan);
+        alert(`🎉 PARABÉNS! Seu Plano WyrmPIXEL ${plan === 'monthly' ? 'Mensal' : 'PRO Vitalício'} foi ativado com sucesso! Aproveite todos os recursos ilimitados.`);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (e) {
+      console.warn('Failed to parse payment status:', e);
+    }
+
     // Load Theme
     try {
       const savedTheme = localStorage.getItem('pixel_theme');
