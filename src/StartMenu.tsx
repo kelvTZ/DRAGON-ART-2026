@@ -15,6 +15,7 @@ import { generateId, getAvatarFallback } from './utils';
 
 import { CONFIG } from './config';
 import OnboardingTutorial from './components/OnboardingTutorial';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 
 export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig, isPro: boolean, userName: string) => void }) {
@@ -665,38 +666,196 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     localStorage.setItem('pixel_profile_name', newName);
   };
   useEffect(() => {
-    // Only local storage profile image logic here if needed
+    if (!isSupabaseConfigured()) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user?.user_metadata) {
+        const meta = session.user.user_metadata;
+        if (meta.display_name) {
+          setProfileName(meta.display_name);
+          localStorage.setItem('pixel_profile_name', meta.display_name);
+        }
+        if (meta.avatar_url) {
+          setProfileImage(meta.avatar_url);
+          localStorage.setItem('pixel_profile_image', meta.avatar_url);
+        }
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user?.user_metadata) {
+        const meta = session.user.user_metadata;
+        if (meta.display_name) {
+          setProfileName(meta.display_name);
+          localStorage.setItem('pixel_profile_name', meta.display_name);
+        }
+        if (meta.avatar_url) {
+          setProfileImage(meta.avatar_url);
+          localStorage.setItem('pixel_profile_image', meta.avatar_url);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    setIsPro(true);
-  }, []);
+  const handleSignUp = async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+    setAuthSuccess(null);
+    try {
+      if (!isSupabaseConfigured()) {
+        const newName = registerName || 'Artista Pixel';
+        setProfileName(newName);
+        localStorage.setItem('pixel_profile_name', newName);
+        setAuthSuccess('Perfil criado localmente! Adicione a SUPABASE_URL e ANON_KEY no config.ts para salvar no Supabase online.');
+        setTimeout(() => setAuthSuccess(null), 4000);
+        setAuthLoading(false);
+        return;
+      }
 
-  const experienceLevels = [
-    { id: 'iniciante' as const, label: 'Iniciante', icon: 'ðŸŒ±', desc: 'ComeÃ§ando no pixel art' },
-    { id: 'intermediario' as const, label: 'IntermediÃ¡rio', icon: 'âš¡', desc: 'JÃ¡ domino o bÃ¡sico' },
-    { id: 'avancado' as const, label: 'AvanÃ§ado', icon: 'ðŸ”¥', desc: 'Crio artes complexas' },
-    { id: 'mestre' as const, label: 'Mestre', icon: 'ðŸ‘‘', desc: 'Artista profissional' },
-  ];
+      const { data, error } = await supabase.auth.signUp({
+        email: authEmail,
+        password: authPassword,
+        options: {
+          data: {
+            display_name: registerName || profileName,
+            avatar_url: profileImage || null,
+            experience_level: experienceLevel,
+            badge: selectedBadge,
+          }
+        }
+      });
 
-  const badges = [
-    { id: 'leaf', image: '/badges/free_1.png', label: 'Iniciante', pro: false, requiredArts: 1 },
-    { id: 'artist', image: '/badges/free_2.png', label: 'Artista', pro: false, requiredArts: 3 },
-    { id: 'sparkles', image: '/badges/free_3.png', label: 'Veterano', pro: false, requiredArts: 10 },
-    { id: 'heart', image: '/badges/free_4.png', label: 'Mestre', pro: false, requiredArts: 15 },
-    { id: 'fire', image: '/badges/free_5.png', label: 'Lenda', pro: false, requiredArts: 25 },
-    { id: 'star', image: '/badges/pro_1.png', label: 'Cristal', pro: true, glow: 'rgba(56, 189, 248, 0.8)' },
-    { id: 'crown', image: '/badges/pro_2.png', label: 'Soberano', pro: true, glow: 'rgba(239, 68, 68, 0.8)' },
-    { id: 'diamond', image: '/badges/pro_3.png', label: 'Eterno', pro: true, glow: 'rgba(168, 85, 247, 0.8)' },
-    { id: 'dragon', image: '/badges/pro_4.png', label: 'Guardião', pro: true, glow: 'rgba(34, 197, 94, 0.8)' },
-    { id: 'verified', image: '/badges/pro_5.png', label: 'Elite', pro: true, glow: 'rgba(234, 179, 8, 0.8)' },
-  ];
+      if (error) throw error;
 
-  const handleSignUp = async () => {};
-  const handleSignIn = async () => {};
-  const handleSignOut = async () => {};
-  const handleSaveProfile = async () => { setAuthSuccess('Perfil e Avatar salvos! ✨'); setTimeout(() => setAuthSuccess(null), 3000); };
-  const handleChangePassword = async () => {};
+      if (data.session) {
+        setSession(data.session);
+      }
+      if (registerName) {
+        setProfileName(registerName);
+        localStorage.setItem('pixel_profile_name', registerName);
+      }
+
+      setAuthSuccess('Conta criada no Supabase com sucesso! ✨');
+      setTimeout(() => setAuthSuccess(null), 4000);
+    } catch (err: any) {
+      setAuthError(err.message || 'Erro ao criar conta no Supabase.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+    setAuthSuccess(null);
+    try {
+      if (!isSupabaseConfigured()) {
+        setAuthError('Supabase não configurado. Adicione a SUPABASE_URL e SUPABASE_ANON_KEY no arquivo src/config.ts');
+        setAuthLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: authPassword,
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        setSession(data.session);
+        const meta = data.user?.user_metadata;
+        if (meta?.display_name) {
+          setProfileName(meta.display_name);
+          localStorage.setItem('pixel_profile_name', meta.display_name);
+        }
+        if (meta?.avatar_url) {
+          setProfileImage(meta.avatar_url);
+          localStorage.setItem('pixel_profile_image', meta.avatar_url);
+        }
+      }
+
+      setAuthSuccess('Login realizado com sucesso! 🎉');
+      setTimeout(() => setAuthSuccess(null), 3000);
+    } catch (err: any) {
+      setAuthError(err.message || 'Erro ao realizar login.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setAuthLoading(true);
+    try {
+      if (isSupabaseConfigured()) {
+        await supabase.auth.signOut();
+      }
+      setSession(null);
+      setAuthSuccess('Desconectado com sucesso.');
+      setTimeout(() => setAuthSuccess(null), 3000);
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setAuthLoading(true);
+    setAuthError(null);
+    setAuthSuccess(null);
+
+    localStorage.setItem('pixel_profile_name', profileName);
+    if (profileImage) localStorage.setItem('pixel_profile_image', profileImage);
+
+    try {
+      if (isSupabaseConfigured() && session?.user) {
+        const { error } = await supabase.auth.updateUser({
+          data: {
+            display_name: profileName,
+            avatar_url: profileImage,
+          }
+        });
+        if (error) throw error;
+        setAuthSuccess('Nome e Foto de Perfil salvos no Supabase com sucesso! ✨');
+      } else {
+        setAuthSuccess('Nome e Foto de Perfil salvos localmente! ✨');
+      }
+      setTimeout(() => setAuthSuccess(null), 3000);
+    } catch (err: any) {
+      setAuthError(err.message || 'Erro ao salvar perfil no Supabase.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword) return;
+    setAuthLoading(true);
+    setAuthError(null);
+    setAuthSuccess(null);
+    try {
+      if (isSupabaseConfigured() && session?.user) {
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+        if (error) throw error;
+        setAuthSuccess('Senha atualizada no Supabase! 🔒');
+        setNewPassword('');
+      } else {
+        setAuthSuccess('Insira as chaves do Supabase no config.ts para alterar a senha.');
+      }
+      setTimeout(() => setAuthSuccess(null), 3000);
+    } catch (err: any) {
+      setAuthError(err.message || 'Erro ao alterar senha.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-app)] font-sans text-[var(--text-primary)] relative transition-colors duration-300 pb-24 overflow-x-hidden">

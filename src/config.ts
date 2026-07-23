@@ -19,5 +19,9 @@ export const CONFIG = {
   // CONFIGURAÇÕES DA COMUNIDADE
   MAX_POSTS_PER_PAGE: 20,
   
+  // CONFIGURAÇÕES DO SUPABASE
+  SUPABASE_URL: (import.meta as any).env?.VITE_SUPABASE_URL || "",
+  SUPABASE_ANON_KEY: (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || "",
+
   WEB_URL: "http://192.168.3.172:3000",
 };
