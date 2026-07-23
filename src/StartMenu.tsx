@@ -1602,8 +1602,8 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                     </div>
                   </div>
 
-                  {/* Estatísticas Limpas */}
-                  <div className="flex items-center gap-6 bg-black/40 px-6 py-4 rounded-2xl border border-white/10 shrink-0 w-full md:w-auto justify-around">
+                  {/* Estatísticas Limpas + Botão Baixar APK */}
+                  <div className="flex items-center gap-6 bg-black/40 px-6 py-4 rounded-2xl border border-white/10 shrink-0 w-full md:w-auto justify-around flex-wrap">
                     <div className="text-center">
                       <div className="text-2xl font-black text-[var(--accent-color)]">{savedProjects.length}</div>
                       <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Projetos</div>
@@ -1615,6 +1615,14 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                       </div>
                       <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Quadros</div>
                     </div>
+                    <a
+                      href={CONFIG.DOWNLOAD_APK_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white text-xs font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 no-underline uppercase tracking-wider ml-auto"
+                    >
+                      <Download size={16} /> <span>Baixar APK Android</span>
+                    </a>
                   </div>
                 </div>
 
