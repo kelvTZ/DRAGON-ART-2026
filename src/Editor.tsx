@@ -340,7 +340,10 @@ export default function Editor({
     { layers: Layer[]; texts: TextObject[] }[]
   >(() => {
     if (frames && frames.length > 0 && frames[0].layers) {
-      return [{ layers: frames[0].layers, texts: frames[0].texts || [] }];
+      return [{ 
+        layers: frames[0].layers.map(l => ({ ...l, data: [...l.data] })), 
+        texts: frames[0].texts ? [...frames[0].texts] : [] 
+      }];
     }
     return [];
   });
@@ -351,9 +354,11 @@ export default function Editor({
     layers: Layer[],
     texts: TextObject[] = frames[currentFrame]?.texts || []
   ) {
+    const clonedLayers = layers.map(l => ({ ...l, data: [...l.data] }));
+    const clonedTexts = Array.isArray(texts) ? [...texts] : [];
     const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push({ layers, texts });
-    if (newHistory.length > 20) newHistory.shift();
+    newHistory.push({ layers: clonedLayers, texts: clonedTexts });
+    if (newHistory.length > 30) newHistory.shift();
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   }
@@ -388,14 +393,17 @@ export default function Editor({
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       const newFrames = [...frames];
+      const restoredLayers = history[newIndex].layers.map(l => ({ ...l, data: [...l.data] }));
+      const restoredTexts = history[newIndex].texts ? [...history[newIndex].texts] : [];
       newFrames[currentFrame] = {
         ...newFrames[currentFrame],
-        layers: history[newIndex].layers,
-        texts: history[newIndex].texts,
+        layers: restoredLayers,
+        texts: restoredTexts,
       };
       setFrames(newFrames);
       setSelection(null);
       sound.playClick();
+      setToolIndicator({ tool: "Desfazer" as any, timestamp: Date.now() });
       if (window.navigator.vibrate) window.navigator.vibrate(50);
     }
   }
@@ -405,14 +413,17 @@ export default function Editor({
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
       const newFrames = [...frames];
+      const restoredLayers = history[newIndex].layers.map(l => ({ ...l, data: [...l.data] }));
+      const restoredTexts = history[newIndex].texts ? [...history[newIndex].texts] : [];
       newFrames[currentFrame] = {
         ...newFrames[currentFrame],
-        layers: history[newIndex].layers,
-        texts: history[newIndex].texts,
+        layers: restoredLayers,
+        texts: restoredTexts,
       };
       setFrames(newFrames);
       setSelection(null);
       sound.playClick();
+      setToolIndicator({ tool: "Refazer" as any, timestamp: Date.now() });
       if (window.navigator.vibrate) window.navigator.vibrate(50);
     }
   }
@@ -1602,22 +1613,22 @@ export default function Editor({
       const compositeKey = hasCtrl ? `ctrl+${key}` : key;
       let handled = false;
 
-      // Ctrl/Meta combos
+      // Ctrl/Meta combos (Desfazer / Refazer / Salvar)
       if (hasCtrl) {
-        if (e.shiftKey && key === shortcuts.undo) {
-          // Ctrl+Shift+Z = Redo (priority over undo)
+        if (key === "z" || compositeKey === shortcuts.undo || key === shortcuts.undo) {
           e.preventDefault();
-          handleRedo();
+          if (e.shiftKey) {
+            handleRedo();
+          } else {
+            handleUndo();
+          }
           handled = true;
-        } else if (compositeKey === shortcuts.undo || key === shortcuts.undo) {
-          e.preventDefault();
-          handleUndo();
-          handled = true;
-        } else if (compositeKey === shortcuts.redo || key === shortcuts.redo) {
+        } else if (key === "y" || compositeKey === shortcuts.redo || key === shortcuts.redo) {
           e.preventDefault();
           handleRedo();
           handled = true;
         } else if (
+          key === "s" ||
           compositeKey === shortcuts.save ||
           compositeKey === "ctrl+s"
         ) {
