@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { 
   Plus, 
   Trash2, 
@@ -18,7 +18,8 @@ import {
   Check,
   X,
   Paintbrush,
-  Image
+  Image,
+  GripVertical
 } from 'lucide-react';
 import { MiniLayerCanvas } from '../MiniLayerCanvas';
 import { sound } from '../../sound';
@@ -58,7 +59,7 @@ interface LayerPanelProps {
   setPreviousCanvasColor: (val: string) => void;
 }
 
-export const LayerPanel: React.FC<LayerPanelProps> = ({
+export const LayerPanel: React.FC<LayerPanelProps> = React.memo(({
   layers,
   setIsPreviewMode,
   setPreviousCanvasColor,
@@ -243,46 +244,59 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
       </div>
 
       <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar overflow-x-hidden">
-        <div className="flex flex-col gap-4">
+        <Reorder.Group 
+          axis="y" 
+          values={displayLayers} 
+          onReorder={(newOrderedDisplay) => {
+            const reversed = [...newOrderedDisplay].reverse();
+            reorderLayers(reversed);
+          }}
+          className="flex flex-col gap-3"
+        >
           <AnimatePresence initial={false}>
             {displayLayers.map((layer) => {
               const actualIdx = layers.findIndex(l => l.id === layer.id);
               if (actualIdx === -1) return null;
 
               return (
-                <LayerItem 
+                <Reorder.Item
                   key={layer.id}
-                  layer={layer}
-                  idx={actualIdx}
-                  active={currentLayer === actualIdx}
-                  onClick={() => { 
-                    sound.playClick(); 
-                    setCurrentLayer(actualIdx); 
-                    triggerLayerFlash(layer.id);
-                  }}
-                  onToggleVisibility={() => { sound.playClick(); toggleLayerVisibility(actualIdx); }}
-                  onToggleLock={() => { sound.playClick(); toggleLayerLock(actualIdx); }}
-                  onDelete={() => { sound.playClick(); deleteLayer(actualIdx); }}
-                  onRename={(newName) => renameLayer(actualIdx, newName)}
-                  onDuplicate={() => { sound.playClick(); duplicateLayer(actualIdx); }}
-                  onOpacityChange={(opacity) => updateLayerOpacity(actualIdx, opacity)}
-                  onMove={(dir) => moveLayer(actualIdx, dir)}
-                  onMoveLimit={(limit) => moveToLimit(actualIdx, limit)}
-                  onFlash={() => { sound.playClick(); triggerLayerFlash(layer.id); }}
-                  width={width}
-                  height={height}
-                  layersLength={layers.length}
-                  isTop={actualIdx === layers.length - 1}
-                  isBottom={actualIdx === 0}
-                />
+                  value={layer}
+                  className="list-none"
+                >
+                  <LayerItem 
+                    layer={layer}
+                    idx={actualIdx}
+                    active={currentLayer === actualIdx}
+                    onClick={() => { 
+                      sound.playClick(); 
+                      setCurrentLayer(actualIdx); 
+                      triggerLayerFlash(layer.id);
+                    }}
+                    onToggleVisibility={() => { sound.playClick(); toggleLayerVisibility(actualIdx); }}
+                    onToggleLock={() => { sound.playClick(); toggleLayerLock(actualIdx); }}
+                    onDelete={() => { sound.playClick(); deleteLayer(actualIdx); }}
+                    onRename={(newName) => renameLayer(actualIdx, newName)}
+                    onDuplicate={() => { sound.playClick(); duplicateLayer(actualIdx); }}
+                    onOpacityChange={(opacity) => updateLayerOpacity(actualIdx, opacity)}
+                    onMove={(dir) => moveLayer(actualIdx, dir)}
+                    onMoveLimit={(limit) => moveToLimit(actualIdx, limit)}
+                    onFlash={() => { sound.playClick(); triggerLayerFlash(layer.id); }}
+                    width={width}
+                    height={height}
+                    layersLength={layers.length}
+                    isTop={actualIdx === layers.length - 1}
+                    isBottom={actualIdx === 0}
+                  />
+                </Reorder.Item>
               );
             })}
           </AnimatePresence>
-        </div>
+        </Reorder.Group>
       </div>
     </div>
   );
-};
+});
 
 interface LayerItemProps {
   layer: Layer;
@@ -357,31 +371,35 @@ const LayerItem: React.FC<LayerItemProps> = ({
   return (
     <motion.div 
       layout
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.15 } }}
-      className={`relative group flex flex-col gap-4 p-4 rounded-3xl border-2 transition-all cursor-pointer overflow-hidden ${
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
+      className={`relative group flex flex-col p-3 rounded-2xl border-2 transition-all cursor-pointer overflow-hidden ${
         active 
-          ? 'bg-[var(--bg-element)] border-[var(--accent-color)] shadow-2xl shadow-[var(--accent-color)]/10' 
-          : 'bg-white/5 border-white/5 hover:border-white/10'
+          ? 'bg-[var(--bg-panel)] border-[var(--accent-color)] shadow-xl shadow-[var(--accent-color)]/5' 
+          : 'bg-white/[0.02] border-white/5 hover:border-white/10'
       }`}
       onClick={onClick}
     >
-      {/* Background Pulse Effect when active */}
+      {/* Background Glow Effect */}
       {active && (
-        <motion.div 
-          layoutId={`active-pulse-${layer.id}`}
-          className="absolute inset-0 bg-gradient-to-r from-[var(--accent-color)]/5 to-transparent pointer-events-none"
-          animate={{ opacity: [0.1, 0.15, 0.1] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-color)]/[0.03] to-transparent pointer-events-none" />
       )}
 
-      {/* Top Row: Preview, Info, and Arrows */}
-      <div className="flex items-center gap-4 relative z-10">
-        <div className="relative group/preview">
-          <div className="w-16 h-16 bg-white rounded-2xl overflow-hidden border-2 border-white/10 shadow-xl shrink-0 relative group-hover:scale-105 transition-transform">
-            <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'conic-gradient(#f0f0f0 90deg, #fff 90deg 180deg, #f0f0f0 180deg 270deg, #fff 270deg)', backgroundSize: '8px 8px' }} />
+      {/* Main Row */}
+      <div className="flex items-center gap-3 relative z-10 w-full">
+        {/* Grip Handle for Reorder */}
+        <div 
+          className="text-white/20 hover:text-white/60 cursor-grab active:cursor-grabbing p-1 -ml-1 transition-colors"
+          title="Arrastar para reordenar"
+        >
+          <GripVertical size={16} />
+        </div>
+
+        {/* Thumbnail Mini Preview */}
+        <div className="relative shrink-0">
+          <div className="w-12 h-12 bg-white/5 rounded-xl overflow-hidden border border-white/10 shadow-inner flex items-center justify-center relative">
+            <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'conic-gradient(#333 90deg, #444 90deg 180deg, #333 180deg 270deg, #444 270deg)', backgroundSize: '6px 6px' }} />
             <MiniLayerCanvas 
               layerData={layer.data} 
               width={width} 
@@ -391,16 +409,17 @@ const LayerItem: React.FC<LayerItemProps> = ({
           </div>
           <button 
             onClick={(e) => { e.stopPropagation(); onFlash(); }}
-            className="absolute -top-2 -right-2 p-1.5 bg-[var(--accent-color)] text-white rounded-lg shadow-lg opacity-0 group-hover/preview:opacity-100 transition-opacity hover:scale-110 active:scale-90 z-20"
+            className="absolute -top-1.5 -right-1.5 p-1 bg-[var(--accent-color)] text-white rounded-md shadow-md hover:scale-105"
+            title="Destacar camada"
           >
-            <Zap size={12} fill="currentColor" />
+            <Zap size={10} fill="currentColor" />
           </button>
         </div>
 
-        {/* Info & Rename */}
+        {/* Info Area */}
         <div className="flex-1 min-w-0">
           {isRenaming ? (
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
               <input
                 ref={inputRef}
                 type="text"
@@ -408,85 +427,126 @@ const LayerItem: React.FC<LayerItemProps> = ({
                 onChange={(e) => setTempName(e.target.value)}
                 onBlur={handleRenameSubmit}
                 onKeyDown={handleKeyDown}
-                className="w-full bg-white/10 border border-[var(--accent-color)] rounded-lg px-2 py-1 text-sm font-bold text-white outline-none"
+                className="w-full bg-white/10 border border-[var(--accent-color)] rounded-lg px-2 py-0.5 text-xs font-bold text-white outline-none"
               />
-              <button onClick={handleRenameSubmit} className="p-1.5 bg-green-500/20 text-green-400 rounded-lg">
-                <Check size={14} />
+              <button onClick={handleRenameSubmit} className="p-1 bg-green-500/20 text-green-400 rounded-md">
+                <Check size={12} />
               </button>
             </div>
           ) : (
             <div 
-              className="flex items-center gap-2 group/name"
+              className="flex items-center gap-1.5"
               onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }}
             >
-              <div className={`text-sm font-black uppercase tracking-tight truncate ${active ? 'text-white' : 'text-white/60'}`}>
+              <span className="text-xs font-black uppercase tracking-tight truncate text-white">
                 {layer.name || `Camada ${idx + 1}`}
-              </div>
-              <Edit2 size={12} className="text-white/20 group-hover/name:text-[var(--accent-color)] transition-colors shrink-0" />
+              </span>
+              <Edit2 size={10} className="text-white/20 hover:text-[var(--accent-color)] transition-colors shrink-0" />
             </div>
           )}
+          
+          {/* Quick Visibility & Lock Status Indicator */}
           <div className="flex items-center gap-2 mt-1">
-            <span className={`text-[10px] font-bold uppercase tracking-widest ${layer.locked ? 'text-orange-400' : 'text-white/30'}`}>
-              {layer.locked ? 'Bloqueada' : 'Editável'}
+            <span className={`text-[9px] font-black uppercase tracking-wider ${layer.locked ? 'text-orange-400' : 'text-white/30'}`}>
+              {layer.locked ? 'Bloqueada' : 'Livre'}
             </span>
-            <span className="w-1 h-1 bg-white/20 rounded-full" />
-            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
-              {Math.round((layer.opacity ?? 1) * 100)}% Opaco
+            <span className="w-1 h-1 bg-white/10 rounded-full" />
+            <span className="text-[9px] text-white/30 font-black uppercase tracking-wider">
+              {Math.round((layer.opacity ?? 1) * 100)}% opac.
             </span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1 shrink-0">
-          <div className="flex gap-1">
-            <button 
-              disabled={isTop}
-              onClick={(e) => { e.stopPropagation(); onMoveLimit('top'); }}
-              className={`p-1.5 rounded-lg transition-all ${isTop ? 'opacity-0 pointer-events-none' : 'bg-white/5 hover:bg-white/10 text-white/30 hover:text-[var(--accent-color)] active:scale-90'}`}
-            >
-              <ChevronsUp size={16} />
-            </button>
-            <button 
-              disabled={isTop}
-              onClick={(e) => { e.stopPropagation(); onMove('up'); }}
-              className={`p-1.5 rounded-lg transition-all ${isTop ? 'opacity-0 pointer-events-none' : 'bg-white/5 hover:bg-white/10 text-white/40 hover:text-white active:scale-90 active:-translate-y-0.5'}`}
-            >
-              <ChevronUp size={18} />
-            </button>
-          </div>
-          <div className="flex gap-1">
-            <button 
-              disabled={isBottom}
-              onClick={(e) => { e.stopPropagation(); onMoveLimit('bottom'); }}
-              className={`p-1.5 rounded-lg transition-all ${isBottom ? 'opacity-0 pointer-events-none' : 'bg-white/5 hover:bg-white/10 text-white/30 hover:text-[var(--accent-color)] active:scale-90'}`}
-            >
-              <ChevronsDown size={16} />
-            </button>
-            <button 
-              disabled={isBottom}
-              onClick={(e) => { e.stopPropagation(); onMove('down'); }}
-              className={`p-1.5 rounded-lg transition-all ${isBottom ? 'opacity-0 pointer-events-none' : 'bg-white/5 hover:bg-white/10 text-white/40 hover:text-white active:scale-90 active:translate-y-0.5'}`}
-            >
-              <ChevronDown size={18} />
-            </button>
           </div>
         </div>
       </div>
 
+      {/* Row 2: Action Controls (Exibida separada para evitar achatamento na horizontal) */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5 relative z-10 w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5">
+          {/* Visibilidade */}
+          <button 
+            onClick={onToggleVisibility}
+            className={`p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center ${
+              !layer.visible 
+                ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
+                : 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white'
+            }`}
+            title={layer.visible ? 'Ocultar camada' : 'Mostrar camada'}
+          >
+            {layer.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+          </button>
+
+          {/* Bloqueio */}
+          <button 
+            onClick={onToggleLock}
+            className={`p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center ${
+              layer.locked 
+                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' 
+                : 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white'
+            }`}
+            title={layer.locked ? 'Desbloquear camada' : 'Bloquear camada'}
+          >
+            {layer.locked ? <Lock size={14} /> : <Unlock size={14} />}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {/* Mover para Cima */}
+          <button 
+            disabled={isTop}
+            onClick={() => onMove('up')}
+            className={`p-2 rounded-xl transition-all active:scale-90 bg-white/5 hover:bg-white/10 text-white/60 disabled:opacity-20 disabled:cursor-not-allowed`}
+            title="Subir camada"
+          >
+            <ChevronUp size={14} />
+          </button>
+
+          {/* Mover para Baixo */}
+          <button 
+            disabled={isBottom}
+            onClick={() => onMove('down')}
+            className={`p-2 rounded-xl transition-all active:scale-90 bg-white/5 hover:bg-white/10 text-white/60 disabled:opacity-20 disabled:cursor-not-allowed`}
+            title="Descer camada"
+          >
+            <ChevronDown size={14} />
+          </button>
+
+          {/* Duplicar */}
+          <button 
+            onClick={onDuplicate}
+            className="p-2 rounded-xl bg-white/5 hover:bg-[var(--accent-color)]/20 hover:text-[var(--accent-color)] text-white/60 transition-all active:scale-90"
+            title="Duplicar camada"
+          >
+            <Copy size={14} />
+          </button>
+
+          {/* Excluir */}
+          {layersLength > 1 && (
+            <button 
+              onClick={onDelete}
+              className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-white/60 transition-all active:scale-90"
+              title="Excluir camada"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Opacidade Slider (Só aparece quando selecionada) */}
       {active && (
         <motion.div 
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-3 py-2 border-t border-white/5 relative z-10" 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="flex flex-col gap-1.5 pt-2 border-t border-white/5 relative z-10 w-full" 
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-white/40 font-black uppercase tracking-widest">Ajuste de Opacidade</span>
-            <span className="px-2 py-0.5 bg-[var(--accent-color)] text-white text-[10px] font-black rounded-md">{Math.round((layer.opacity ?? 1) * 100)}%</span>
+          <div className="flex items-center justify-between text-[9px] font-black text-white/40 uppercase tracking-widest">
+            <span>Opacidade</span>
+            <span className="text-[var(--accent-color)]">{Math.round((layer.opacity ?? 1) * 100)}%</span>
           </div>
-          <div className="relative h-8 flex items-center">
-            <div className="absolute inset-0 h-3 bg-white/5 rounded-full my-auto" />
+          <div className="relative h-6 flex items-center">
+            <div className="absolute inset-0 h-1.5 bg-white/5 rounded-full my-auto" />
             <div 
-              className="absolute inset-y-0 left-0 h-3 bg-[var(--accent-color)] rounded-full my-auto" 
+              className="absolute inset-y-0 left-0 h-1.5 bg-[var(--accent-color)] rounded-full my-auto" 
               style={{ width: `${(layer.opacity ?? 1) * 100}%` }} 
             />
             <input 
@@ -501,52 +561,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
           </div>
         </motion.div>
       )}
-
-      <div className="flex items-center justify-between pt-2 border-t border-white/5 relative z-10">
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl font-bold text-[10px] uppercase transition-all ${
-              layer.locked 
-                ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' 
-                : 'bg-white/5 text-white/40 hover:text-white border border-transparent'
-            }`}
-          >
-            {layer.locked ? <Lock size={16} /> : <Unlock size={16} />}
-            <span>{layer.locked ? 'Bloqueada' : 'Bloquear'}</span>
-          </button>
-          
-          <button 
-            onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl font-bold text-[10px] uppercase transition-all ${
-              !layer.visible 
-                ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
-                : 'bg-white/5 text-white/40 hover:text-white border border-transparent'
-            }`}
-          >
-            {layer.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-            <span>{layer.visible ? 'Visível' : 'Oculta'}</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-            className="p-3 text-white/40 hover:text-[var(--accent-color)] bg-white/5 hover:bg-[var(--accent-color)]/10 rounded-xl transition-all active:scale-90"
-          >
-            <Copy size={18} />
-          </button>
-          
-          {layersLength > 1 && (
-            <button 
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="p-3 text-white/40 hover:text-red-400 bg-white/5 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
-            >
-              <Trash2 size={18} />
-            </button>
-          )}
-        </div>
-      </div>
     </motion.div>
   );
 };
+

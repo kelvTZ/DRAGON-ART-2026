@@ -3,6 +3,7 @@ class SoundEngine {
   private sfxEnabled: boolean = true;
   private bgmEnabled: boolean = true;
   private lastDrawTime: number = 0;
+  private cachedNoiseBuffer: AudioBuffer | null = null; // Reusable noise buffer
 
   private bgmAudio: HTMLAudioElement | null = null;
 
@@ -79,6 +80,15 @@ class SoundEngine {
     return buffer;
   }
 
+  // Cached noise buffer — avoids allocating new AudioBuffer on every stroke
+  private getCachedNoiseBuffer(): AudioBuffer | null {
+    if (!this.ctx) return null;
+    if (!this.cachedNoiseBuffer) {
+      this.cachedNoiseBuffer = this.createNoiseBuffer(0.5); // 500ms reusable
+    }
+    return this.cachedNoiseBuffer;
+  }
+
   playDraw(muffle: number = 0, speed: number = 1) {
     if (!this.sfxEnabled || !this.ctx) return;
     const now = this.ctx.currentTime;
@@ -108,16 +118,20 @@ class SoundEngine {
     gain.gain.linearRampToValueAtTime(0.04, now + 0.01 / speed);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-    // Noise component for scratchiness
-    const noiseBuffer = this.createNoiseBuffer(duration);
+    // Noise component for scratchiness — uses cached buffer
+    const noiseBuffer = this.getCachedNoiseBuffer();
     if (noiseBuffer) {
       const noise = this.ctx.createBufferSource();
       noise.buffer = noiseBuffer;
+      // Random offset into the cached buffer for variety
+      const maxOffset = Math.max(0, noiseBuffer.duration - duration);
+      const offset = Math.random() * maxOffset;
       const noiseGain = this.ctx.createGain();
       noiseGain.gain.setValueAtTime(0.01 * (1 - muffle), now);
       noise.connect(noiseGain);
       noiseGain.connect(filter);
-      noise.start(now);
+      noise.start(now, offset);
+      noise.stop(now + duration);
     }
     
     osc.connect(filter);
@@ -136,15 +150,13 @@ class SoundEngine {
 
     // Use a short burst of filtered noise for erasing
     const duration = 0.05 / speed;
-    const bufferSize = this.ctx.sampleRate * duration;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-
+    // Use cached noise buffer instead of creating new one each erase
+    const buffer = this.getCachedNoiseBuffer();
+    if (!buffer) return;
     const noise = this.ctx.createBufferSource();
     noise.buffer = buffer;
+    const maxOffset = Math.max(0, buffer.duration - duration);
+    const offset = Math.random() * maxOffset;
     
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
@@ -161,7 +173,8 @@ class SoundEngine {
     filter.connect(gain);
     gain.connect(this.ctx.destination);
 
-    noise.start(now);
+    noise.start(now, offset);
+    noise.stop(now + duration);
   }
 
   playFill(muffle: number = 0, speed: number = 1) {

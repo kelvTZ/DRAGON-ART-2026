@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameFy Showroom | Apresentação Interativa Premium</title>
+    <meta name="description" content="Uma apresentação dinâmica e interativa premium do portal de notícias, lançamentos e tutoriais GameFy.">
+    <link rel="icon" type="image/png" href="https://gamefy.net.br/favicon.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+
+    <style>
+        :root {
+            /* Tema Padrão - Cyber Purple */
+            --accent-rgb: 168, 85, 247;
+            --accent: rgb(var(--accent-rgb));
+            --accent-glow: rgba(var(--accent-rgb), 0.35);
+            --accent-glow-strong: rgba(var(--accent-rgb), 0.6);
+            --secondary-rgb: 6, 182, 212;
+            --secondary: rgb(var(--secondary-rgb));
+            
+            --bg-dark: #050508;
+            --bg-card: rgba(13, 13, 20, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #f4f4f6;
+            --text-muted: #94a3b8;
+            
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Outfit', sans-serif;
+            --font-cyber: 'Rajdhani', sans-serif;
+            
+            --transition-speed: 0.5s;
+        }
+
+        .theme-razer {
+            --accent-rgb: 46, 204, 113;
+            --secondary-rgb: 52, 152, 219;
+        }
+
+        .theme-playstation {
+            --accent-rgb: 0, 112, 209;
+            --secondary-rgb: 168, 85, 247;
+        }
+
+        .theme-nintendo {
+            --accent-rgb: 230, 0, 18;
+            --secondary-rgb: 241, 196, 15;
+        }
+
+        .theme-cyan {
+            --accent-rgb: 6, 182, 212;
+            --secondary-rgb: 168, 85, 247;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Neon grid background */
+        .background-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: center;
+            z-index: 1;
+        }
+
+        .background-grid::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, transparent 20%, var(--bg-dark) 80%);
+        }
+
+        .glow-sphere {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
+            filter: blur(80px);
+            pointer-events: none;
+            transition: all 1s ease;
+            opacity: 0.6;
+        }
+
+        .glow-sphere-1 {
+            top: -10%;
+            left: -10%;
+        }
+
+        .glow-sphere-2 {
+            bottom: -10%;
+            right: -10%;
+            background: radial-gradient(circle, rgba(var(--secondary-rgb), 0.25) 0%, transparent 70%);
+        }
+
+        /* Main Glass Container */
+        .presentation-frame {
+            position: relative;
+            z-index: 10;
+            width: 95vw;
+            max-width: 1300px;
+            height: 85vh;
+            max-height: 850px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 0 1px rgba(255, 255, 255, 0.15);
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: 70px 1fr 70px;
+            overflow: hidden;
+            transition: border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .presentation-frame:hover {
+            border-color: rgba(var(--accent-rgb), 0.2);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7), 0 0 30px var(--accent-glow);
+        }
+
+        /* Top Header */
+        header {
+            grid-column: 1 / 3;
+            height: 70px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            background: rgba(10, 10, 15, 0.4);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .logo-img {
+            height: 40px;
+            filter: drop-shadow(0 0 8px var(--accent-glow-strong));
+        }
+
+        .logo-text {
+            font-family: var(--font-cyber);
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+
+        .logo-text span {
+            color: var(--accent);
+            transition: color var(--transition-speed) ease;
+        }
+
+        .badge-live {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            color: #000;
+            font-weight: 800;
+            font-size: 10px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Left Navigation Bar */
+        .sidebar {
+            grid-column: 1;
+            border-right: 1px solid var(--border-color);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: rgba(5, 5, 8, 0.3);
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: var(--font-cyber);
+            font-size: 16px;
+            font-weight: 700;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.05);
+            padding-left: 22px;
+        }
+
+        .nav-item.active {
+            color: #fff;
+            background: rgba(var(--accent-rgb), 0.1);
+            border-color: rgba(var(--accent-rgb), 0.3);
+            box-shadow: inset 0 0 12px rgba(var(--accent-rgb), 0.1);
+            padding-left: 22px;
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 25%;
+            height: 50%;
+            width: 4px;
+            background: var(--accent);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 10px var(--accent-glow-strong);
+            transition: background var(--transition-speed) ease;
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+            transition: color var(--transition-speed) ease;
+        }
+
+        .nav-item.active i {
+            color: var(--accent);
+        }
+
+        .sidebar-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .sidebar-footer-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            font-weight: 800;
+        }
+
+        /* Themes Quick Switcher */
+        .theme-picker {
+            display: flex;
+            gap: 8px;
+        }
+
+        .theme-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .theme-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+        }
+
+        .theme-btn-purple { background: #a855f7; }
+        .theme-btn-razer { background: #2ecc71; }
+        .theme-btn-ps { background: #0070d1; }
+        .theme-btn-nintendo { background: #e60012; }
+        .theme-btn-cyan { background: #06b6d4; }
+
+        /* Slide Content Area */
+        .content-area {
+            grid-column: 2;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+            background: rgba(5, 5, 8, 0.15);
+        }
+
+        /* Slides transition container */
+        .slide-deck {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease, visibility 0.5s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Slide typography */
+        .slide-title {
+            font-family: var(--font-display);
+            font-size: 38px;
+            font-weight: 900;
+            line-height: 1.1;
+            color: #fff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .slide-title span {
+            background: linear-gradient(90deg, var(--accent), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .slide-subtitle {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            font-weight: 400;
+        }
+
+        .slide-body {
+            flex-grow: 1;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        /* Layout Types */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 40px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+        }
+
+        .full-layout {
+            width: 100%;
+            height: 100%;
+        }
+
+        .feature-text {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .feature-tagline {
+            font-size: 20px;
+            color: #fff;
+            font-weight: 600;
+            line-height: 1.4;
+            border-left: 4px solid var(--accent);
+            padding-left: 15px;
+            transition: border-color var(--transition-speed) ease;
+        }
+
+        .feature-bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feature-bullet {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .feature-bullet i {
+            color: var(--accent);
+            margin-top: 3px;
+            font-size: 14px;
+            transition: color var(--transition-speed) ease;
+        }
+
+        .feature-bullet strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Neon Graphics/Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb), 0.5), transparent);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(var(--accent-rgb), 0.25);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4), 0 0 15px rgba(var(--accent-rgb), 0.15);
+            transform: translateY(-4px);
+        }
+
+        /* Slide 1 - Hero Graphic */
+        .hero-graphic-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .neon-shield {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(var(--accent-rgb), 0.1) 0%, transparent 70%);
+            border: 2px dashed rgba(var(--accent-rgb), 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: rotateDashed 25s linear infinite;
+            position: relative;
+            transition: border-color var(--transition-speed) ease;
+        }
+
+        @keyframes rotateDashed {
+            100% { transform: rotate(360deg); }
+        }
+
+        .neon-shield-inner {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 3px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px var(--accent-glow);
+            animation: pulseGlow 3s ease-in-out infinite alternate;
+            position: absolute;
+            background: var(--bg-dark);
+            transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.2); }
+            100% { box-shadow: 0 0 45px rgba(var(--accent-rgb), 0.6); }
+        }
+
+        .hero-logo-icon {
+            font-size: 75px;
+            color: #fff;
+            filter: drop-shadow(0 0 12px var(--accent-glow-strong));
+            animation: floatLogo 6s ease-in-out infinite;
+        }
+
+        @keyframes floatLogo {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        /* Slide 2 - Interactive Themes */
+        .theme-demo-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .theme-card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .theme-selection-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-selection-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-5px);
+        }
+
+        .theme-selection-card.active {
+            background: rgba(var(--accent-rgb), 0.08);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .theme-color-preview {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            margin: 0 auto 12px auto;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            transition: border-color 0.3s ease;
+        }
+
+        .theme-selection-card.active .theme-color-preview {
+            border-color: #fff;
+        }
+
+        .theme-label {
+            font-family: var(--font-cyber);
+            font-weight: 800;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #fff;
+        }
+
+        .theme-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* Slide 3 - Releases Carousel Mockup */
+        .carousel-container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            overflow: hidden;
+            padding: 10px 0;
+            position: relative;
+        }
+
+        .game-release-card {
+            flex: 0 0 200px;
+            height: 310px;
+            background: #0d0d12;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+        }
+
+        .game-release-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--accent);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+        }
+
+        .game-cover {
+            height: 220px;
+            width: 100%;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .game-date-badge {
+            position: absolute;
+            top: 0; left: 0;
+            background: var(--accent);
+            color: #000;
+            font-family: var(--font-cyber);
+            font-weight: 900;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 0 0 8px 0;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+            transition: background var(--transition-speed) ease;
+        }
+
+        .game-rating {
+            position: absolute;
+            bottom: 8px; right: 8px;
+            background: rgba(5,5,8,0.85);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--secondary);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .game-info {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex-grow: 1;
+        }
+
+        .game-title {
+            font-family: var(--font-cyber);
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .game-genre {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Slide 4 - Blog & Tutorials Content Grid */
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .blog-card {
+            display: flex;
+            gap: 15px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 16px;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .blog-card:hover {
+            border-color: rgba(var(--accent-rgb), 0.3);
+            background: rgba(255,255,255,0.04);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2), 0 0 10px rgba(var(--accent-rgb), 0.1);
+        }
+
+        .blog-thumb {
+            width: 100px;
+            height: 80px;
+            border-radius: 10px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .blog-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow: hidden;
+        }
+
+        .blog-tag {
+            font-family: var(--font-cyber);
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color var(--transition-speed) ease;
+        }
+
+        .blog-heading {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .blog-views {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Slide 5 - Gamer Store deals */
+        .store-deck {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+
+        .store-card {
+            background: rgba(10, 10, 15, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .store-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4), 0 0 15px rgba(var(--accent-rgb), 0.1);
+        }
+
+        .store-img-container {
+            height: 150px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .store-partner-badge {
+            position: absolute;
+            top: 10px; left: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .store-partner-badge i {
+            color: #ff3838;
+        }
+
+        .store-body {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+
+        .store-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.35;
+        }
+
+        .store-price-tag {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-top: 5px;
+        }
+
+        .store-price-original {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .store-price-current {
+            font-size: 18px;
+            font-family: var(--font-cyber);
+            font-weight: 800;
+            color: var(--secondary);
+        }
+
+        .store-btn {
+            background: var(--accent);
+            color: #000;
+            font-family: var(--font-cyber);
+            font-weight: 900;
+            font-size: 12px;
+            text-align: center;
+            padding: 8px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+        }
+
+        .store-btn:hover {
+            filter: brightness(1.2);
+            box-shadow: 0 0 10px var(--accent-glow-strong);
+        }
+
+        /* Slide 6 - Live Interactive Laptop Mockup */
+        .simulator-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .laptop-mockup {
+            width: 580px;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .laptop-screen {
+            background: #1e1e24;
+            border: 12px solid #08080a;
+            border-radius: 16px 16px 0 0;
+            height: 290px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            overflow: hidden;
+            position: relative;
+            transform: rotateX(5deg);
+            border-bottom: none;
+        }
+
+        .laptop-screen-header {
+            height: 25px;
+            background: #141419;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        .laptop-window-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .window-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .window-dot-red { background: #ff5f56; }
+        .window-dot-yellow { background: #ffbd2e; }
+        .window-dot-green { background: #27c93f; }
+
+        .laptop-url-bar {
+            background: #0d0d12;
+            border-radius: 4px;
+            padding: 2px 20px;
+            width: 250px;
+            text-align: center;
+            font-family: monospace;
+            color: var(--accent);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: color var(--transition-speed) ease;
+        }
+
+        .laptop-viewport {
+            height: calc(100% - 25px);
+            position: relative;
+            background: #09090b;
+        }
+
+        .simulator-iframe-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .simulator-logo {
+            height: 50px;
+            animation: pulseSlow 2s infinite alternate;
+        }
+
+        @keyframes pulseSlow {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            100% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 15px var(--accent-glow)); }
+        }
+
+        .simulator-btn {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            color: #000;
+            font-family: var(--font-cyber);
+            font-weight: 800;
+            font-size: 12px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            text-decoration: none;
+            box-shadow: 0 0 15px var(--accent-glow);
+            transition: all 0.3s ease;
+        }
+
+        .simulator-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(var(--accent-rgb), 0.6);
+        }
+
+        .laptop-base {
+            background: linear-gradient(to bottom, #d1d5db 0%, #9ca3af 20%, #4b5563 100%);
+            height: 12px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 5;
+        }
+
+        .laptop-base::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 5px;
+            background: #374151;
+            border-radius: 0 0 4px 4px;
+        }
+
+        /* Bottom Player Controls */
+        footer {
+            grid-column: 1 / 3;
+            height: 70px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            background: rgba(10, 10, 15, 0.6);
+        }
+
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.15);
+            color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .control-btn-play {
+            width: 44px;
+            height: 44px;
+            background: var(--accent);
+            border: none;
+            color: #000;
+            font-size: 16px;
+            box-shadow: 0 0 15px var(--accent-glow);
+            transition: all 0.3s ease;
+        }
+
+        .control-btn-play:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 0 25px rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            max-width: 500px;
+            margin: 0 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .progress-bar-bg {
+            flex-grow: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.1s linear, background var(--transition-speed) ease;
+        }
+
+        .time-display {
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            min-width: 45px;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .audio-btn {
+            font-size: 13px;
+            font-family: var(--font-cyber);
+            font-weight: 800;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.02);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .audio-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        .audio-btn.active {
+            color: #fff;
+            background: rgba(var(--accent-rgb), 0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .audio-btn i {
+            font-size: 14px;
+        }
+
+        /* Intro Overlay screen for direct user permission to play Web Audio */
+        .intro-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            background: #040406;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+
+        .intro-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .intro-card {
+            background: rgba(13, 13, 20, 0.8);
+            border: 1px solid rgba(var(--accent-rgb), 0.2);
+            box-shadow: 0 0 50px var(--accent-glow);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 550px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .intro-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .intro-title span {
+            color: var(--accent);
+        }
+
+        .intro-text {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            color: #000;
+            font-family: var(--font-cyber);
+            font-size: 16px;
+            font-weight: 900;
+            padding: 16px 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 25px var(--accent-glow);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 35px rgba(var(--accent-rgb), 0.6);
+            filter: brightness(1.1);
+        }
+
+        .start-btn i {
+            font-size: 18px;
+        }
+
+        /* Keyboard indicator */
+        .keyboard-tips {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .key-badge {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-weight: bold;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Space Background Glows -->
+    <div class="background-grid"></div>
+    <div class="glow-sphere glow-sphere-1" id="glow-1"></div>
+    <div class="glow-sphere glow-sphere-2" id="glow-2"></div>
+
+    <!-- Intro Permission Overlay -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-card">
+            <img src="logo_nexus.png" alt="GameFy Logo" style="height: 70px;" onerror="this.src='https://gamefy.net.br/logo_nexus.png'">
+            <h2 class="intro-title">GAME<span>FY</span> SHOWROOM</h2>
+            <p class="intro-text">
+                Prepare-se para uma experiência dinâmica e interativa premium apresentando o site <strong>GameFy.net.br</strong>.<br>
+                Esta apresentação inclui áudio sintetizado em tempo real (SFX & Música) e um modo de reprodução de vídeo guiado por IA.
+            </p>
+            <button class="start-btn" onclick="startPresentation()" id="btnStart">
+                <i class="fas fa-play"></i> Iniciar Apresentação
+            </button>
+            <div class="keyboard-tips">
+                <span><span class="key-badge">←</span> <span class="key-badge">→</span> Navegar Slides</span>
+                <span><span class="key-badge">Espaço</span> Play/Pause</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Presentation Container Frame -->
+    <div class="presentation-frame">
+        
+        <!-- Header -->
+        <header>
+            <div class="logo-container" onclick="showSlide(0)">
+                <img src="logo_nexus.png" alt="GameFy Logo" class="logo-img" onerror="this.src='https://gamefy.net.br/logo_nexus.png'">
+                <h1 class="logo-text">GAME<span>FY</span></h1>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <span class="badge-live"><i class="fas fa-satellite-dish"></i> Live Portal</span>
+                <span style="font-family: var(--font-cyber); font-weight: 800; font-size: 13px; color: var(--text-muted); tracking: 1px;">SHOWROOM v1.0</span>
+            </div>
+        </header>
+
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <ul class="nav-list">
+                <li class="nav-item active" onclick="showSlide(0)" id="nav-item-0">
+                    <i class="fas fa-gamepad"></i> 01. INTRODUÇÃO
+                </li>
+                <li class="nav-item" onclick="showSlide(1)" id="nav-item-1">
+                    <i class="fas fa-palette"></i> 02. TEMAS RGB
+                </li>
+                <li class="nav-item" onclick="showSlide(2)" id="nav-item-2">
+                    <i class="fas fa-calendar-alt"></i> 03. LANÇAMENTOS
+                </li>
+                <li class="nav-item" onclick="showSlide(3)" id="nav-item-3">
+                    <i class="fas fa-newspaper"></i> 04. CONTEÚDO
+                </li>
+                <li class="nav-item" onclick="showSlide(4)" id="nav-item-4">
+                    <i class="fas fa-shopping-bag"></i> 05. LOJA GAMER
+                </li>
+                <li class="nav-item" onclick="showSlide(5)" id="nav-item-5">
+                    <i class="fas fa-laptop-code"></i> 06. NAVEGAÇÃO
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <span class="sidebar-footer-title">Cores do Sistema</span>
+                <div class="theme-picker">
+                    <button class="theme-btn theme-btn-purple active" onclick="changeSystemTheme('purple', this)" title="Roxo Cyber"></button>
+                    <button class="theme-btn theme-btn-cyan" onclick="changeSystemTheme('cyan', this)" title="Ciano Neon"></button>
+                    <button class="theme-btn theme-btn-razer" onclick="changeSystemTheme('razer', this)" title="Verde Razer"></button>
+                    <button class="theme-btn theme-btn-ps" onclick="changeSystemTheme('playstation', this)" title="Azul PlayStation"></button>
+                    <button class="theme-btn theme-btn-nintendo" onclick="changeSystemTheme('nintendo', this)" title="Vermelho Nintendo"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide Content Viewport -->
+        <div class="content-area">
+            <div class="slide-deck">
+                
+                <!-- SLIDE 1: INTRO -->
+                <div class="slide active" id="slide-0">
+                    <div>
+                        <h2 class="slide-title">SEU PORTAL GAMER <span>DEFINITIVO</span></h2>
+                        <p class="slide-subtitle">Notícias, Lançamentos, Tutoriais de Hardware e Ofertas Especiais em um só ecossistema dinâmico.</p>
+                    </div>
+                    <div class="slide-body">
+                        <div class="split-layout">
+                            <div class="feature-text">
+                                <p class="feature-tagline">
+                                    O GameFy é projetado para dar voz ao público gamer brasileiro em 2026, com uma interface cyberpunk fluida, rápida e livre de distrações pesadas.
+                                </p>
+                                <ul class="feature-bullets">
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-check-circle"></i>
+                                        <div><strong>Notícias Rápidas:</strong> Acompanhe o que acontece na indústria no exato segundo dos lançamentos de trailers e novidades.</div>
+                                    </li>
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-check-circle"></i>
+                                        <div><strong>Otimização de Hardware:</strong> Tutoriais detalhados ensinando a extrair cada frame da sua placa de vídeo e otimizar o Windows.</div>
+                                    </li>
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-check-circle"></i>
+                                        <div><strong>Loja e Ofertas Gamer:</strong> Garanta equipamentos eletrônicos com cupons e links oficiais dos maiores parceiros (Lenovo, Mercado Livre, Lomadee).</div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="hero-graphic-container">
+                                <div class="neon-shield">
+                                    <div class="neon-shield-inner">
+                                        <i class="fas fa-headset hero-logo-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 2: THEMES RGB -->
+                <div class="slide" id="slide-1">
+                    <div>
+                        <h2 class="slide-title">IMERSÃO VISUAL <span>CUSTOMIZÁVEL</span></h2>
+                        <p class="slide-subtitle">Uma paleta vibrante inspirada nos consoles e marcas de hardware lendárias.</p>
+                    </div>
+                    <div class="slide-body">
+                        <div class="theme-demo-panel">
+                            <p class="feature-tagline">
+                                O GameFy inova ao permitir que os leitores adaptem toda a iluminação e identidade cromática do portal de acordo com sua preferência pessoal com um único clique.
+                            </p>
+                            
+                            <div class="theme-card-grid">
+                                <div class="theme-selection-card active" onclick="changeSystemTheme('purple'); triggerSound('select');" id="theme-card-purple">
+                                    <div class="theme-color-preview" style="background: rgba(168, 85, 247, 0.2); color: #a855f7;">
+                                        <i class="fas fa-bolt"></i>
+                                    </div>
+                                    <h4 class="theme-label">Cyber Purple</h4>
+                                    <p class="theme-desc">O visual padrão com energia neon futurista.</p>
+                                </div>
+                                <div class="theme-selection-card" onclick="changeSystemTheme('cyan'); triggerSound('select');" id="theme-card-cyan">
+                                    <div class="theme-color-preview" style="background: rgba(6, 182, 212, 0.2); color: #06b6d4;">
+                                        <i class="fas fa-atom"></i>
+                                    </div>
+                                    <h4 class="theme-label">Neon Cyan</h4>
+                                    <p class="theme-desc">Tons glaciais de alta tecnologia futurista.</p>
+                                </div>
+                                <div class="theme-selection-card" onclick="changeSystemTheme('razer'); triggerSound('select');" id="theme-card-razer">
+                                    <div class="theme-color-preview" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71;">
+                                        <i class="fas fa-terminal"></i>
+                                    </div>
+                                    <h4 class="theme-label">Razer Green</h4>
+                                    <p class="theme-desc">Estética clássica de eSports e luzes RGB de PC.</p>
+                                </div>
+                                <div class="theme-selection-card" onclick="changeSystemTheme('playstation'); triggerSound('select');" id="theme-card-playstation">
+                                    <div class="theme-color-preview" style="background: rgba(0, 112, 209, 0.2); color: #0070d1;">
+                                        <i class="fab fa-playstation"></i>
+                                    </div>
+                                    <h4 class="theme-label">PS Blue</h4>
+                                    <p class="theme-desc">Inspirado na lendária sobriedade e luzes da Sony.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 3: RELEASES CAROUSEL -->
+                <div class="slide" id="slide-2">
+                    <div>
+                        <h2 class="slide-title">CALENDÁRIO DE <span>LANÇAMENTOS</span></h2>
+                        <p class="slide-subtitle">Não perca um segundo de contagem regressiva para os maiores jogos da década.</p>
+                    </div>
+                    <div class="slide-body">
+                        <div class="split-layout">
+                            <div class="feature-text">
+                                <p class="feature-tagline">
+                                    O sistema exclusivo de calendário exibe a capa do jogo, a nota do hype atual e a contagem precisa da data de lançamento de forma interativa.
+                                </p>
+                                <ul class="feature-bullets">
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-star"></i>
+                                        <div><strong>Avaliação Integrada:</strong> Nota do hype gerada pela nossa comunidade de gamers analistas.</div>
+                                    </li>
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-gamepad"></i>
+                                        <div><strong>Foco em Gêneros:</strong> Classificação instantânea (RPG, Ação, Simuladores, Cooperativos).</div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="carousel-container">
+                                <!-- Game Card 1 -->
+                                <div class="game-release-card">
+                                    <div class="game-cover" style="background-image: url('https://images.igdb.com/igdb/image/upload/t_cover_big/cobc4t.jpg');">
+                                        <div class="game-date-badge">12 JAN</div>
+                                        <div class="game-rating">8.5 <i class="fas fa-star" style="color:#f1c40f;"></i></div>
+                                    </div>
+                                    <div class="game-info">
+                                        <h4 class="game-title">Hytale</h4>
+                                        <span class="game-genre">Aventura / RPG</span>
+                                    </div>
+                                </div>
+                                <!-- Game Card 2 -->
+                                <div class="game-release-card">
+                                    <div class="game-cover" style="background-image: url('https://images.igdb.com/igdb/image/upload/t_cover_big/co836n.jpg');">
+                                        <div class="game-date-badge">18 OUT</div>
+                                        <div class="game-rating">9.9 <i class="fas fa-star" style="color:#f1c40f;"></i></div>
+                                    </div>
+                                    <div class="game-info">
+                                        <h4 class="game-title">GTA VI</h4>
+                                        <span class="game-genre">Ação / Mundo Aberto</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 4: ARTICLES & TUTORIALS -->
+                <div class="slide" id="slide-3">
+                    <div>
+                        <h2 class="slide-title">CONTEÚDO E <span>TUTORIAIS</span></h2>
+                        <p class="slide-subtitle">Guias profundos para otimização de sistemas, notícias e opiniões.</p>
+                    </div>
+                    <div class="slide-body">
+                        <div class="split-layout">
+                            <div class="blog-grid">
+                                <!-- Blog item 1 -->
+                                <div class="blog-card" onclick="window.open('https://gamefy.net.br/', '_blank')">
+                                    <div class="blog-thumb" style="background-image: url('https://gamefy.net.br/uploads/blog/featured_6a15a413ae780_1779803155.jpg');"></div>
+                                    <div class="blog-meta">
+                                        <span class="blog-tag">Lançamentos</span>
+                                        <h4 class="blog-heading">Bluey's Quest: Aquarela que humilha gráficos ultra-realistas!</h4>
+                                        <span class="blog-views"><i class="fas fa-eye"></i> 1.2k visualizações</span>
+                                    </div>
+                                </div>
+                                <!-- Blog item 2 -->
+                                <div class="blog-card" onclick="window.open('https://gamefy.net.br/', '_blank')">
+                                    <div class="blog-thumb" style="background-image: url('https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=60');"></div>
+                                    <div class="blog-meta">
+                                        <span class="blog-tag">Otimização</span>
+                                        <h4 class="blog-heading">Como duplicar seus FPS no Windows com hacks simples</h4>
+                                        <span class="blog-views"><i class="fas fa-eye"></i> 4.5k visualizações</span>
+                                    </div>
+                                </div>
+                                <!-- Blog item 3 -->
+                                <div class="blog-card" onclick="window.open('https://gamefy.net.br/', '_blank')">
+                                    <div class="blog-thumb" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&auto=format&fit=crop&q=60');"></div>
+                                    <div class="blog-meta">
+                                        <span class="blog-tag">eSports</span>
+                                        <h4 class="blog-heading">Cenário competitivo de CS2 e Valorant: O que esperar em 2026?</h4>
+                                        <span class="blog-views"><i class="fas fa-eye"></i> 890 visualizações</span>
+                                    </div>
+                                </div>
+                                <!-- Blog item 4 -->
+                                <div class="blog-card" onclick="window.open('https://gamefy.net.br/', '_blank')">
+                                    <div class="blog-thumb" style="background-image: url('https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=400&auto=format&fit=crop&q=60');"></div>
+                                    <div class="blog-meta">
+                                        <span class="blog-tag">Hardware</span>
+                                        <h4 class="blog-heading">Melhores placas de vídeo Custo-Benefício para comprar hoje</h4>
+                                        <span class="blog-views"><i class="fas fa-eye"></i> 3.1k visualizações</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="feature-text">
+                                <p class="feature-tagline">
+                                    Escrito por gamers dedicados, nosso portal divide o conteúdo de forma inteligente, garantindo carregamento rápido e acesso imediato.
+                                </p>
+                                <ul class="feature-bullets">
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-bolt"></i>
+                                        <div><strong>Leitura Otimizada:</strong> Formatação fluida, moderna e limpa, perfeita para mobile ou desktops widescreen.</div>
+                                    </li>
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-share-alt"></i>
+                                        <div><strong>Integração Social:</strong> Compartilhamento direto nas principais redes para debater com seus amigos.</div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 5: GAMER STORE DEALS -->
+                <div class="slide" id="slide-4">
+                    <div>
+                        <h2 class="slide-title">LOJA GAMER & <span>PARCERIAS</span></h2>
+                        <p class="slide-subtitle">O melhor hardware e acessórios com descontos exclusivos de grandes marcas.</p>
+                    </div>
+                    <div class="slide-body">
+                        <div class="split-layout">
+                            <div class="feature-text">
+                                <p class="feature-tagline">
+                                    GameFy traz descontos reais e promoções agressivas em computadores Lenovo, mouses, teclados mecânicos e fones de ouvido através de afiliação direta.
+                                </p>
+                                <ul class="feature-bullets">
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-handshake"></i>
+                                        <div><strong>Parceiros Oficiais:</strong> Lenovo Brasil, Mercado Livre e redes de cupons premium como Lomadee.</div>
+                                    </li>
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <div><strong>Links 100% Seguros:</strong> Verificação contra golpes, garantindo a melhor procedência do hardware.</div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="store-deck">
+                                <!-- Card 1 -->
+                                <div class="store-card">
+                                    <div class="store-img-container" style="background-image: url('https://p4-ofp.static.pub//fes/cms/2024/07/17/2oqk2rqj588tdkcz8c8kdpzcrij3j7171606.png?width=250&height=250');">
+                                        <div class="store-partner-badge"><i class="fas fa-fire"></i> Lenovo</div>
+                                    </div>
+                                    <div class="store-body">
+                                        <h4 class="store-card-title">Lenovo ThinkBook 14" Intel Core i5 16GB SSD 512GB</h4>
+                                        <div class="store-price-tag">
+                                            <span class="store-price-original">R$ 4.299</span>
+                                            <span class="store-price-current">R$ 3.499</span>
+                                        </div>
+                                        <a href="https://gamefy.net.br/cacapromocao.php" target="_blank" class="store-btn">Ver Oferta</a>
+                                    </div>
+                                </div>
+                                <!-- Card 2 -->
+                                <div class="store-card">
+                                    <div class="store-img-container" style="background-image: url('https://images.unsplash.com/photo-1541140111813-822258685e06?w=250&auto=format&fit=crop&q=60');">
+                                        <div class="store-partner-badge"><i class="fas fa-fire"></i> Meli</div>
+                                    </div>
+                                    <div class="store-body">
+                                        <h4 class="store-card-title">Headset Gamer RGB Surround 7.1 Microfone Noise Cancel</h4>
+                                        <div class="store-price-tag">
+                                            <span class="store-price-original">R$ 299</span>
+                                            <span class="store-price-current">R$ 189</span>
+                                        </div>
+                                        <a href="https://gamefy.net.br/cacapromocao.php" target="_blank" class="store-btn">Ver Oferta</a>
+                                    </div>
+                                </div>
+                                <!-- Card 3 -->
+                                <div class="store-card">
+                                    <div class="store-img-container" style="background-image: url('https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=250&auto=format&fit=crop&q=60');">
+                                        <div class="store-partner-badge"><i class="fas fa-fire"></i> Meli</div>
+                                    </div>
+                                    <div class="store-body">
+                                        <h4 class="store-card-title">Teclado Mecânico RGB Hot-Swappable Switches Outemu Blue</h4>
+                                        <div class="store-price-tag">
+                                            <span class="store-price-original">R$ 399</span>
+                                            <span class="store-price-current">R$ 249</span>
+                                        </div>
+                                        <a href="https://gamefy.net.br/cacapromocao.php" target="_blank" class="store-btn">Ver Oferta</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 6: INTERACTIVE PORTAL SIMULATOR -->
+                <div class="slide" id="slide-5">
+                    <div>
+                        <h2 class="slide-title">EXPERIMENTE O <span>PORTAL VIVO</span></h2>
+                        <p class="slide-subtitle">Entre no portal em tempo real e comece a navegar na melhor central de conteúdo gamer.</p>
+                    </div>
+                    <div class="slide-body">
+                        <div class="split-layout">
+                            <div class="feature-text">
+                                <p class="feature-tagline">
+                                    Nossa plataforma conta com otimização PWA (Progressive Web App), permitindo a instalação nativa no celular para ler artigos mesmo offline!
+                                </p>
+                                <ul class="feature-bullets">
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-mobile-alt"></i>
+                                        <div><strong>Experiência PWA:</strong> Adicione o GameFy à sua tela inicial sem gastar espaço do seu celular.</div>
+                                    </li>
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-language"></i>
+                                        <div><strong>Picker Multilíngue:</strong> Tradutor automático de alta qualidade integrado para Português, Inglês e Espanhol.</div>
+                                    </li>
+                                    <li class="feature-bullet">
+                                        <i class="fas fa-ad"></i>
+                                        <div><strong>Ads Responsáveis:</strong> Distribuição equilibrada de anúncios e banners Rakuten/Adsterra de forma não obstrutiva.</div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="simulator-container">
+                                <div class="laptop-mockup">
+                                    <div class="laptop-screen">
+                                        <div class="laptop-screen-header">
+                                            <div class="laptop-window-dots">
+                                                <div class="window-dot window-dot-red"></div>
+                                                <div class="window-dot window-dot-yellow"></div>
+                                                <div class="window-dot window-dot-green"></div>
+                                            </div>
+                                            <div class="laptop-url-bar" id="simulatorUrlBar">https://gamefy.net.br</div>
+                                            <div style="width: 25px;"></div>
+                                        </div>
+                                        <div class="laptop-viewport">
+                                            <div class="simulator-iframe-placeholder">
+                                                <img src="logo_nexus.png" alt="GameFy Logo" class="simulator-logo" onerror="this.src='https://gamefy.net.br/logo_nexus.png'">
+                                                <p style="font-size:12px; color: var(--text-muted);">Explore notícias de lançamentos, tutoriais de otimização e muito mais diretamente no portal ao vivo!</p>
+                                                <a href="https://gamefy.net.br" target="_blank" class="simulator-btn">Acessar Gamefy.net.br <i class="fas fa-external-link-alt" style="margin-left: 5px;"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="laptop-base"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Bottom Media Controller Player Bar -->
+        <footer>
+            <div class="playback-controls">
+                <button class="control-btn" onclick="prevSlide(); triggerSound('click');" title="Slide Anterior">
+                    <i class="fas fa-backward"></i>
+                </button>
+                <button class="control-btn control-btn-play" onclick="togglePlay(); triggerSound('select');" id="playBtn" title="Play/Pause">
+                    <i class="fas fa-play" id="playBtnIcon"></i>
+                </button>
+                <button class="control-btn" onclick="nextSlide(); triggerSound('click');" title="Próximo Slide">
+                    <i class="fas fa-forward"></i>
+                </button>
+            </div>
+
+            <!-- Progress Bar / Seek indicator -->
+            <div class="progress-container">
+                <span class="time-display" id="currentTime">SLIDE 1</span>
+                <div class="progress-bar-bg" onclick="seekSlide(event)">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                <span class="time-display" id="totalTime">SLIDE 6</span>
+            </div>
+
+            <div class="audio-controls">
+                <button class="audio-btn" onclick="toggleAmbientMusic()" id="musicBtn">
+                    <i class="fas fa-music"></i> Música: <span id="musicStatus">OFF</span>
+                </button>
+                <button class="audio-btn active" onclick="toggleSFX()" id="sfxBtn">
+                    <i class="fas fa-volume-up"></i> SFX: ON
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Web Audio Synthesizer Engine -->
+    <script>
+        let slideIndex = 0;
+        const totalSlides = 6;
+        let slideInterval = null;
+        let isPlaying = false;
+        let slideDuration = 8000; // time in ms per slide in autoplay
+        let startTime = 0;
+        let currentProgressWidth = 0;
+        let progressAnimFrame = null;
+        let lastTickTime = 0;
+
+        // Theme management
+        function changeSystemTheme(theme, element) {
+            // Remove previous theme classes
+            document.body.classList.remove('theme-razer', 'theme-playstation', 'theme-nintendo', 'theme-cyan');
+            
+            // Set new theme class
+            if (theme !== 'purple') {
+                document.body.classList.add(`theme-${theme}`);
+            }
+
+            // Update theme picker active states
+            const buttons = document.querySelectorAll('.theme-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (element) {
+                element.classList.add('active');
+            }
+
+            // Sync slide selection cards active states
+            const cards = document.querySelectorAll('.theme-selection-card');
+            cards.forEach(card => card.classList.remove('active'));
+            const activeCard = document.getElementById(`theme-card-${theme}`);
+            if (activeCard) {
+                activeCard.classList.add('active');
+            }
+
+            // Animate dynamic color changes in glow spheres and URL bar
+            const glow1 = document.getElementById('glow-1');
+            const urlBar = document.getElementById('simulatorUrlBar');
+            if (theme === 'purple') {
+                glow1.style.background = 'radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, transparent 70%)';
+                if(urlBar) urlBar.style.color = 'rgb(168, 85, 247)';
+            } else if (theme === 'cyan') {
+                glow1.style.background = 'radial-gradient(circle, rgba(6, 182, 212, 0.35) 0%, transparent 70%)';
+                if(urlBar) urlBar.style.color = 'rgb(6, 182, 212)';
+            } else if (theme === 'razer') {
+                glow1.style.background = 'radial-gradient(circle, rgba(46, 204, 113, 0.35) 0%, transparent 70%)';
+                if(urlBar) urlBar.style.color = 'rgb(46, 204, 113)';
+            } else if (theme === 'playstation') {
+                glow1.style.background = 'radial-gradient(circle, rgba(0, 112, 209, 0.35) 0%, transparent 70%)';
+                if(urlBar) urlBar.style.color = 'rgb(0, 112, 209)';
+            } else if (theme === 'nintendo') {
+                glow1.style.background = 'radial-gradient(circle, rgba(230, 0, 18, 0.35) 0%, transparent 70%)';
+                if(urlBar) urlBar.style.color = 'rgb(230, 0, 18)';
+            }
+        }
+
+        // Navigation
+        function showSlide(index) {
+            if (index < 0) index = totalSlides - 1;
+            if (index >= totalSlides) index = 0;
+            
+            slideIndex = index;
+            
+            // Update active slides
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach((slide, i) => {
+                if (i === index) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            // Update active nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Update player labels
+            document.getElementById('currentTime').innerText = `SLIDE ${index + 1}`;
+            
+            // Reset progress bar on slide change
+            resetProgress();
+            
+            triggerSound('slide-change');
+        }
+
+        function nextSlide() {
+            showSlide(slideIndex + 1);
+        }
+
+        function prevSlide() {
+            showSlide(slideIndex - 1);
+        }
+
+        // Autoplay player loop
+        function togglePlay() {
+            if (isPlaying) {
+                pausePlayback();
+            } else {
+                startPlayback();
+            }
+        }
+
+        function startPlayback() {
+            isPlaying = true;
+            document.getElementById('playBtnIcon').className = 'fas fa-pause';
+            document.getElementById('playBtn').title = 'Pausar Apresentação';
+            
+            lastTickTime = performance.now();
+            runProgressAnimation();
+        }
+
+        function pausePlayback() {
+            isPlaying = false;
+            document.getElementById('playBtnIcon').className = 'fas fa-play';
+            document.getElementById('playBtn').title = 'Iniciar Apresentação';
+            
+            if (progressAnimFrame) {
+                cancelAnimationFrame(progressAnimFrame);
+            }
+        }
+
+        function resetProgress() {
+            currentProgressWidth = 0;
+            document.getElementById('progressBar').style.width = '0%';
+            if (isPlaying) {
+                lastTickTime = performance.now();
+            }
+        }
+
+        function runProgressAnimation() {
+            if (!isPlaying) return;
+            
+            const now = performance.now();
+            const delta = now - lastTickTime;
+            lastTickTime = now;
+            
+            currentProgressWidth += (delta / slideDuration) * 100;
+            
+            if (currentProgressWidth >= 100) {
+                currentProgressWidth = 0;
+                nextSlide();
+            }
+            
+            document.getElementById('progressBar').style.width = `${currentProgressWidth}%`;
+            progressAnimFrame = requestAnimationFrame(runProgressAnimation);
+        }
+
+        function seekSlide(event) {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            
+            // Calculate which slide corresponds to the seek percentage
+            const targetSlide = Math.floor(percentage * totalSlides);
+            showSlide(targetSlide);
+            
+            // Position the bar at corresponding progress of that slide
+            currentProgressWidth = (percentage * totalSlides - targetSlide) * 100;
+            document.getElementById('progressBar').style.width = `${currentProgressWidth}%`;
+            
+            if (isPlaying) {
+                lastTickTime = performance.now();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('introOverlay').classList.contains('hidden')) {
+                if (e.key === 'ArrowRight') {
+                    nextSlide();
+                    triggerSound('click');
+                } else if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                    triggerSound('click');
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    togglePlay();
+                }
+            }
+        });
+
+
+        // ==========================================
+        // WEB AUDIO SYNTHESIS ENGINE
+        // ==========================================
+        let audioCtx = null;
+        let sfxEnabled = true;
+        let musicEnabled = false;
+        let ambientOscs = [];
+        let ambientGainNode = null;
+        let chordInterval = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            
+            // Create audio context supporting most browsers
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContextClass();
+        }
+
+        function toggleSFX() {
+            sfxEnabled = !sfxEnabled;
+            const btn = document.getElementById('sfxBtn');
+            if (sfxEnabled) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-volume-up"></i> SFX: ON';
+                triggerSound('click');
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-volume-mute"></i> SFX: OFF';
+            }
+        }
+
+        function startPresentation() {
+            initAudio();
+            document.getElementById('introOverlay').classList.add('hidden');
+            
+            // Start playing the tour immediately in visual
+            startPlayback();
+            
+            // Trigger introductory sci-fi chime
+            setTimeout(() => {
+                triggerWelcomeChime();
+            }, 500);
+        }
+
+        // High-quality synthesised futuristic chime
+        function triggerWelcomeChime() {
+            if (!audioCtx || !sfxEnabled) return;
+            
+            try {
+                const now = audioCtx.currentTime;
+                
+                // Synth parameters
+                const tones = [261.63, 329.63, 392.00, 523.25, 659.25]; // C major pentatonic sweep
+                
+                tones.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    const filter = audioCtx.createBiquadFilter();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    osc.frequency.exponentialRampToValueAtTime(freq * 2, now + idx * 0.1 + 0.8);
+                    
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1000, now);
+                    filter.Q.setValueAtTime(5, now);
+                    
+                    gain.gain.setValueAtTime(0, now + idx * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.12, now + idx * 0.1 + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.1 + 1.2);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 1.3);
+                });
+            } catch(e) {
+                console.error("Erro na síntese de áudio: ", e);
+            }
+        }
+
+        // General sound triggers
+        function triggerSound(type) {
+            if (!audioCtx || !sfxEnabled) return;
+            
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const now = audioCtx.currentTime;
+                
+                if (type === 'click') {
+                    // Quick digital click
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.05);
+                    
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.linearRampToValueAtTime(0.0001, now + 0.05);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                } else if (type === 'select') {
+                    // Sci-fi UI selection sound
+                    const osc1 = audioCtx.createOscillator();
+                    const osc2 = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc1.type = 'square';
+                    osc1.frequency.setValueAtTime(600, now);
+                    osc1.frequency.setValueAtTime(900, now + 0.08);
+                    
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(300, now);
+                    osc2.frequency.setValueAtTime(450, now + 0.08);
+                    
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+                    
+                    osc1.connect(gain);
+                    osc2.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + 0.25);
+                    osc2.stop(now + 0.25);
+                } else if (type === 'slide-change') {
+                    // Deep futuristic WHOOSH sweep
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(80, now);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.4);
+                    
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(350, now);
+                    filter.frequency.exponentialRampToValueAtTime(120, now + 0.4);
+                    filter.Q.setValueAtTime(7, now);
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+                    
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.55);
+                }
+            } catch(err) {
+                console.warn(err);
+            }
+        }
+
+        // Melodic synthwave ambient generator (infinite procedurally generated chords!)
+        function toggleAmbientMusic() {
+            initAudio();
+            musicEnabled = !musicEnabled;
+            const btn = document.getElementById('musicBtn');
+            const status = document.getElementById('musicStatus');
+            
+            if (musicEnabled) {
+                btn.classList.add('active');
+                status.innerText = 'ON';
+                startAmbientMusic();
+                triggerSound('select');
+            } else {
+                btn.classList.remove('active');
+                status.innerText = 'OFF';
+                stopAmbientMusic();
+            }
+        }
+
+        // Procedural Chord Progression generator (Fades in a soft retro chord pad every 6 seconds)
+        const progression = [
+            [130.81, 164.81, 196.00, 246.94], // C major 7th (Deep space feel)
+            [146.83, 174.61, 220.00, 261.63], // D minor 7th (Slightly melancholic)
+            [164.81, 196.00, 246.94, 293.66], // E minor 7th (Cosmic float)
+            [174.61, 220.00, 261.63, 329.63]  // F major 7th (Resolving rise)
+        ];
+        let progressionIndex = 0;
+
+        function startAmbientMusic() {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            // Create main volume gain for background music
+            ambientGainNode = audioCtx.createGain();
+            ambientGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            ambientGainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 2.5); // Warm slow fade-in
+            ambientGainNode.connect(audioCtx.destination);
+
+            playNextChord();
+
+            // Set interval to transition chords smoothly every 6 seconds
+            chordInterval = setInterval(() => {
+                playNextChord();
+            }, 6000);
+        }
+
+        function playNextChord() {
+            if (!audioCtx || !musicEnabled) return;
+            
+            const now = audioCtx.currentTime;
+            const chord = progression[progressionIndex];
+            
+            // Advance chord index
+            progressionIndex = (progressionIndex + 1) % progression.length;
+            
+            // Stop old oscillators if any are playing (soft fade out)
+            const oldOscs = [...ambientOscs];
+            ambientOscs = [];
+            
+            oldOscs.forEach(oData => {
+                try {
+                    oData.gainNode.gain.cancelScheduledValues(now);
+                    oData.gainNode.gain.setValueAtTime(oData.gainNode.gain.value, now);
+                    oData.gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1.5); // slow crossfade
+                    setTimeout(() => {
+                        try { oData.osc.stop(); } catch(e){}
+                    }, 1600);
+                } catch(err){}
+            });
+
+            // Synthesize the new chord oscillators
+            chord.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const oGain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                
+                // Soft triangle sound representing synth pads
+                osc.type = 'triangle';
+                
+                // detuning oscillators slightly creates a gorgeous analogue chorus/warble effect
+                osc.frequency.setValueAtTime(freq + (Math.random() - 0.5) * 0.6, now);
+                
+                // Lowpass filter to keep it deep, warm, and non-distracting
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(250 + idx * 80, now);
+                filter.Q.setValueAtTime(1.5, now);
+                
+                // Slow envelope attack (1.5 seconds) to prevent clicking
+                oGain.gain.setValueAtTime(0, now);
+                oGain.gain.linearRampToValueAtTime(0.045, now + 1.8);
+                
+                osc.connect(filter);
+                filter.connect(oGain);
+                oGain.connect(ambientGainNode);
+                
+                osc.start(now);
+                
+                // Store osc reference for next transition
+                ambientOscs.push({ osc, gainNode: oGain });
+            });
+        }
+
+        function stopAmbientMusic() {
+            if (chordInterval) {
+                clearInterval(chordInterval);
+                chordInterval = null;
+            }
+            
+            const now = audioCtx ? audioCtx.currentTime : 0;
+            
+            if (ambientGainNode && audioCtx) {
+                try {
+                    ambientGainNode.gain.cancelScheduledValues(now);
+                    ambientGainNode.gain.setValueAtTime(ambientGainNode.gain.value, now);
+                    ambientGainNode.gain.exponentialRampToValueAtTime(0.0001, now + 2.0); // 2 second slow fade-out
+                } catch(e){}
+            }
+
+            setTimeout(() => {
+                ambientOscs.forEach(oData => {
+                    try { oData.osc.stop(); } catch(e){}
+                });
+                ambientOscs = [];
+                ambientGainNode = null;
+            }, 2100);
+        }
+    </script>
+</body>
+</html>

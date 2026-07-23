@@ -7,26 +7,20 @@ import { ProjectConfig } from '../types';
 
 import StartMenu from '../StartMenu';
 import Editor from '../Editor';
+import { Capacitor } from '@capacitor/core';
 
-// Safe polyfill - dynamic import to avoid crash on mobile
+import { App as CapApp } from '@capacitor/app';
+import { StatusBar as CapStatusBar } from '@capacitor/status-bar';
+import { polyfill } from 'mobile-drag-drop';
+import { scrollBehaviourDragImageTranslateOverride } from 'mobile-drag-drop/scroll-behaviour';
+import { sound } from '../sound';
+
 try {
-  import("mobile-drag-drop").then((mod) => {
-    import("mobile-drag-drop/scroll-behaviour").then((scrollMod) => {
-      mod.polyfill({
-        dragImageTranslateOverride: scrollMod.scrollBehaviourDragImageTranslateOverride
-      });
-    });
-  }).catch(() => {});
+  polyfill({
+    dragImageTranslateOverride: scrollBehaviourDragImageTranslateOverride
+  });
 } catch (e) {}
 import "mobile-drag-drop/default.css";
-
-// Capacitor plugins (safe import - won't crash on web)
-let CapApp: any = null;
-let CapStatusBar: any = null;
-try {
-  import('@capacitor/app').then(m => { CapApp = m.App; }).catch(() => {});
-  import('@capacitor/status-bar').then(m => { CapStatusBar = m.StatusBar; }).catch(() => {});
-} catch (_) {}
 
 // Simple loading fallback
 function LoadingFallback() {
@@ -61,7 +55,7 @@ function LoadingFallback() {
 
 export default function App() {
   const [config, setConfig] = useState<ProjectConfig | null>(null);
-  const [isPro, setIsPro] = useState(false);
+  const [isPro, setIsPro] = useState(true);
   const [userName, setUserName] = useState('Artista Pixel');
   const [showSplash, setShowSplash] = useState(true);
   const [splashSequence, setSplashSequence] = useState(0);
@@ -111,12 +105,12 @@ export default function App() {
 
     } catch (e) {}
 
-    const logoTimer = setTimeout(() => setSplashSequence(1), 3000);
-    const instaTimer = setTimeout(() => setSplashSequence(2), 5500);
+    const logoTimer = setTimeout(() => setSplashSequence(1), 1200);
+    const instaTimer = setTimeout(() => setSplashSequence(2), 2400);
     const headTimer = setTimeout(() => {
       setSplashSequence(3);
       setShowSplash(false);
-    }, 8000);
+    }, 3600);
 
     return () => {
       clearTimeout(logoTimer);
@@ -126,27 +120,66 @@ export default function App() {
   }, []);
 
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const trackIndexRef = React.useRef(0);
 
   useEffect(() => {
-    try {
-      const audio = audioRef.current;
-      if (audio) {
-        audio.volume = 0.1;
-        import('../sound').then(({ sound }) => {
-          sound.setBgm(audio);
-        });
-        audio.play().catch(() => {
-          const handleInteraction = () => {
-            import('../sound').then(({ sound }) => {
-              sound.init();
-              if (sound.isEnabled()) audio.play().catch(() => {});
-            });
-            document.removeEventListener('click', handleInteraction);
-          };
-          document.addEventListener('click', handleInteraction);
-        });
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const playlist = [
+      "/background_music.mp3",
+      "/relaxing-music.mp3",
+      "/jazz-restaurant.mp3",
+      "/dinner-jazz.mp3"
+    ];
+
+    audio.volume = 0.1;
+    audio.src = playlist[trackIndexRef.current];
+
+    const handleEnded = () => {
+      // Avança para a próxima música e reinicia
+      trackIndexRef.current = (trackIndexRef.current + 1) % playlist.length;
+      audio.src = playlist[trackIndexRef.current];
+      audio.volume = 0.1;
+      audio.play().catch(() => {});
+    };
+
+    const handleTimeUpdate = () => {
+      if (audio.duration && audio.currentTime) {
+        const timeLeft = audio.duration - audio.currentTime;
+        if (timeLeft <= 5 && timeLeft > 0) {
+          // Diminui o volume de forma linear nos últimos 5 segundos de 0.1 até 0
+          const fadeVolume = Math.max(0, (timeLeft / 5) * 0.1);
+          audio.volume = fadeVolume;
+        } else if (timeLeft > 5) {
+          audio.volume = 0.1;
+        }
       }
-    } catch (e) {}
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+
+    // BGM do Sound Engine
+    import('../sound').then(({ sound }) => {
+      sound.setBgm(audio);
+    });
+
+    audio.play().catch(() => {
+      const handleInteraction = () => {
+        import('../sound').then(({ sound }) => {
+          sound.init();
+          if (sound.isEnabled()) audio.play().catch(() => {});
+        });
+        document.removeEventListener('click', handleInteraction);
+      };
+      document.addEventListener('click', handleInteraction);
+    });
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+    };
   }, []);
 
   const handleStartProject = (newConfig: ProjectConfig, userIsPro: boolean, name: string) => {
@@ -162,7 +195,7 @@ export default function App() {
 
   return (
     <>
-      <audio ref={audioRef} loop src="/background_music.mp3" />
+      <audio ref={audioRef} src="/background_music.mp3" />
       
       {showSplash ? (
         <motion.div 
@@ -222,14 +255,16 @@ export default function App() {
           </AnimatePresence>
         </motion.div>
       ) : !config ? (
-          <StartMenu onStart={handleStartProject} />
+        <StartMenu onStart={handleStartProject} />
       ) : (
         <ErrorBoundary>
             <Editor 
               config={config} 
               isPro={isPro}
               userName={userName}
-              onBack={() => setConfig(null)} 
+              onBack={() => {
+                setConfig(null);
+              }} 
               onRegisterBackHandler={(h: () => void) => { editorSavePromptRef.current = h; }} 
               onUnregisterBackHandler={() => { editorSavePromptRef.current = null; }} 
             />
@@ -252,7 +287,7 @@ export default function App() {
               className="bg-[#1a1a2e] rounded-2xl p-6 max-w-sm w-full border border-[#333] shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
-              <h2 className="text-xl font-bold text-white text-center mb-4">Sair do Dragon Art?</h2>
+              <h2 className="text-xl font-bold text-white text-center mb-4">Sair do WyrmPIXEL?</h2>
               <div className="flex flex-col gap-3">
                 <button onClick={handleExitApp} className="w-full p-3 bg-red-600 text-white font-bold rounded-xl">Sair</button>
                 <button onClick={() => setShowExitDialog(false)} className="w-full p-3 bg-[#2a2a3e] text-[#aaa)] font-bold rounded-xl">Cancelar</button>

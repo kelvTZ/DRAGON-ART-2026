@@ -43,6 +43,8 @@ interface AjustesPanelProps {
   setShowUpgradeModal?: (v: boolean) => void;
   setIsPreviewMode: (val: boolean) => void;
   setPreviousAppBackground: (val: string) => void;
+  layoutMode: 'classic' | 'modern' | 'minimal';
+  setLayoutMode: (v: 'classic' | 'modern' | 'minimal') => void;
 }
 
 export const AjustesPanel: React.FC<AjustesPanelProps> = ({
@@ -78,7 +80,9 @@ export const AjustesPanel: React.FC<AjustesPanelProps> = ({
   gridSize,
   setGridSize,
   isPro = false,
-  setShowUpgradeModal
+  setShowUpgradeModal,
+  layoutMode,
+  setLayoutMode
 }) => {
   const [activeTab, setActiveTab] = useState<'tela' | 'ambiente' | 'sistema'>('tela');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -321,6 +325,33 @@ export const AjustesPanel: React.FC<AjustesPanelProps> = ({
                     <Monitor size={12} /> INTERFACE
                   </div>
                   <div className="space-y-2">
+                    <div className="flex flex-col p-4 bg-black/30 rounded-2xl border border-white/5 gap-3">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-white uppercase">Modelo de Layout da Área de Desenho</span>
+                        <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-2">Mude a disposição e organização dos botões</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'classic', label: 'Clássico', desc: 'Layout padrão' },
+                          { id: 'modern', label: 'Moderno', desc: 'Cantos curvos' },
+                          { id: 'minimal', label: 'Minimalista', desc: 'Foco na tela' }
+                        ].map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() => { sound.playClick(); setLayoutMode(m.id as any); }}
+                            className={`py-3 px-1 rounded-xl text-[10px] font-black border transition-all text-center flex flex-col gap-0.5 justify-center ${
+                              layoutMode === m.id 
+                                ? 'bg-[var(--accent-color)] text-white border-[var(--accent-color)] shadow-lg shadow-[var(--accent-color)]/20 scale-105' 
+                                : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:text-white'
+                            }`}
+                          >
+                            <span>{m.label}</span>
+                            <span className="text-[7px] opacity-60 font-bold uppercase tracking-tight">{m.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="flex flex-col p-4 bg-black/30 rounded-2xl border border-white/5 gap-3">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">

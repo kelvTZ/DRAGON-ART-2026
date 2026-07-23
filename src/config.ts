@@ -7,13 +7,14 @@ export const CONFIG = {
   STRIPE_PRO_LINK: "https://buy.stripe.com/test_4gM5kFeyk7YJ8cO4Pra3u00",
   
   // INFORMAÇÕES DA PLATAFORMA
-  VERSION: "1.8.8",
-  APP_NAME: "Dragon Art",
-  PLATFORM_NAME: "Dragon Art Studio",
+  VERSION: "1.13.1",
+  APP_NAME: "WyrmPIXEL",
+  PLATFORM_NAME: "WyrmPIXEL Studio",
   
   // LINKS DE DOWNLOAD / REDES SOCIAIS
-  DOWNLOAD_APK_URL: "http://192.168.3.172:8080/DragonArt_Ultra_v1.8.8.apk",
-  INSTAGRAM_URL: "https://instagram.com/dragonart",
+  DOWNLOAD_APK_URL: "https://drive.google.com/uc?export=download&id=1TWz60_idJJy5mBWfi1Ng-l2s81_ZshdU",
+  INSTAGRAM_URL: "https://www.instagram.com/dragonart_pixel/",
+  DISCORD_URL: "https://discord.gg/gFvckFY5",
   
   // CONFIGURAÇÕES DA COMUNIDADE
   MAX_POSTS_PER_PAGE: 20,

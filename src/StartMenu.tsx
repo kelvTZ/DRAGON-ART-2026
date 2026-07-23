@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, Download, Palette, Settings, HelpCircle, X, PlayCircle, BookOpen, Pencil, Layers as LayersIcon, Film, Play, Copy, Sun, Check, Star, Image as ImageIcon, FileImage, User, Home, LogOut, Shield, Award, Mail, Lock, Eye, EyeOff, ChevronRight, Share2, RefreshCw, ArrowRight, Send, ArrowLeft } from 'lucide-react';
+import { Trash2, Plus, Download, Palette, Settings, HelpCircle, X, PlayCircle, BookOpen, Pencil, Layers as LayersIcon, Film, Play, Copy, Sun, Check, Star, Image as ImageIcon, FileImage, User, Home, LogOut, Shield, Award, Mail, Lock, Eye, EyeOff, ChevronRight, Share2, RefreshCw, ArrowRight, Send, ArrowLeft, Instagram, MessageSquare, ExternalLink } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -11,8 +11,8 @@ import { ProjectConfig } from './types';
 import { themes, applyTheme, FREE_THEME_IDS } from './theme';
 import type { Theme } from './theme';
 import { generateId, getAvatarFallback } from './utils';
-import { supabase } from './lib/supabase';
-import type { Session } from '@supabase/supabase-js';
+
+
 import { CONFIG } from './config';
 import OnboardingTutorial from './components/OnboardingTutorial';
 
@@ -26,13 +26,13 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [savedProjects, setSavedProjects] = useState<ProjectConfig[]>([]);
   const [activeTab, setActiveTab] = useState<'home' | 'profile'>('home');
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [profileName, setProfileName] = useState('Artista Pixel');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState(() => localStorage.getItem('pixel_profile_name') || 'Artista Pixel');
+  const [profileImage, setProfileImage] = useState<string | null>(() => localStorage.getItem('pixel_profile_image') || null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   // Supabase Auth State
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<any | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -43,8 +43,10 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);  
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  const [isPro, setIsPro] = useState(false);
+  const [isPro, setIsPro] = useState(() => Capacitor.isNativePlatform());
   const [showProModal, setShowProModal] = useState(false);
+  const [selectedFeatureNotice, setSelectedFeatureNotice] = useState<string | null>(null);
+  const plansSectionRef = useRef<HTMLDivElement>(null);
   const [previewTheme, setPreviewTheme] = useState<Theme | null>(null);
   const [projectGridSize, setProjectGridSize] = useState(() => {
     const saved = localStorage.getItem('pixel_grid_size');
@@ -441,9 +443,8 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     const canvas = renderProjectToCanvas(p, 0, scale, format);
     if (!canvas) return;
 
-    if (!isPro) {
-      addWatermark(canvas, session?.user?.user_metadata?.display_name || profileName);
-    }
+    // Always add watermark, but style it differently for PRO
+    addWatermark(canvas, session?.user?.user_metadata?.display_name || profileName, isPro);
 
     const fileName = `${p.name}-${targetHeight}p.${format === 'jpeg' ? 'jpg' : 'png'}`;
     const dataUrl = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.92 : undefined);
@@ -463,9 +464,8 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       for (let i = 0; i < p.frames.length; i++) {
         const canvas = renderProjectToCanvas(p, i, scale);
         if (canvas) {
-          if (!isPro) {
-            addWatermark(canvas, session?.user?.user_metadata?.display_name || profileName);
-          }
+          // Always add watermark
+          addWatermark(canvas, session?.user?.user_metadata?.display_name || profileName, isPro);
           gif.addFrame(canvas, { delay });
         }
       }
@@ -480,13 +480,15 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     }
   };
 
-  const addWatermark = (canvas: HTMLCanvasElement, userName: string) => {
+  const addWatermark = (canvas: HTMLCanvasElement, userName: string, isProUser: boolean = false) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return canvas;
     
     const size = Math.max(9, Math.floor(canvas.height * 0.018));
     const padding = size * 0.5;
-    const text = `DragonArt \u00b7 ${userName}`;
+    
+    // Professional watermark text
+    const text = isProUser ? `DragonArt PRO \u00b7 ${userName}` : `DragonArt \u00b7 ${userName}`;
     
     ctx.save();
     ctx.font = `bold ${size}px Inter, -apple-system, sans-serif`;
@@ -498,8 +500,19 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     const y = canvas.height - rectHeight - margin;
 
     const r = Math.max(4, size * 0.4);
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = '#000000';
+    
+    // Background box
+    if (isProUser) {
+      // Premium Golden/Dark Gradient for PRO
+      const grad = ctx.createLinearGradient(x, y, x + rectWidth, y + rectHeight);
+      grad.addColorStop(0, 'rgba(10, 10, 10, 0.85)');
+      grad.addColorStop(1, 'rgba(30, 20, 0, 0.9)');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#000000';
+    }
+    
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + rectWidth - r, y);
@@ -513,16 +526,41 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     ctx.closePath();
     ctx.fill();
 
-    ctx.globalAlpha = 0.06;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    if (isProUser) {
+      // Golden border for PRO
+      ctx.strokeStyle = 'rgba(234, 179, 8, 0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else {
+      ctx.globalAlpha = 0.06;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
 
-    ctx.globalAlpha = 0.55;
-    ctx.fillStyle = '#ffffff';
+    // Text color
+    if (isProUser) {
+      ctx.fillStyle = '#fbbf24'; // Golden Yellow
+      // Subtle glow
+      ctx.shadowColor = 'rgba(234, 179, 8, 0.4)';
+      ctx.shadowBlur = 4;
+    } else {
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = '#ffffff';
+    }
+    
     ctx.textBaseline = 'middle';
     ctx.fillText(text, x + padding, y + rectHeight / 2);
     
+    // Add a tiny sparkle for PRO
+    if (isProUser) {
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.arc(x + 5, y + 5, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     ctx.restore();
     return canvas;
   };
@@ -536,9 +574,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       return;
     }
     const userName = session?.user?.user_metadata?.display_name || profileName;
-    if (!isPro) {
-      addWatermark(canvas, userName);
-    }
+    addWatermark(canvas, userName, isPro);
     const dataUrl = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.92 : undefined);
     
     if (Capacitor.isNativePlatform()) {
@@ -557,7 +593,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
 
         await Share.share({
           title: p.name,
-          text: `Confira minha arte "${p.name}" feita no DragonArt por ${userName}! ðŸ‰âœ¨`,
+          text: `Confirma minha arte feita no Dragon Art por ${userName}! 🐉✨`,
           url: writeResult.uri,
           dialogTitle: 'Compartilhar Arte'
         });
@@ -568,7 +604,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         try {
           await Share.share({
             title: p.name,
-            text: `Confira minha arte "${p.name}" feita no DragonArt por ${userName}! ðŸ‰âœ¨`,
+            text: `Confirma minha arte feita no Dragon Art por ${userName}! 🐉✨`,
             dialogTitle: 'Compartilhar Arte'
           });
         } catch (e) {}
@@ -579,112 +615,62 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       try {
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], `${p.name}.${format === 'jpeg' ? 'jpg' : 'png'}`, { type: `image/${format}` });
-        await navigator.share({ title: `${p.name} - DragonArt`, text: `Feito com ðŸ‰ DragonArt por ${userName}`, files: [file] });
+        await navigator.share({ title: `${p.name} - DragonArt`, text: `Confirma minha arte feita no Dragon Art por ${userName}! 🐉✨`, files: [file] });
         return;
       } catch {}
     }
   };
 
+  const [openingProject, setOpeningProject] = useState<ProjectConfig | null>(null);
+
+  const openProjectWithTransition = (project: ProjectConfig) => {
+    sound.init();
+    sound.playAction();
+    setOpeningProject(project);
+    setTimeout(() => {
+      onStart(project, isPro, profileName);
+    }, 400);
+  };
+
   const handleStart = () => {
     sound.init();
     sound.playAction();
-    if (!isPro && savedProjects.length >= 10) {
-      setShowProModal(true);
-      return;
-    }
+    
     const newConfig = { id: generateId(), name, width: isCustom ? customWidth : size, height: isCustom ? customHeight : size };
     const updatedProjects = [...savedProjects, newConfig];
     setSavedProjects(updatedProjects);
     localStorage.setItem('pixel_projects', JSON.stringify(updatedProjects));
-    onStart(newConfig, isPro, profileName);
+    openProjectWithTransition(newConfig);
   };
 
-  // Supabase session listener
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCustomAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setProfileImage(result);
+        localStorage.setItem('pixel_profile_image', result);
+        sound.playClick();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpdateProfileName = (newName: string) => {
+    setProfileName(newName);
+    localStorage.setItem('pixel_profile_name', newName);
+  };
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      if (s?.user?.user_metadata) {
-        setProfileName(s.user.user_metadata.display_name || 'Artista Pixel');
-        setExperienceLevel(s.user.user_metadata.experience_level || 'iniciante');
-      }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      console.log('Auth State Change:', event, s ? 'Session found' : 'No session');
-      setSession(s);
-      if (s?.user?.user_metadata) {
-        if (s.user.user_metadata.display_name) setProfileName(s.user.user_metadata.display_name);
-        if (s.user.user_metadata.experience_level) setExperienceLevel(s.user.user_metadata.experience_level);
-        if (s.user.user_metadata.badge) setSelectedBadge(s.user.user_metadata.badge);
-        
-        const metaAvatar = s.user.user_metadata.avatar_url;
-        if (metaAvatar) setProfileImage(metaAvatar);
-      }
-      
-      // Auto-trigger onboarding if metadata is incomplete or session is missing
-      if (!s) {
-        setOnboardingStep('welcome');
-      } else if (!s.user.user_metadata?.display_name || !s.user.user_metadata?.avatar_url) {
-        setOnboardingStep('avatar');
-      } else {
-        setOnboardingStep(null);
-      }
-    });
-    return () => subscription.unsubscribe();
+    // Only local storage profile image logic here if needed
   }, []);
 
   useEffect(() => {
-    const fetchProStatus = async () => {
-      if (session?.user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_pro, avatar_url, display_name, badge')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (!error && data) {
-          setIsPro(!!data.is_pro);
-          
-          const metaName = session.user.user_metadata?.display_name;
-          const metaAvatar = session.user.user_metadata?.avatar_url;
-          const metaBadge = session.user.user_metadata?.badge;
-
-          // Source of Truth: Database (Community data) > Metadata (Fallback) > Current State
-          const finalName = data.display_name || metaName || profileName;
-          const finalAvatar = data.avatar_url || metaAvatar || profileImage;
-          const finalBadge = data.badge || metaBadge || selectedBadge;
-
-          if (finalName) setProfileName(finalName);
-          if (finalAvatar) setProfileImage(finalAvatar);
-          if (finalBadge) setSelectedBadge(finalBadge);
-
-          // If DB is missing anything that we have in Meta/State, update it once
-          if (!data.display_name || !data.badge || (!data.avatar_url && finalAvatar)) {
-            await supabase.from('profiles').upsert({
-              id: session.user.id,
-              display_name: finalName,
-              avatar_url: finalAvatar,
-              badge: finalBadge,
-              is_pro: !!data.is_pro,
-              updated_at: new Date()
-            });
-          }
-        } else if (!data) {
-          // Profile doesn't exist yet, create it
-          await supabase.from('profiles').upsert({
-            id: session.user.id,
-            display_name: profileName,
-            avatar_url: profileImage,
-            badge: selectedBadge,
-            is_pro: false,
-            updated_at: new Date()
-          });
-        }
-      } else {
-        setIsPro(false);
-      }
-    };
-    fetchProStatus();
-  }, [session]);
+    setIsPro(true);
+  }, []);
 
   const experienceLevels = [
     { id: 'iniciante' as const, label: 'Iniciante', icon: 'ðŸŒ±', desc: 'ComeÃ§ando no pixel art' },
@@ -694,127 +680,23 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   ];
 
   const badges = [
-    { id: 'leaf', image: '/badges/free_1.png', label: 'Folha Ancestral', pro: false },
-    { id: 'artist', image: '/badges/free_2.png', label: 'Selo de Pedra', pro: false },
-    { id: 'sparkles', image: '/badges/free_3.png', label: 'Pincel de Prata', pro: false },
-    { id: 'heart', image: '/badges/free_4.png', label: 'Coração de Artista', pro: false },
-    { id: 'fire', image: '/badges/free_5.png', label: 'Chama Amarela', pro: false },
-    { id: 'star', image: '/badges/pro_1.png', label: 'Cristal Celestial', pro: true, glow: 'rgba(56, 189, 248, 0.8)' },
-    { id: 'crown', image: '/badges/pro_2.png', label: 'Coroa de Fogo', pro: true, glow: 'rgba(239, 68, 68, 0.8)' },
-    { id: 'diamond', image: '/badges/pro_3.png', label: 'Diamante Cósmico', pro: true, glow: 'rgba(168, 85, 247, 0.8)' },
-    { id: 'dragon', image: '/badges/pro_4.png', label: 'Dragão Guardião', pro: true, glow: 'rgba(34, 197, 94, 0.8)' },
-    { id: 'verified', image: '/badges/pro_5.png', label: 'Elite Dourada', pro: true, glow: 'rgba(234, 179, 8, 0.8)' },
+    { id: 'leaf', image: '/badges/free_1.png', label: 'Iniciante', pro: false, requiredArts: 1 },
+    { id: 'artist', image: '/badges/free_2.png', label: 'Artista', pro: false, requiredArts: 3 },
+    { id: 'sparkles', image: '/badges/free_3.png', label: 'Veterano', pro: false, requiredArts: 10 },
+    { id: 'heart', image: '/badges/free_4.png', label: 'Mestre', pro: false, requiredArts: 15 },
+    { id: 'fire', image: '/badges/free_5.png', label: 'Lenda', pro: false, requiredArts: 25 },
+    { id: 'star', image: '/badges/pro_1.png', label: 'Cristal', pro: true, glow: 'rgba(56, 189, 248, 0.8)' },
+    { id: 'crown', image: '/badges/pro_2.png', label: 'Soberano', pro: true, glow: 'rgba(239, 68, 68, 0.8)' },
+    { id: 'diamond', image: '/badges/pro_3.png', label: 'Eterno', pro: true, glow: 'rgba(168, 85, 247, 0.8)' },
+    { id: 'dragon', image: '/badges/pro_4.png', label: 'Guardião', pro: true, glow: 'rgba(34, 197, 94, 0.8)' },
+    { id: 'verified', image: '/badges/pro_5.png', label: 'Elite', pro: true, glow: 'rgba(234, 179, 8, 0.8)' },
   ];
 
-  const handleSignUp = async () => {
-    console.log('Attempting Sign Up:', authEmail);
-    setAuthLoading(true); setAuthError(null); setAuthSuccess(null);
-    const { data, error } = await supabase.auth.signUp({
-      email: authEmail, password: authPassword,
-      options: { data: { display_name: registerName, experience_level: experienceLevel } }
-    });
-    setAuthLoading(false);
-    if (error) { 
-      console.error('Sign Up Error:', error.message);
-      let errorMsg = error.message;
-      if (errorMsg === 'Email signups are disabled') {
-         errorMsg = 'Cadastro por e-mail desativado no Supabase. Ative em: Authentication > Providers > Email.';
-      } else if (errorMsg === 'User already registered') {
-         errorMsg = 'Este e-mail jÃ¡ estÃ¡ cadastrado.';
-      } else if (errorMsg === 'Password should be at least 6 characters') {
-         errorMsg = 'A senha deve ter no mÃ­nimo 6 caracteres.';
-      }
-      setAuthError(errorMsg); 
-      return; 
-    }
-    console.log('Sign Up Success:', data);
-    if (data.session) {
-      setAuthSuccess('Conta criada com sucesso!');
-    } else {
-      setAuthSuccess('Conta criada! Verifique sua caixa de entrada (e-mail) para confirmar a conta antes de entrar.');
-      setAuthMode('login');
-    }
-  };
-
-  const handleSignIn = async () => {
-    console.log('Attempting Sign In:', authEmail);
-    setAuthLoading(true); setAuthError(null); setAuthSuccess(null);
-    const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
-    setAuthLoading(false);
-    if (error) { 
-      console.error('Sign In Error:', error.message);
-      let errorMsg = error.message;
-      if (errorMsg === 'Invalid login credentials') {
-         errorMsg = 'E-mail ou senha incorretos.';
-      } else if (errorMsg === 'Email not confirmed') {
-         errorMsg = 'E-mail nÃ£o confirmado. Por favor, verifique sua caixa de entrada e clique no link de confirmaÃ§Ã£o.';
-      }
-      setAuthError(errorMsg); 
-      return; 
-    }
-    console.log('Sign In Success:', data.session ? 'Session active' : 'No session');
-    sound.playAction();
-  };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setSession(null); 
-    setProfileImage(null); 
-    setProfileName('Artista Pixel');
-    setExperienceLevel('iniciante');
-    setSelectedBadge('leaf');
-    sound.playClick();
-  };
-
-
-  const handleSaveProfile = async () => {
-    sound.playAction();
-    // Do not force a default avatar, leave it as null to trigger transparent/black fallback
-    const avatarUrl = profileImage;
-    
-    // 1. Update Auth Metadata
-    const { error: authError } = await supabase.auth.updateUser({ 
-      data: { 
-        display_name: profileName, 
-        experience_level: experienceLevel,
-        badge: selectedBadge,
-        avatar_url: avatarUrl
-      } 
-    });
-
-    // 2. Update Public Profile Table (Critical for Community)
-    if (session?.user?.id) {
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: session.user.id,
-        display_name: profileName,
-        experience_level: experienceLevel,
-        badge: selectedBadge,
-        avatar_url: avatarUrl,
-        is_pro: isPro,
-        updated_at: new Date()
-      });
-      
-      if (profileError) {
-        console.error('Error updating public profile:', profileError);
-        setAuthError('Erro ao salvar as alterações do perfil.');
-      }
-    }
-
-    if (authError) setAuthError(authError.message);
-    else {
-      setAuthSuccess('Perfil e Avatar salvos! ✨');
-    }
-    setTimeout(() => setAuthSuccess(null), 3000);
-  };
-
-  const handleChangePassword = async () => {
-    sound.playAction(); setAuthError(null);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) { setAuthError(error.message); return; }
-    setCurrentPassword(''); setNewPassword('');
-    setAuthSuccess('Senha alterada com sucesso!');
-    setTimeout(() => setAuthSuccess(null), 3000);
-  };
+  const handleSignUp = async () => {};
+  const handleSignIn = async () => {};
+  const handleSignOut = async () => {};
+  const handleSaveProfile = async () => { setAuthSuccess('Perfil e Avatar salvos! ✨'); setTimeout(() => setAuthSuccess(null), 3000); };
+  const handleChangePassword = async () => {};
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-app)] font-sans text-[var(--text-primary)] relative transition-colors duration-300 pb-24 overflow-x-hidden">
@@ -840,15 +722,15 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center gap-6">
                     <img src="/logo.png" alt="Logo" className="w-24 h-24 image-pixelated drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
                     <div>
-                      <h2 className="text-3xl font-black text-white tracking-tighter mb-2">BEM-VINDO AO DRAGON ART</h2>
+                      <h2 className="text-3xl font-black text-white tracking-tighter mb-2">BEM-VINDO AO WYRMPIXEL</h2>
                       <p className="text-xs text-gray-500 font-bold uppercase tracking-widest leading-relaxed">Sua jornada épica no pixel art começa aqui.</p>
                     </div>
                     <div className="w-full flex flex-col gap-3 mt-4">
-                      <button onClick={() => { setAuthMode('register'); setOnboardingStep('auth'); sound.playAction(); }}
+                      <button onClick={() => { /* setAuthMode removed */; setOnboardingStep(null); sound.playAction(); }}
                         className="w-full py-5 bg-[var(--accent-color)] text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-[var(--accent-color)]/20 active:scale-95 transition-all">
                         CRIAR CONTA GRÁTIS
                       </button>
-                      <button onClick={() => { setAuthMode('login'); setOnboardingStep('auth'); sound.playClick(); }}
+                      <button onClick={() => { /* setAuthMode removed */; setOnboardingStep(null); sound.playClick(); }}
                         className="w-full py-5 bg-white/5 text-white font-black uppercase tracking-widest rounded-2xl border border-white/10 hover:bg-white/10 active:scale-95 transition-all">
                         JÁ TENHO CONTA
                       </button>
@@ -1014,35 +896,86 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
               exit={{ opacity: 0, x: 20 }}
               className="flex-1 flex flex-col"
             >
-              {/* Top Navigation */}
-              <div className="bg-[var(--bg-panel)] p-4 sm:p-6 border-b border-[var(--border-subtle)] shadow-md">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="flex items-center gap-4 group">
-                    <motion.img 
-                      whileHover={{ rotate: 5, scale: 1.1 }}
-                      src="/logo.png" 
-                      alt="Logo" 
-                      className="w-16 h-16 md:w-20 md:h-20 object-contain image-pixelated"
-                      style={{ filter: 'drop-shadow(4px 4px 0 rgba(0,0,0,0.5))' }}
-                    />
+              {/* Top Navigation Profissional */}
+              <div className="bg-[#121216]/90 backdrop-blur-2xl px-6 py-5 border-b border-white/10 shadow-2xl sticky top-0 z-40">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5">
+                  <div className="flex items-center gap-4 group cursor-pointer" onClick={() => sound.playClick()}>
+                    <motion.div
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                      className="relative p-2 bg-[var(--accent-color)]/10 rounded-2xl border border-[var(--accent-color)]/30 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+                    >
+                      <img 
+                        src="/logo.png" 
+                        alt="WyrmPIXEL Logo" 
+                        className="w-12 h-12 md:w-14 md:h-14 object-contain image-pixelated drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
+                      />
+                    </motion.div>
                     <div className="flex flex-col">
-                      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white" style={{ fontFamily: '"Press Start 2P", monospace', textShadow: '4px 4px 0 #000' }}>
-                        DRAGONART
-                      </h1>
-                      <div className="mt-2 flex items-center gap-3">
-                        <span className="text-[10px] font-black text-[var(--accent-color)] uppercase tracking-widest bg-[var(--accent-color)]/10 px-2 py-1 rounded-md border border-[var(--accent-color)]/20">Studio v{CONFIG.VERSION}</span>
-                        {isPro && <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-[9px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1 animate-pulse">PRO <Check size={10} /></span>}
+                      <div className="flex items-center gap-2">
+                        <h1 className="text-2xl md:text-3xl font-black tracking-wider text-white uppercase" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
+                          Wyrm<span className="text-[var(--accent-color)]">PIXEL</span>
+                        </h1>
+                        <span className="text-[9px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/30 tracking-widest uppercase shadow-sm">
+                          PRO STUDIO
+                        </span>
                       </div>
+                      <p className="text-xs font-semibold text-white/50 tracking-wide">
+                        Crie & Anime Pixel Art Profissional • v{CONFIG.VERSION}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                      <button onClick={() => setShowTutorials(true)} className="w-12 h-12 flex items-center justify-center bg-[var(--bg-element)] text-[var(--text-muted)] hover:text-white hover:bg-[var(--accent-color)] rounded-xl transition-all shadow-sm">
-                        <BookOpen size={24} />
-                      </button>
-                      <button onClick={() => setShowSettings(true)} className="w-12 h-12 flex items-center justify-center bg-[var(--bg-element)] text-[var(--text-muted)] hover:text-white hover:bg-[var(--accent-color)] rounded-xl transition-all shadow-sm">
-                        <Settings size={24} />
-                      </button>
+                  {/* Seletor de Abas Principal */}
+                  <div className="flex items-center gap-1.5 bg-black/60 p-1.5 rounded-2xl border border-white/10 shadow-lg">
+                    <button
+                      onClick={() => { sound.playClick(); setActiveTab('home'); }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeTab === 'home' ? 'bg-[var(--accent-color)] text-white shadow-lg shadow-[var(--accent-color)]/30 scale-105' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                    >
+                      <Home size={16} />
+                      <span>Projetos</span>
+                    </button>
+                    <button
+                      onClick={() => { sound.playClick(); setActiveTab('profile'); }}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeTab === 'profile' ? 'bg-[var(--accent-color)] text-white shadow-lg shadow-[var(--accent-color)]/30 scale-105' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                    >
+                      <User size={16} />
+                      <span>Meu Perfil</span>
+                      {profileImage && (
+                        <img src={profileImage} alt="Avatar" className="w-4 h-4 rounded-full object-cover border border-white/40 ml-0.5" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Redes Sociais & Controles */}
+                  <div className="flex items-center gap-2.5 bg-black/40 p-1.5 rounded-2xl border border-white/10 shadow-inner">
+                    <a 
+                      href={CONFIG.INSTAGRAM_URL} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/30 transition-all active:scale-95 group shadow-md" 
+                      title="Siga no Instagram"
+                    >
+                      <Instagram size={18} className="group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline">Instagram</span>
+                    </a>
+                    
+                    <button 
+                      onClick={() => { sound.playClick(); setShowTutorials(true); }} 
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 transition-all active:scale-95 group" 
+                      title="Guia & Tutoriais"
+                    >
+                      <BookOpen size={18} className="group-hover:scale-110 transition-transform text-[var(--accent-color)]" />
+                      <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline">Aprender</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => { sound.playClick(); setShowSettings(true); }} 
+                      className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 transition-all active:scale-95" 
+                      title="Configurações"
+                    >
+                      <Settings size={18} />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1051,7 +984,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
               <div className="w-full bg-[var(--bg-element)] border-y border-[var(--border-subtle)] py-6 overflow-hidden relative flex flex-col gap-4 mt-2">
                 <div className="max-w-6xl mx-auto w-full px-6 flex items-center gap-2">
                   <Star className="text-yellow-400 animate-pulse" size={16} />
-                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Galeria Dragon Art</h3>
+                  <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Galeria WyrmPIXEL</h3>
                 </div>
                 <div className="flex animate-scroll gap-4 px-4 w-max">
                   {[...carouselImages, ...carouselImages].map((src, i) => (
@@ -1176,22 +1109,14 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                           <Star size={28} className="text-black fill-black" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-black text-white text-base tracking-wide">SEJA DRAGON ART PRO</h3>
+                          <h3 className="font-black text-white text-base tracking-wide">SEJA WYRMPIXEL PRO</h3>
                           <p className="text-xs text-yellow-300/80 font-bold mt-0.5">ExportaÃ§Ã£o HD â€¢ Sem Marca D'Ã¡gua â€¢ Selos Exclusivos</p>
                         </div>
                         <ChevronRight size={24} className="text-yellow-400 shrink-0 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </motion.div>
                   )}
-                  {isPro && (
-                    <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-2xl">
-                      <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center"><Check size={20} className="text-white" /></div>
-                      <div>
-                        <span className="font-black text-green-400 text-sm">DRAGON ART PRO ATIVO</span>
-                        <p className="text-[10px] text-green-300/60 font-bold">VocÃª tem acesso a todos os recursos premium!</p>
-                      </div>
-                    </div>
-                  )}
+
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <h2 className="text-xl font-black flex items-center gap-3">
                       <LayersIcon className="text-[var(--accent-color)]" size={24} /> Meus Projetos
@@ -1217,33 +1142,73 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                     }[projectGridSize] || "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
                   }`}>
                     {savedProjects.length === 0 ? (
-                      <div className="col-span-full py-20 text-center opacity-30 font-bold">Nenhum projeto salvo.</div>
+                      <div className="col-span-full py-16 px-6 text-center bg-[#141418]/60 backdrop-blur-2xl rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-3">
+                        <div className="p-4 bg-[var(--accent-color)]/10 rounded-2xl text-[var(--accent-color)] border border-[var(--accent-color)]/20 shadow-inner">
+                          <Palette size={36} />
+                        </div>
+                        <h3 className="text-base font-bold text-white tracking-wide">Sua galeria está vazia</h3>
+                        <p className="text-xs text-white/50 max-w-sm">Crie seu primeiro projeto de pixel art no painel ao lado para começar a desenhar!</p>
+                      </div>
                     ) : (
                       savedProjects.map(p => (
-                        <div key={p.id} className="bg-[var(--bg-panel)] rounded-[28px] border border-white/5 hover:border-[var(--accent-color)]/50 transition-all hover:-translate-y-1 shadow-lg relative">
-                          <div className="cursor-pointer" onClick={() => onStart(p, isPro, profileName)}>
-                            <div className="aspect-square bg-white/5 flex items-center justify-center overflow-hidden rounded-t-[28px]">
-                              {p.thumbnail ? <img src={p.thumbnail} className="w-full h-full object-contain image-pixelated" /> : <Palette className="opacity-20" size={40} />}
+                        <div 
+                          key={p.id} 
+                          className="bg-[#141418]/90 hover:bg-[#18181e] rounded-3xl border border-white/10 hover:border-[var(--accent-color)]/60 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_15px_30px_rgba(99,102,241,0.2)] relative group flex flex-col overflow-hidden"
+                        >
+                          <div 
+                            className="cursor-pointer relative aspect-square bg-gradient-to-b from-black/40 to-black/20 flex items-center justify-center p-3 overflow-hidden rounded-t-3xl border-b border-white/5"
+                            onClick={() => openProjectWithTransition(p)}
+                          >
+                            {p.thumbnail ? (
+                              <img 
+                                src={p.thumbnail} 
+                                alt={p.name} 
+                                className="w-full h-full object-contain image-pixelated group-hover:scale-105 transition-transform duration-300 drop-shadow-md" 
+                              />
+                            ) : (
+                              <Palette className="text-white/20 group-hover:text-[var(--accent-color)]/50 transition-colors" size={48} />
+                            )}
+                            
+                            {/* Overlay de hover play */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                              <div className="p-3 bg-[var(--accent-color)] text-white rounded-2xl shadow-xl transform scale-75 group-hover:scale-100 transition-transform">
+                                <Play size={24} className="fill-white translate-x-0.5" />
+                              </div>
+                            </div>
+
+                            {/* Dimensions Badge */}
+                            <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md text-[9px] font-bold text-white/90 px-2 py-0.5 rounded-full border border-white/10 tracking-wider uppercase">
+                              {p.width}×{p.height}px{p.frames && p.frames.length > 1 ? ` • ${p.frames.length}f` : ''}
                             </div>
                           </div>
-                          <div className="p-3 flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex-1" onClick={() => onStart(p, isPro, profileName)}>
-                              <h4 className="font-bold truncate text-sm cursor-pointer">{p.name}</h4>
-                              <p className="text-[10px] font-bold text-[var(--accent-color)]/60 uppercase">{p.width}x{p.height}px{p.frames && p.frames.length > 1 ? ` â€¢ ${p.frames.length}f` : ''}</p>
+
+                          <div className="p-3.5 flex items-center justify-between gap-2">
+                            <div 
+                              className="min-w-0 flex-1 cursor-pointer" 
+                              onClick={() => openProjectWithTransition(p)}
+                            >
+                              <h4 className="font-bold truncate text-sm text-white/90 group-hover:text-white transition-colors">{p.name}</h4>
+                              <span className="text-[10px] font-bold text-[var(--accent-color)] tracking-wider uppercase">Abrir Projeto</span>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
-                              <button onClick={(e) => { 
-                                e.stopPropagation(); 
-                                console.log('Direct Share button clicked for:', p.id);
-                                shareProject(p); 
-                              }} className="p-2 text-white/40 hover:text-[var(--accent-color)] hover:bg-white/5 rounded-xl transition-colors" title="Compartilhar">
+                              <button 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  shareProject(p); 
+                                }} 
+                                className="p-2 text-white/40 hover:text-[var(--accent-color)] hover:bg-white/10 rounded-xl transition-colors" 
+                                title="Compartilhar"
+                              >
                                 <Share2 size={16} />
                               </button>
-                              <button onClick={(e) => { 
-                                e.stopPropagation(); 
-                                console.log('Toggle Options Menu for:', p.id, 'Current state:', openMenuId);
-                                setOpenMenuId(openMenuId === p.id ? null : p.id); 
-                              }} className="p-2 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-colors" title="OpÃ§Ãµes">
+                              <button 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  setOpenMenuId(openMenuId === p.id ? null : p.id); 
+                                }} 
+                                className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors" 
+                                title="Opções"
+                              >
                                 <Settings size={16} />
                               </button>
                             </div>
@@ -1269,71 +1234,61 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                                   className="absolute right-0 top-full mt-1 bg-[var(--bg-panel)] rounded-2xl shadow-2xl border border-white/10 z-[999] overflow-hidden min-w-[220px]"
                                   style={{ position: 'absolute', top: '100%', right: 0 }}
                                 >
-                                  {/* PNG */}
-                                  <div className="px-3 py-1.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider bg-white/5 flex items-center gap-2"><FileImage size={10} /> Exportar PNG</div>
-                                  <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'png'); setOpenMenuId(null); }} className="w-full px-4 py-2 text-sm hover:bg-[var(--accent-color)] hover:text-white flex items-center gap-2 transition-colors"><Download size={14} /> Original (GrÃ¡tis)</button>
-                                  <button onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    if(isPro) { downloadProject(p, 'png', 1); setOpenMenuId(null); } 
-                                    else { alert('A exportaÃ§Ã£o Full HD Ã© exclusiva para usuÃ¡rios PRO! Acesse a aba Perfil para assinar.'); }
-                                  }} className={`w-full px-4 py-2 text-sm flex items-center gap-2 transition-colors ${isPro ? 'hover:bg-[var(--accent-color)] hover:text-white' : 'opacity-70 text-yellow-400 hover:bg-yellow-400/10'}`}>
-                                    {isPro ? <Download size={14} /> : <Lock size={14} />} Full HD (1080p) {isPro ? '' : 'PRO'}
-                                  </button>
-                                  <button onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    if(isPro) { downloadProject(p, 'png', 4); setOpenMenuId(null); } 
-                                    else { alert('A exportaÃ§Ã£o 4K Ã© exclusiva para usuÃ¡rios PRO! Acesse a aba Perfil para assinar.'); }
-                                  }} className={`w-full px-4 py-2 text-sm flex items-center gap-2 transition-colors ${isPro ? 'hover:bg-[var(--accent-color)] hover:text-white' : 'opacity-70 text-yellow-400 hover:bg-yellow-400/10'}`}>
-                                    {isPro ? <Download size={14} /> : <Lock size={14} />} Ultra HD (4K) {isPro ? '' : 'PRO'}
-                                  </button>
-                                  
-                                  {/* JPG */}
-                                  <div className="px-3 py-1.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider bg-white/5 flex items-center gap-2"><ImageIcon size={10} /> Exportar JPG</div>
-                                  <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'jpeg'); setOpenMenuId(null); }} className="w-full px-4 py-2 text-sm hover:bg-[var(--accent-color)] hover:text-white flex items-center gap-2 transition-colors"><Download size={14} /> Original (GrÃ¡tis)</button>
-                                  <button onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    if(isPro) { downloadProject(p, 'jpeg', 1); setOpenMenuId(null); } 
-                                    else { alert('A exportaÃ§Ã£o Full HD Ã© exclusiva para usuÃ¡rios PRO! Acesse a aba Perfil para assinar.'); }
-                                  }} className={`w-full px-4 py-2 text-sm flex items-center gap-2 transition-colors ${isPro ? 'hover:bg-[var(--accent-color)] hover:text-white' : 'opacity-70 text-yellow-400 hover:bg-yellow-400/10'}`}>
-                                    {isPro ? <Download size={14} /> : <Lock size={14} />} Full HD (1080p) {isPro ? '' : 'PRO'}
-                                  </button>
-                                  <button onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    if(isPro) { downloadProject(p, 'jpeg', 4); setOpenMenuId(null); } 
-                                    else { alert('A exportaÃ§Ã£o 4K Ã© exclusiva para usuÃ¡rios PRO! Acesse a aba Perfil para assinar.'); }
-                                  }} className={`w-full px-4 py-2 text-sm flex items-center gap-2 transition-colors ${isPro ? 'hover:bg-[var(--accent-color)] hover:text-white' : 'opacity-70 text-yellow-400 hover:bg-yellow-400/10'}`}>
-                                    {isPro ? <Download size={14} /> : <Lock size={14} />} Ultra HD (4K) {isPro ? '' : 'PRO'}
-                                  </button>
-                                  
-                                  {/* GIF */}
-                                  {p.frames && p.frames.length > 1 && (<>
-                                    <div className="px-3 py-1.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider bg-white/5 flex items-center gap-2"><Film size={10} /> GIF Animado</div>
-                                    <button onClick={(e) => { e.stopPropagation(); downloadGif(p); setOpenMenuId(null); }} disabled={exportingId === p.id} className="w-full px-4 py-2 text-sm hover:bg-green-600 hover:text-white flex items-center gap-2 transition-colors disabled:opacity-50"><Film size={14} /> {exportingId === p.id ? 'Exportando...' : 'Original (GrÃ¡tis)'}</button>
-                                    <button onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      if(isPro) { downloadGif(p, 1); setOpenMenuId(null); } 
-                                      else { alert('A exportaÃ§Ã£o Full HD Ã© exclusiva para usuÃ¡rios PRO! Acesse a aba Perfil para assinar.'); }
-                                    }} disabled={exportingId === p.id} className={`w-full px-4 py-2 text-sm flex items-center gap-2 transition-colors disabled:opacity-50 ${isPro ? 'hover:bg-green-600 hover:text-white' : 'opacity-70 text-yellow-400 hover:bg-yellow-400/10'}`}>
-                                      {isPro ? <Film size={14} /> : <Lock size={14} />} {exportingId === p.id ? 'Exportando...' : `Full HD (1080p) ${isPro ? '' : 'PRO'}`}
+                                  {/* Título/Cabeçalho do Menu */}
+                                  <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                                    <span className="text-[11px] font-black text-white/80 uppercase tracking-widest">Opções do Desenho</span>
+                                    <button onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} className="text-white/40 hover:text-white transition-colors">
+                                      <X size={14} />
                                     </button>
-                                    <button onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      if(isPro) { downloadGif(p, 4); setOpenMenuId(null); } 
-                                      else { alert('A exportaÃ§Ã£o 4K Ã© exclusiva para usuÃ¡rios PRO! Acesse a aba Perfil para assinar.'); }
-                                    }} disabled={exportingId === p.id} className={`w-full px-4 py-2 text-sm flex items-center gap-2 transition-colors disabled:opacity-50 ${isPro ? 'hover:bg-green-600 hover:text-white' : 'opacity-70 text-yellow-400 hover:bg-yellow-400/10'}`}>
-                                      {isPro ? <Film size={14} /> : <Lock size={14} />} Ultra HD (4K) {isPro ? '' : 'PRO'}
-                                    </button>
-                                  </>)}
-                                  {/* Share */}
-                                  <div className="h-px bg-white/10 mx-2" />
-                                  <div className="px-3 py-1.5 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider bg-white/5 flex items-center gap-2"><Share2 size={10} /> Compartilhar</div>
-                                  <button onClick={(e) => { e.stopPropagation(); shareProject(p, 'png'); setOpenMenuId(null); }} className="w-full px-4 py-2 text-sm hover:bg-blue-600 hover:text-white flex items-center gap-2 transition-colors"><FileImage size={14} /> PNG</button>
-                                  <button onClick={(e) => { e.stopPropagation(); shareProject(p, 'jpeg'); setOpenMenuId(null); }} className="w-full px-4 py-2 text-sm hover:bg-blue-600 hover:text-white flex items-center gap-2 transition-colors"><ImageIcon size={14} /> JPG</button>
-                                  {/* Project actions */}
-                                  <div className="h-px bg-white/10 mx-2" />
-                                  <button onClick={(e) => { e.stopPropagation(); duplicateProject(p.id); setOpenMenuId(null); }} className="w-full px-4 py-2 text-sm hover:bg-[var(--accent-color)] hover:text-white flex items-center gap-2 transition-colors"><Copy size={14} /> Duplicar</button>
-                                  <button onClick={(e) => { e.stopPropagation(); renameProject(p.id); setOpenMenuId(null); }} className="w-full px-4 py-2 text-sm hover:bg-[var(--accent-color)] hover:text-white flex items-center gap-2 transition-colors"><Pencil size={14} /> Renomear</button>
-                                  <button onClick={(e) => { e.stopPropagation(); deleteProject(p.id); setOpenMenuId(null); }} className="w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500 hover:text-white flex items-center gap-2 transition-colors"><Trash2 size={14} /> Excluir</button>
+                                  </div>
+
+                                  {/* Exportar PNG */}
+                                  <div className="p-3 border-b border-white/5">
+                                    <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-2 flex items-center gap-1.5"><FileImage size={12} /> Exportar PNG</div>
+                                    <div className="grid grid-cols-3 gap-1">
+                                      <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'png'); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Download size={12} /><span>Original</span></button>
+                                      <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'png', 1); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Download size={12} /><span>1080p</span></button>
+                                      <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'png', 4); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Download size={12} /><span>4K</span></button>
+                                    </div>
+                                  </div>
+
+                                  {/* Exportar JPG */}
+                                  <div className="p-3 border-b border-white/5">
+                                    <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-2 flex items-center gap-1.5"><ImageIcon size={12} /> Exportar JPG</div>
+                                    <div className="grid grid-cols-3 gap-1">
+                                      <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'jpeg'); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Download size={12} /><span>Original</span></button>
+                                      <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'jpeg', 1); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Download size={12} /><span>1080p</span></button>
+                                      <button onClick={(e) => { e.stopPropagation(); downloadProject(p, 'jpeg', 4); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Download size={12} /><span>4K</span></button>
+                                    </div>
+                                  </div>
+
+                                  {/* GIF Animado (se aplicável) */}
+                                  {p.frames && p.frames.length > 1 && (
+                                    <div className="p-3 border-b border-white/5">
+                                      <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-2 flex items-center gap-1.5"><Film size={12} /> GIF Animado</div>
+                                      <div className="grid grid-cols-3 gap-1">
+                                        <button onClick={(e) => { e.stopPropagation(); downloadGif(p); setOpenMenuId(null); }} disabled={exportingId === p.id} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-green-600 hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5 disabled:opacity-50"><Film size={12} /><span>Original</span></button>
+                                        <button onClick={(e) => { e.stopPropagation(); downloadGif(p, 1); setOpenMenuId(null); }} disabled={exportingId === p.id} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-green-600 hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5 disabled:opacity-50"><Film size={12} /><span>1080p</span></button>
+                                        <button onClick={(e) => { e.stopPropagation(); downloadGif(p, 4); setOpenMenuId(null); }} disabled={exportingId === p.id} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-green-600 hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5 disabled:opacity-50"><Film size={12} /><span>4K</span></button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Compartilhar */}
+                                  <div className="p-3 border-b border-white/5">
+                                    <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-wider mb-2 flex items-center gap-1.5"><Share2 size={12} /> Compartilhar</div>
+                                    <div className="grid grid-cols-2 gap-1">
+                                      <button onClick={(e) => { e.stopPropagation(); shareProject(p, 'png'); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-blue-600 hover:text-white rounded-lg transition-all text-center flex items-center justify-center gap-1"><FileImage size={12} /><span>PNG</span></button>
+                                      <button onClick={(e) => { e.stopPropagation(); shareProject(p, 'jpeg'); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold bg-white/5 hover:bg-blue-600 hover:text-white rounded-lg transition-all text-center flex items-center justify-center gap-1"><ImageIcon size={12} /><span>JPG</span></button>
+                                    </div>
+                                  </div>
+
+                                  {/* Ações do Projeto */}
+                                  <div className="p-2 grid grid-cols-3 gap-1 bg-white/[0.01]">
+                                    <button onClick={(e) => { e.stopPropagation(); duplicateProject(p.id); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold text-white/70 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Copy size={12} /><span>Duplicar</span></button>
+                                    <button onClick={(e) => { e.stopPropagation(); renameProject(p.id); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold text-white/70 hover:bg-[var(--accent-color)] hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Pencil size={12} /><span>Renomear</span></button>
+                                    <button onClick={(e) => { e.stopPropagation(); deleteProject(p.id); setOpenMenuId(null); }} className="py-2 text-[10px] font-bold text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-all text-center flex flex-col items-center justify-center gap-0.5"><Trash2 size={12} /><span>Excluir</span></button>
+                                  </div>
                                 </motion.div>
                               </>
                             )}
@@ -1342,379 +1297,271 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                       ))
                     )}
                   </div>
+
+                  {/* Rodapé de Comunidade & Redes Sociais */}
+                  <div className="mt-10 p-6 bg-[#121216]/80 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg.pink-500/10 text-pink-400 rounded-2xl border border-pink-500/20 shadow-inner">
+                        <Instagram size={28} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-base">Comunidade WyrmPIXEL</h4>
+                        <p className="text-xs text-white/50">Compartilhe suas artes no Instagram usando <strong className="text-pink-400">#WyrmPIXEL</strong>!</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <a 
+                        href={CONFIG.INSTAGRAM_URL} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="px-5 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider rounded-2xl shadow-lg flex items-center gap-2 active:scale-95 transition-all"
+                      >
+                        <Instagram size={16} /> Siga no Instagram
+                      </a>
+                      <button 
+                        onClick={() => { sound.playClick(); setShowTutorials(true); }}
+                        className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white/80 font-bold text-xs uppercase tracking-wider rounded-2xl border border-white/10 transition-all active:scale-95 flex items-center gap-2"
+                      >
+                        <BookOpen size={16} /> Guia
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
           )}
 
+          {/* Aba de Perfil do Artista - Layout Clean & Otimizado */}
           {activeTab === 'profile' && (
             <motion.div
               key="profile"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex-1 max-w-4xl mx-auto w-full p-4 sm:p-6 flex flex-col items-center justify-start overflow-y-auto gap-6"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="flex-1 max-w-6xl mx-auto w-full p-4 sm:p-6 flex flex-col gap-6"
             >
-
-              {!session ? (
-                /* ========== NOT LOGGED IN ========== */
-                <div className="w-full max-w-md flex flex-col items-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-[var(--accent-color)] to-[var(--bg-panel)] rounded-[28px] flex items-center justify-center shadow-2xl border-4 border-white/10 mb-6">
-                    <User size={48} className="text-white/40" />
-                  </div>
-                  <h2 className="text-2xl font-black text-white mb-1">
-                    {authMode === 'login' ? 'Entrar na Conta' : 'Criar Conta'}
-                  </h2>
-                  <p className="text-[var(--text-muted)] text-sm font-bold mb-8">
-                    {authMode === 'login' ? 'Acesse seu perfil de artista' : 'Cadastre-se e mostre suas artes'}
-                  </p>
-                  <div className="w-full space-y-4">
-                    {authMode === 'register' && (
-                      <div>
-                        <label className="block text-xs font-black uppercase text-[var(--text-muted)] mb-2 tracking-widest pl-2">Nome de Artista</label>
-                        <div className="relative">
-                          <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-                          <input type="text" placeholder="Seu nome criativo" value={registerName} onChange={e => setRegisterName(e.target.value)}
-                            className="w-full bg-[var(--bg-panel)] border border-white/10 p-4 pl-12 rounded-2xl focus:border-[var(--accent-color)] outline-none font-bold" />
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <label className="block text-xs font-black uppercase text-[var(--text-muted)] mb-2 tracking-widest pl-2">E-mail</label>
-                      <div className="relative">
-                        <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-                        <input type="email" placeholder="seu@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
-                          className="w-full bg-[var(--bg-panel)] border border-white/10 p-4 pl-12 rounded-2xl focus:border-[var(--accent-color)] outline-none font-bold" />
-                      </div>
+              {/* Header Clean do Perfil com Botão X de Voltar */}
+              <div className="bg-[#121216]/90 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 sm:p-7 shadow-2xl relative overflow-hidden flex flex-col gap-6">
+                
+                {/* Botão X para Voltar ao Menu Principal */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-[var(--accent-color)]/10 text-[var(--accent-color)] rounded-xl border border-[var(--accent-color)]/20">
+                      <User size={20} />
                     </div>
                     <div>
-                      <label className="block text-xs font-black uppercase text-[var(--text-muted)] mb-2 tracking-widest pl-2">Senha</label>
-                      <div className="relative">
-                        <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-                        <input type="password" placeholder="MÃ­nimo 6 caracteres" value={authPassword} onChange={e => setAuthPassword(e.target.value)}
-                          className="w-full bg-[var(--bg-panel)] border border-white/10 p-4 pl-12 rounded-2xl focus:border-[var(--accent-color)] outline-none font-bold" />
-                      </div>
+                      <h2 className="text-xl font-black text-white tracking-wide">Meu Perfil de Artista</h2>
+                      <p className="text-xs text-white/50">Gerencie sua foto, nome e veja suas estatísticas</p>
                     </div>
-                    {authMode === 'register' && (
-                      <div>
-                        <label className="block text-xs font-black uppercase text-[var(--text-muted)] mb-3 tracking-widest pl-2">Seu NÃ­vel</label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {experienceLevels.map(lvl => (
-                            <button key={lvl.id} onClick={() => setExperienceLevel(lvl.id)}
-                              className={`p-4 rounded-2xl border-2 transition-all text-left ${experienceLevel === lvl.id ? 'border-[var(--accent-color)] bg-[var(--accent-color)]/10 scale-[1.02]' : 'border-white/5 bg-[var(--bg-panel)] hover:border-white/20'}`}>
-                              <span className="text-2xl">{lvl.icon}</span>
-                              <div className="font-black text-sm mt-1">{lvl.label}</div>
-                              <div className="text-[10px] opacity-50 font-bold">{lvl.desc}</div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <button onClick={authMode === 'login' ? handleSignIn : handleSignUp} disabled={authLoading || !authEmail || !authPassword}
-                      className="w-full p-5 bg-[var(--accent-color)] rounded-2xl text-white font-black text-lg shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                      {authLoading ? (
-                        <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>{authMode === 'login' ? 'ENTRAR' : 'CRIAR CONTA'} <ChevronRight size={20} /></>
-                      )}
-                    </button>
-                    <button onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(null); }}
-                      className="w-full text-center text-sm font-bold text-[var(--text-muted)] hover:text-white transition-colors py-2">
-                      {authMode === 'login' ? 'NÃ£o tem conta? Cadastre-se' : 'JÃ¡ tem conta? FaÃ§a login'}
-                    </button>
                   </div>
+                  <button
+                    onClick={() => { sound.playClick(); setActiveTab('home'); }}
+                    className="p-2.5 bg-white/5 hover:bg-red-500/20 hover:border-red-500/40 text-white/70 hover:text-red-400 rounded-2xl border border-white/10 transition-all active:scale-95 flex items-center gap-2 font-bold text-xs"
+                    title="Voltar aos Projetos (X)"
+                  >
+                    <span>Voltar</span>
+                    <X size={18} />
+                  </button>
                 </div>
-              ) : (
-                /* ========== LOGGED IN: Profile Dashboard ========== */
-                <div className="w-full flex flex-col gap-6">
-                  
-                  {/* Hero Card - Avatar + Info */}
-                  <div className="relative bg-[var(--bg-panel)] rounded-[32px] border border-white/5 shadow-2xl overflow-hidden">
-                    {/* Background glow from badge */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                      <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-[80px] opacity-30"
-                        style={{ background: badges.find(b => b.id === selectedBadge)?.glow || 'var(--accent-color)' }} />
-                      <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full blur-[60px] opacity-20"
-                        style={{ background: badges.find(b => b.id === selectedBadge)?.glow || 'var(--accent-color)' }} />
-                    </div>
+
+                {/* Perfil & Detalhes do Usuário */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left w-full md:w-auto">
                     
-                    <div className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                      {/* Avatar with animated badge ring */}
-                      <div className="relative group cursor-pointer shrink-0" onClick={() => setShowAvatarPicker(true)}>
-                        {/* Animated glow ring */}
-                        {badges.find(b => b.id === selectedBadge)?.glow && (
-                          <motion.div
-                            animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                            className="absolute -inset-3 rounded-[44px] pointer-events-none z-0"
-                            style={{ background: `radial-gradient(circle, ${badges.find(b => b.id === selectedBadge)?.glow} 0%, transparent 70%)` }}
-                          />
+                    {/* Foto de Perfil / Avatar Clean */}
+                    <div className="relative group shrink-0">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-[var(--accent-color)] shadow-[0_0_25px_rgba(99,102,241,0.3)] bg-black/60 flex items-center justify-center relative">
+                        {profileImage ? (
+                          <img src={profileImage} alt="Perfil" className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={48} className="text-white/40" />
                         )}
-                        <div className="relative w-36 h-36 bg-gradient-to-br from-[var(--accent-color)] to-[var(--bg-element)] rounded-[40px] flex items-center justify-center shadow-2xl border-4 border-white/10 p-1.5 z-10 overflow-hidden">
-                          <div className="w-full h-full bg-[var(--bg-panel)] rounded-[32px] overflow-hidden flex items-center justify-center">
-                            <img 
-                              src={getAvatarFallback(profileImage, profileName || session?.user?.id || 'user')} 
-                              alt="Avatar" 
-                              className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                              onError={(e) => { (e.target as HTMLImageElement).src = getAvatarFallback(null, profileName || 'user'); }}
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Badge overlay on avatar corner */}
-                        <motion.div
-                          animate={{ 
-                            scale: badges.find(b => b.id === selectedBadge)?.glow ? [1, 1.2, 1] : [1, 1.1, 1],
-                            rotate: [0, 8, -8, 0]
-                          }}
-                          transition={{ 
-                            duration: 4, 
-                            repeat: Infinity, 
-                            ease: 'easeInOut' 
-                          }}
-                          className="absolute -bottom-3 -right-3 w-16 h-16 flex items-center justify-center z-20"
+                      </div>
+
+                      {/* Botões de Alteração de Foto */}
+                      <div className="absolute bottom-0 right-0 flex items-center gap-1 z-20">
+                        <button
+                          onClick={() => { sound.playClick(); avatarFileInputRef.current?.click(); }}
+                          className="p-2 bg-[var(--accent-color)] hover:brightness-110 text-white rounded-full shadow-lg active:scale-95 transition-all border border-white/30"
+                          title="Enviar Foto da Galeria"
                         >
-                          <img src={badges.find(b => b.id === selectedBadge)?.image || '/badges/free_1.png'} className="w-14 h-14 object-contain" alt="Selo"
-                            style={badges.find(b => b.id === selectedBadge)?.glow ? { filter: `drop-shadow(0 0 12px ${badges.find(b => b.id === selectedBadge)?.glow})` } : { filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.6))' }} />
-                        </motion.div>
-                        
-                        {/* Edit overlay */}
-                        <div className="absolute inset-0 bg-black/40 rounded-[40px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all z-30 backdrop-blur-[2px]">
-                          <RefreshCw size={32} className="text-white mb-2" />
-                          <span className="text-[10px] font-black text-white uppercase tracking-widest">Alterar Avatar</span>
-                        </div>
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 flex flex-col items-center sm:items-start gap-2 min-w-0">
-                        <input type="text" value={profileName} onChange={e => setProfileName(e.target.value)}
-                          className="bg-transparent border-none text-center sm:text-left text-2xl font-black text-white outline-none focus:bg-white/5 rounded-xl px-3 py-1 transition-colors w-full" />
-                        
-                          <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-                            <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-[var(--accent-color)] text-[var(--accent-color)] bg-[var(--accent-color)]/10 backdrop-blur-sm">
-                              <Award size={12} /> {experienceLevels.find(l => l.id === experienceLevel)?.label || 'Iniciante'}
-                            </span>
-                            {isPro && (
-                              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border border-yellow-400 text-yellow-400 bg-yellow-400/10 backdrop-blur-sm flex items-center gap-1">
-                                <Star size={10} className="fill-yellow-400" /> PRO
-                              </span>
-                            )}
-                            {(profileName.toLowerCase() === 'kelvin' || session?.user?.email === 'kelvinlexjesusda@gmail.com') && (
-                              <span className="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[9px] font-black rounded-md shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse px-3 py-1 flex items-center gap-1">
-                                <Shield size={10} /> FUNDADOR
-                              </span>
-                            )}
-                          </div>
-                        
-                        <p className="text-xs text-[var(--text-muted)] font-bold flex items-center gap-1 mt-1">
-                          <Mail size={12} /> {session.user.email}
-                        </p>
-                        
-                      </div>
-                    </div>
-
-                    {/* PRO Upgrade Banner - MOVED UP */}
-                    {!isPro && (
-                      <div className="px-6 pb-6 pt-0">
-                        <motion.div
-                          whileHover={{ scale: 1.01 }}
-                          onClick={() => setShowProModal(true)}
-                          className="relative overflow-hidden cursor-pointer rounded-[24px] border border-yellow-400/30 shadow-[0_0_40px_rgba(251,191,36,0.12)] group"
+                          <ImageIcon size={14} />
+                        </button>
+                        <button
+                          onClick={() => { sound.playClick(); setShowAvatarPicker(true); }}
+                          className="p-2 bg-purple-600 hover:brightness-110 text-white rounded-full shadow-lg active:scale-95 transition-all border border-white/30"
+                          title="Escolher Avatar Padrão"
                         >
-                          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-orange-500/5 to-amber-600/10" />
-                          <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/10 rounded-full blur-3xl" />
-                          <div className="relative p-5 flex items-center gap-4">
-                            <motion.div
-                              animate={{ rotate: [0, 5, -5, 0] }}
-                              transition={{ duration: 3, repeat: Infinity }}
-                              className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl shrink-0"
-                            >
-                              <Star size={24} className="text-black fill-black" />
-                            </motion.div>
-                            <div className="flex-1">
-                              <h3 className="font-black text-white text-base">Desbloqueie o PRO</h3>
-                              <p className="text-[10px] text-yellow-300/70 font-bold mt-1">Exportação HD/4K • Sem marca d'água • Selos animados • Camadas ilimitadas</p>
-                            </div>
-                            <ChevronRight size={20} className="text-yellow-400 shrink-0 group-hover:translate-x-1 transition-transform" />
-                          </div>
-                        </motion.div>
+                          <User size={14} />
+                        </button>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Badge Selection - Professional Grid */}
-                  <div className="bg-[var(--bg-panel)] rounded-[32px] p-6 border border-white/5 shadow-2xl overflow-hidden relative">
-                    <div className="absolute top-0 right-0 p-4 opacity-5">
-                      <Award size={80} />
+                      <input 
+                        type="file" 
+                        ref={avatarFileInputRef} 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleCustomAvatarUpload} 
+                      />
                     </div>
 
-                    <h3 className="text-lg font-black mb-6 flex items-center gap-3">
-                      <div className="p-2 bg-[var(--accent-color)]/20 rounded-xl"><Award size={20} className="text-[var(--accent-color)]" /></div>
-                      Selos de Conquista
-                    </h3>
-                    
-                    <div className="space-y-8">
-                      {/* Free badges */}
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.25em]">Coleção Básica</span>
-                          <span className="text-[9px] font-bold text-green-400/60 bg-green-400/10 px-2 py-0.5 rounded-md">DESBLOQUEADO</span>
-                        </div>
-                        <div className="grid grid-cols-5 gap-3">
-                          {badges.filter(b => !b.pro).map(badge => (
-                            <div key={badge.id} className="flex flex-col items-center gap-2">
-                              <motion.button
-                                whileHover={{ scale: 1.1, y: -2 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => { setSelectedBadge(badge.id); sound.playClick(); }}
-                                className={`relative w-full aspect-square rounded-[24px] flex items-center justify-center transition-all ${
-                                  selectedBadge === badge.id
-                                    ? 'bg-gradient-to-br from-[var(--accent-color)]/30 to-[var(--accent-color)]/10 ring-2 ring-[var(--accent-color)] shadow-[0_0_20px_rgba(var(--accent-rgb),0.2)]'
-                                    : 'bg-white/[0.03] hover:bg-white/10'
-                                }`}
-                              >
-                                <img src={badge.image} className="w-10 h-10 object-contain drop-shadow-lg" alt={badge.label} />
-                                {selectedBadge === badge.id && (
-                                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                                    className="absolute -top-1 -right-1 w-6 h-6 bg-[var(--accent-color)] rounded-full flex items-center justify-center border-2 border-[var(--bg-panel)] shadow-lg">
-                                    <Check size={12} className="text-white" />
-                                  </motion.div>
-                                )}
-                              </motion.button>
-                              <span className={`text-[8px] font-black uppercase text-center truncate w-full ${selectedBadge === badge.id ? 'text-[var(--accent-color)]' : 'text-[var(--text-muted)] opacity-60'}`}>{badge.label}</span>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Nome do Artista & Status */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <input
+                          type="text"
+                          value={profileName}
+                          onChange={(e) => handleUpdateProfileName(e.target.value)}
+                          placeholder="Seu Nome de Artista..."
+                          className="text-xl sm:text-2xl font-black bg-white/5 hover:bg-white/10 focus:bg-black/60 border border-white/10 focus:border-[var(--accent-color)] px-3.5 py-1 rounded-xl outline-none text-white transition-all max-w-[260px]"
+                        />
+                        <Pencil size={16} className="text-white/40 shrink-0" />
                       </div>
-                      
-                      {/* Pro badges */}
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.25em] flex items-center gap-1">
-                            <Star size={10} className="fill-yellow-400" /> Coleção Dragon PRO
-                          </span>
-                          {!isPro && <span className="text-[9px] font-bold text-yellow-400/60 bg-yellow-400/10 px-2 py-0.5 rounded-md">BLOQUEADO</span>}
-                        </div>
-                        <div className="grid grid-cols-5 gap-3">
-                          {badges.filter(b => b.pro).map(badge => {
-                            const isLocked = !isPro;
-                            const isSelected = selectedBadge === badge.id;
-                            return (
-                              <div key={badge.id} className="flex flex-col items-center gap-2">
-                                <motion.button
-                                  whileHover={!isLocked ? { scale: 1.1, y: -2 } : {}}
-                                  whileTap={!isLocked ? { scale: 0.9 } : {}}
-                                  onClick={() => {
-                                    if (isLocked) { setShowProModal(true); return; }
-                                    setSelectedBadge(badge.id); sound.playClick();
-                                  }}
-                                  className={`relative w-full aspect-square rounded-[24px] flex items-center justify-center transition-all ${
-                                    isSelected
-                                      ? 'ring-2 ring-yellow-400 shadow-[0_0_25px_rgba(234,179,8,0.3)] bg-yellow-400/10'
-                                      : isLocked
-                                        ? 'bg-black/40 grayscale opacity-40 cursor-not-allowed border border-white/5'
-                                        : 'bg-white/[0.03] hover:bg-white/10'
-                                  }`}
-                                  style={isSelected && badge.glow ? {
-                                    background: `radial-gradient(circle, ${badge.glow}30 0%, transparent 80%)`
-                                  } : {}}
-                                >
-                                  {/* Glow effect for selected PRO badge */}
-                                  {isSelected && badge.glow && (
-                                    <motion.div
-                                      animate={{ opacity: [0.2, 0.5, 0.2] }}
-                                      transition={{ duration: 3, repeat: Infinity }}
-                                      className="absolute inset-0 rounded-[24px] pointer-events-none"
-                                      style={{ boxShadow: `inset 0 0 15px ${badge.glow}40` }}
-                                    />
-                                  )}
-                                  <img src={badge.image} className="w-10 h-10 object-contain relative z-10" alt={badge.label}
-                                    style={isSelected && badge.glow ? { filter: `drop-shadow(0 0 10px ${badge.glow})` } : {}} />
-                                  
-                                  {isLocked && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-[24px] backdrop-blur-[1px]">
-                                      <Lock size={12} className="text-white/60" />
-                                    </div>
-                                  )}
-                                  
-                                  {isSelected && !isLocked && (
-                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                                      className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center border-2 border-[var(--bg-panel)] shadow-lg z-20">
-                                      <Check size={12} className="text-black" />
-                                    </motion.div>
-                                  )}
-                                </motion.button>
-                                <span className={`text-[8px] font-black uppercase text-center truncate w-full ${isSelected ? 'text-yellow-400' : 'text-[var(--text-muted)] opacity-60'}`}>{badge.label}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                      <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+                        <span className="text-[11px] font-bold text-amber-400 bg-amber-400/10 px-3 py-0.5 rounded-full border border-amber-400/30 uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                          <Star size={12} className="fill-amber-400" /> WyrmPIXEL PRO
+                        </span>
+                        <span className="text-xs font-semibold text-white/50">
+                          {savedProjects.length} Artes Criadas
+                        </span>
                       </div>
                     </div>
                   </div>
 
-
-
-                  {/* Actions Row */}
-                  <div className="flex gap-3">
-                    <button onClick={handleSaveProfile}
-                      className="flex-1 bg-[var(--accent-color)] hover:brightness-110 p-4 rounded-2xl text-white font-black shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
-                      <Check size={20} /> SALVAR PERFIL
-                    </button>
-                    <button onClick={handleSignOut}
-                      className="p-4 bg-white/5 text-[var(--text-muted)] hover:bg-red-500/20 hover:text-red-400 rounded-2xl font-black flex items-center justify-center gap-2 active:scale-95 transition-all border border-white/5"
-                      title="Sair da Conta">
-                      <LogOut size={20} />
-                    </button>
+                  {/* Estatísticas Limpas */}
+                  <div className="flex items-center gap-6 bg-black/40 px-6 py-4 rounded-2xl border border-white/10 shrink-0 w-full md:w-auto justify-around">
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-[var(--accent-color)]">{savedProjects.length}</div>
+                      <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Projetos</div>
+                    </div>
+                    <div className="w-px h-8 bg-white/10" />
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-emerald-400">
+                        {savedProjects.reduce((acc, p) => acc + (p.frames?.length || 1), 0)}
+                      </div>
+                      <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Quadros</div>
+                    </div>
                   </div>
-
                 </div>
-              )}
+
+                {/* Seção de Planos de Assinatura & Acesso Vitalício */}
+                <div className="mt-2 bg-gradient-to-r from-[#181824] via-[#1c1a2e] to-[#181824] rounded-2xl p-5 border border-yellow-500/20 shadow-xl flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                    <div>
+                      <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <Star size={18} className="text-yellow-400 fill-yellow-400" />
+                        <h3 className="text-base font-black text-white uppercase tracking-wider">Planos WyrmPIXEL PRO Pass</h3>
+                      </div>
+                      <p className="text-xs text-white/60 mt-0.5">Desbloqueie exportação em HD/4K, sem marcas d'água e camadas ilimitadas</p>
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20 shrink-0">
+                      OFERTA DE LANÇAMENTO
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Opção Mensal */}
+                    <div 
+                      onClick={() => { sound.playClick(); setShowProModal(true); }}
+                      className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-yellow-400/50 transition-all cursor-pointer group flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black uppercase text-white/50 tracking-wider">Plano Mensal</span>
+                          <span className="text-[10px] text-white/30 line-through font-bold">R$ 29,90</span>
+                        </div>
+                        <div className="text-xl font-black text-white mt-0.5">R$ 14,90 <span className="text-xs text-white/40 font-normal">/ mês</span></div>
+                        <p className="text-[11px] text-white/50 mt-1">Cancele quando quiser</p>
+                      </div>
+                      <button className="px-3.5 py-2 bg-white/10 group-hover:bg-yellow-400 group-hover:text-black text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider">
+                        Assinar
+                      </button>
+                    </div>
+
+                    {/* Opção Vitalícia - Destaque */}
+                    <div 
+                      onClick={() => { sound.playClick(); setShowProModal(true); }}
+                      className="p-4 bg-gradient-to-br from-yellow-400/10 via-amber-500/15 to-yellow-500/10 hover:from-yellow-400/20 rounded-2xl border-2 border-yellow-400/50 transition-all cursor-pointer group flex items-center justify-between relative overflow-hidden shadow-lg"
+                    >
+                      <div className="absolute top-0 right-0 bg-yellow-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-bl-xl uppercase tracking-widest">
+                        MAIS VENDIDO (80% OFF)
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 pr-12">
+                          <span className="text-[10px] font-black uppercase text-yellow-300 tracking-wider flex items-center gap-1">
+                            👑 Acesso Vitalício
+                          </span>
+                          <span className="text-[10px] text-amber-200/40 line-through font-bold">R$ 299,00</span>
+                        </div>
+                        <div className="text-xl font-black text-amber-300 mt-0.5">R$ 49,90 <span className="text-xs text-amber-200/60 font-normal">único</span></div>
+                        <p className="text-[11px] text-amber-200/70 mt-1">Pague 1x e use PARA SEMPRE</p>
+                      </div>
+                      <button className="px-4 py-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black rounded-xl shadow-md group-hover:scale-105 transition-all uppercase tracking-wider">
+                        Garantir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seção da Galeria Pessoal do Artista */}
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-black text-white flex items-center gap-2.5">
+                    <Palette size={22} className="text-[var(--accent-color)]" /> Desenhos Salvos no Perfil
+                  </h3>
+                  <span className="text-xs font-semibold text-white/40 hidden sm:inline">
+                    Toque em qualquer projeto para abrir no editor!
+                  </span>
+                </div>
+
+                {savedProjects.length === 0 ? (
+                  <div className="py-16 text-center bg-[#121216]/60 backdrop-blur-2xl rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-3">
+                    <Palette size={40} className="text-white/20" />
+                    <p className="text-sm font-bold text-white/60">Sua galeria pessoal está vazia.</p>
+                    <button 
+                      onClick={() => { sound.playClick(); setActiveTab('home'); }} 
+                      className="px-5 py-2.5 bg-[var(--accent-color)] text-white text-xs font-bold rounded-xl uppercase tracking-wider shadow-lg active:scale-95 transition-all"
+                    >
+                      Criar Novo Desenho
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {savedProjects.map((p) => (
+                      <div 
+                        key={p.id}
+                        onClick={() => openProjectWithTransition(p)}
+                        className="bg-[#121216]/90 hover:bg-[#16161c] rounded-2xl border border-white/10 hover:border-[var(--accent-color)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer group flex flex-col overflow-hidden relative"
+                      >
+                        <div className="aspect-square bg-black/40 flex items-center justify-center p-3 relative overflow-hidden rounded-t-2xl border-b border-white/5">
+                          {p.thumbnail ? (
+                            <img src={p.thumbnail} alt={p.name} className="w-full h-full object-contain image-pixelated group-hover:scale-105 transition-transform duration-300 drop-shadow-md" />
+                          ) : (
+                            <Palette size={36} className="text-white/20" />
+                          )}
+                          <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-md text-[9px] font-bold text-white/90 px-2 py-0.5 rounded-full border border-white/10 tracking-wider uppercase">
+                            {p.width}×{p.height}px
+                          </div>
+                        </div>
+                        <div className="p-3 flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold truncate text-xs text-white/90 group-hover:text-white transition-colors">{p.name}</h4>
+                            <span className="text-[9px] font-bold text-[var(--accent-color)] tracking-wider uppercase">Abrir Projeto</span>
+                          </div>
+                          <Play size={16} className="text-white/30 group-hover:text-[var(--accent-color)] transition-all shrink-0" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
-
-
         </AnimatePresence>
       </div>
 
-      {/* NavegaÃ§Ã£o Inferior */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] pointer-events-none">
-        {/* Solid background at the bottom to ensure the cutout matches perfectly */}
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-[var(--bg-app)] -z-10"></div>
-        <div className="bg-gradient-to-t from-[var(--bg-app)] to-transparent pt-12 pb-6 px-4">
-          <div className="max-w-md mx-auto relative pointer-events-auto mt-4">
-            
-            {/* Background da barra de navegação */}
-            <div className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-3xl h-[72px] flex items-center p-1.5 relative overflow-hidden">
-              
-              {/* Sliding Active Indicator */}
-              <motion.div 
-                animate={{ x: activeTab === 'profile' ? 0 : '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                className="absolute left-1.5 top-1.5 bottom-1.5 w-[calc(50%-3px)] bg-gradient-to-br from-[var(--accent-color)]/20 to-[var(--accent-color)]/5 rounded-full border border-[var(--accent-color)]/20 z-0"
-              />
-
-              <button 
-                onClick={() => { sound.playClick(); setActiveTab('profile'); }}
-                className={`flex-1 relative z-10 flex flex-col items-center justify-center gap-1 transition-all duration-300 h-full ${activeTab === 'profile' ? 'text-[var(--accent-color)]' : 'text-white/40 hover:text-white/80'}`}
-              >
-                <User size={22} className={activeTab === 'profile' ? 'fill-[var(--accent-color)]/20' : ''} />
-                <span className="text-[10px] font-black uppercase tracking-widest mt-0.5">PERFIL</span>
-              </button>
-
-              <button 
-                onClick={() => { sound.playClick(); setActiveTab('home'); }}
-                className={`flex-1 relative z-10 flex flex-col items-center justify-center gap-1 transition-all duration-300 h-full ${activeTab === 'home' ? 'text-[var(--accent-color)]' : 'text-white/40 hover:text-white/80'}`}
-              >
-                <Home size={22} className={activeTab === 'home' ? 'fill-[var(--accent-color)]/20' : ''} />
-                <span className="text-[10px] font-black uppercase tracking-widest mt-0.5">INÍCIO</span>
-              </button>
-
-            </div>
-            
-          </div>
-        </div>
-      </div>
+      {/* Navegação Inferior Removida */}
 
       {/* Modais fora das abas */}
       <AnimatePresence>
@@ -1808,7 +1655,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                   {/* Audio */}
                   <div>
                     <h4 className="font-bold text-xl mb-4 flex items-center gap-2">
-                      Ãudio e Sons
+                      Ã udio e Sons
                     </h4>
                     <div className="space-y-4">
                       <div className="p-5 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between">
@@ -1829,6 +1676,24 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                           <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-lg transition-all ${bgmEnabled ? 'right-1' : 'left-1'}`} />
                         </button>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-white/10" />
+
+                  {/* Tutorials & Help */}
+                  <div>
+                    <h4 className="font-bold text-xl mb-4 flex items-center gap-2">
+                      <BookOpen className="text-[var(--accent-color)]" /> Tutoriais e Ajuda
+                    </h4>
+                    <div className="space-y-4">
+                      <button onClick={() => { setShowSettings(false); setIsTutorialOpen(true); }} className="w-full p-5 bg-white/5 hover:bg-white/10 rounded-3xl border border-white/5 flex items-center justify-between transition-colors text-left group">
+                        <div>
+                          <span className="block font-bold group-hover:text-[var(--accent-color)] transition-colors">Assistir Tutorial Novamente</span>
+                          <span className="text-xs opacity-40 font-bold">Reveja o guia inicial passo a passo</span>
+                        </div>
+                        <PlayCircle size={24} className="text-[var(--accent-color)] opacity-50 group-hover:opacity-100 transition-opacity" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1853,6 +1718,12 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
 
 
       </AnimatePresence>
+
+      <OnboardingTutorial 
+        isOpen={isTutorialOpen} 
+        onClose={() => setIsTutorialOpen(false)} 
+        mode="menu" 
+      />
 
 
       {/* ========== PRO FEATURES MODAL ========== */}
@@ -1885,12 +1756,15 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                 >
                   <Star size={40} className="text-black fill-black" />
                 </motion.div>
-                <h2 className="text-2xl font-black text-white">Dragon Art PRO</h2>
+                <h2 className="text-2xl font-black text-white">WyrmPIXEL PRO</h2>
                 <p className="text-sm text-yellow-300/60 font-bold mt-1">Desbloqueie todo o poder criativo</p>
               </div>
 
-              {/* Features List */}
-              <div className="px-6 pb-6 space-y-3">
+              {/* Features List (Com trava interativa) */}
+              <div className="px-6 pb-4 space-y-2.5">
+                <p className="text-[11px] text-white/50 text-center font-bold mb-1">
+                  Clique em qualquer recurso abaixo para desbloquear nos planos:
+                </p>
                 {[
                   { icon: '📐', title: 'Exportação HD / 4K / 8K / 16K', desc: 'Exporte suas artes em altíssima resolução para impressão e portfólio profissional' },
                   { icon: '✨', title: 'Sem Marca D\'água', desc: 'Suas artes limpas, sem nenhum logo sobreposto nas exportações' },
@@ -1905,32 +1779,117 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                     key={i}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.07 }}
-                    className="flex items-start gap-4 p-4 bg-white/[0.03] rounded-2xl border border-white/5 hover:bg-white/[0.06] transition-colors"
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => {
+                      sound.playClick();
+                      setSelectedFeatureNotice(feature.title);
+                      if (plansSectionRef.current) {
+                        plansSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }}
+                    className={`flex items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer group relative overflow-hidden ${
+                      selectedFeatureNotice === feature.title
+                        ? 'bg-yellow-400/20 border-yellow-400 shadow-md shadow-yellow-400/20 scale-[1.02]'
+                        : 'bg-white/[0.03] hover:bg-yellow-400/[0.08] border-white/5 hover:border-yellow-400/30'
+                    }`}
                   >
-                    <span className="text-2xl shrink-0 mt-0.5">{feature.icon}</span>
-                    <div>
-                      <h4 className="font-black text-white text-sm">{feature.title}</h4>
-                      <p className="text-[11px] text-white/40 font-bold mt-0.5 leading-relaxed">{feature.desc}</p>
+                    <div className="flex items-start gap-3 min-w-0">
+                      <span className="text-xl shrink-0 mt-0.5 group-hover:scale-110 transition-transform">{feature.icon}</span>
+                      <div>
+                        <h4 className="font-black text-white text-xs group-hover:text-yellow-300 transition-colors">{feature.title}</h4>
+                        <p className="text-[10px] text-white/40 font-bold mt-0.5 leading-relaxed">{feature.desc}</p>
+                      </div>
                     </div>
+                    <span className="px-2 py-1 bg-yellow-400/10 border border-yellow-400/30 text-yellow-300 text-[9px] font-black rounded-lg shrink-0 flex items-center gap-1 group-hover:bg-yellow-400 group-hover:text-black transition-all">
+                      <Lock size={10} />
+                      REQUER PRO
+                    </span>
                   </motion.div>
                 ))}
               </div>
 
-              {/* CTA */}
-              <div className="p-6 pt-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    window.open(CONFIG.STRIPE_PRO_LINK, '_blank');
-                    setShowProModal(false);
-                  }}
-                  className="w-full p-5 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-2xl text-black font-black text-lg shadow-[0_0_30px_rgba(251,191,36,0.4)] flex items-center justify-center gap-3 active:scale-95 transition-all"
-                >
-                  <Star size={24} className="fill-black" /> ASSINAR PRO AGORA
-                </motion.button>
-                <p className="text-center text-[10px] text-white/20 font-bold mt-3">Pagamento seguro via Stripe • Cancele quando quiser</p>
+              {/* Seletor de Planos Promocionais Estratégicos */}
+              <div ref={plansSectionRef} className="px-6 pb-5 space-y-3">
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-400/10 px-3 py-0.5 rounded-full border border-yellow-400/20">
+                    ⚡ OFERTA PROMOCIONAL DE LANÇAMENTO
+                  </span>
+                  <h4 className="text-xs font-black uppercase text-white tracking-wider">Escolha o seu Plano Promocional</h4>
+                </div>
+
+                {selectedFeatureNotice && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    className="p-3 bg-gradient-to-r from-yellow-400/20 via-amber-500/25 to-yellow-400/20 border border-yellow-400/60 rounded-2xl text-center shadow-lg"
+                  >
+                    <p className="text-xs font-black text-yellow-300 flex items-center justify-center gap-1.5">
+                      <span>🔓</span> Para liberar <span className="underline decoration-amber-400">{selectedFeatureNotice}</span>, escolha um plano abaixo:
+                    </p>
+                  </motion.div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Plano Mensal */}
+                  <div 
+                    onClick={() => {
+                      window.open(CONFIG.STRIPE_PRO_LINK, '_blank');
+                      setShowProModal(false);
+                    }}
+                    className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-yellow-400/50 transition-all cursor-pointer flex flex-col justify-between gap-3 group relative"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-white/50 tracking-wider">Assinatura Mensal</span>
+                        <span className="text-[10px] text-white/30 line-through font-bold">R$ 29,90</span>
+                      </div>
+                      <div className="text-xl font-black text-white mt-1">
+                        R$ 14,90 <span className="text-xs text-white/40 font-normal">/mês</span>
+                      </div>
+                      <p className="text-[10px] text-white/40 mt-1 leading-tight">Renovação mensal flexível. Cancele quando quiser.</p>
+                    </div>
+                    <button className="w-full py-2 bg-white/10 group-hover:bg-yellow-400 group-hover:text-black text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider">
+                      Assinar Mensal
+                    </button>
+                  </div>
+
+                  {/* Plano Vitalício - Estratégico & Recomendado */}
+                  <div 
+                    onClick={() => {
+                      window.open(CONFIG.STRIPE_PRO_LINK, '_blank');
+                      setShowProModal(false);
+                    }}
+                    className={`p-4 bg-gradient-to-br from-yellow-400/20 via-amber-500/25 to-yellow-500/20 hover:from-yellow-400/30 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 relative overflow-hidden shadow-xl group ${
+                      selectedFeatureNotice ? 'border-yellow-400 animate-pulse shadow-yellow-400/40 scale-[1.02]' : 'border-yellow-400/70'
+                    }`}
+                  >
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-widest shadow-md">
+                      MAIS VENDIDO (80% OFF)
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between pr-14">
+                        <span className="text-[10px] font-black uppercase text-yellow-300 tracking-wider flex items-center gap-1">
+                          👑 Acesso Vitalício
+                        </span>
+                        <span className="text-[10px] text-amber-200/40 line-through font-bold">R$ 299,00</span>
+                      </div>
+                      <div className="text-2xl font-black text-amber-300 mt-1">
+                        R$ 49,90 <span className="text-xs text-amber-200/60 font-normal">único</span>
+                      </div>
+                      <p className="text-[10px] text-amber-100/80 mt-1 font-bold leading-tight">
+                        Pague 1x e use <span className="text-yellow-300 underline">PARA SEMPRE</span>. Sem mensalidades!
+                      </p>
+                    </div>
+                    <button className="w-full py-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black rounded-xl shadow-lg group-hover:scale-105 transition-all uppercase tracking-wider flex items-center justify-center gap-1">
+                      <span>Garantir Vitalício</span> 🚀
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Modal */}
+              <div className="p-6 pt-0">
+                <p className="text-center text-[10px] text-white/30 font-bold">Pagamento 100% seguro via Stripe • Acesso instantâneo às funções PRO</p>
               </div>
             </motion.div>
           </motion.div>
@@ -2095,12 +2054,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                           setShowAvatarPicker(false);
                           sound.playClick();
                           
-                          await supabase.from('profiles').upsert({
-                            id: session.user.id,
-                            avatar_url: url,
-                            updated_at: new Date()
-                          });
-                          await supabase.auth.updateUser({ data: { avatar_url: url } });
+                          localStorage.setItem('pixel_avatar', url);
                         }}
                         className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${
                           profileImage === url ? 'border-[var(--accent-color)] ring-4 ring-[var(--accent-color)]/20' : 'border-white/5 opacity-60 hover:opacity-100'
@@ -2130,12 +2084,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                             setShowAvatarPicker(false);
                             sound.playClick(); 
                             
-                            await supabase.from('profiles').upsert({
-                              id: session.user.id,
-                              avatar_url: url,
-                              updated_at: new Date()
-                            });
-                            await supabase.auth.updateUser({ data: { avatar_url: url } });
+                            localStorage.setItem('pixel_avatar', url);
                           } else {
                             alert('Este avatar animado é exclusivo para membros PRO! 🌟');
                           }
@@ -2162,6 +2111,42 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Cinematic Transition Overlay */}
+      <AnimatePresence>
+        {openingProject && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            className="fixed inset-0 bg-[#0a0a0c] z-[99999] flex flex-col items-center justify-center gap-5 backdrop-blur-3xl"
+          >
+            <motion.div
+              initial={{ scale: 0.8, rotate: -5 }}
+              animate={{ scale: 1.15, rotate: 0 }}
+              transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+              className="relative p-4 bg-[var(--accent-color)]/10 rounded-3xl border border-[var(--accent-color)]/30 shadow-[0_0_50px_rgba(99,102,241,0.3)]"
+            >
+              <img 
+                src="/logo.png" 
+                alt="WyrmPIXEL Loading Logo" 
+                className="w-20 h-20 md:w-24 md:h-24 object-contain image-pixelated drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]" 
+              />
+            </motion.div>
+            
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-color)] animate-ping" />
+                <span className="text-base font-black text-white tracking-widest uppercase" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
+                  Abrindo {openingProject.name}...
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-white/40">Preparando tela de desenho e camadas...</p>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

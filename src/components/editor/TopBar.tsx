@@ -80,7 +80,7 @@ interface TopBarProps {
   setShowBatchActions: (show: boolean) => void;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({
+export const TopBar: React.FC<TopBarProps> = React.memo(({
   shortcuts,
   activePanel,
   togglePanel,
@@ -144,11 +144,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   setShowBatchActions,
 }) => {
   const [showRefSettings, setShowRefSettings] = React.useState(false);
+  const [showViewMenu, setShowViewMenu] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   return (
     <>
-      <div className={`top-bar absolute top-0 left-0 right-0 h-auto landscape:h-full landscape:w-auto landscape:min-w-[4.5rem] landscape:right-auto flex items-center px-1 py-1 landscape:px-1 landscape:py-2 z-50 transition-all duration-500 landscape:max-h-screen landscape:overflow-y-auto overflow-x-auto hide-scrollbar ${!uiVisible ? '' : 'bg-[var(--bg-panel)]/60 backdrop-blur-xl border-b landscape:border-b-0 landscape:border-r border-white/5'}`}>
-        <div className="flex flex-nowrap items-center landscape:flex-col gap-3.5 landscape:gap-2.5 px-6 landscape:px-0 landscape:py-6 w-full justify-start pointer-events-auto landscape:min-h-max pb-8 landscape:pb-0">
+      <div className={`top-bar fixed top-3 left-1/2 -translate-x-1/2 landscape:left-3 landscape:top-1/2 landscape:-translate-y-1/2 landscape:translate-x-0 landscape:h-auto landscape:w-auto flex items-center justify-center px-2 py-1 z-50 max-w-[98vw] overflow-x-auto hide-scrollbar scroll-smooth transition-all duration-500 ${!uiVisible ? '' : 'bg-[var(--bg-panel)]/80 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl'}`}>
+        <div className="flex items-center landscape:flex-col gap-1 sm:gap-1.5 pointer-events-auto">
             {/* UI Toggle Button - Always Visible and Clickable */}
             {showUiToggle && (
               <ToolButton 
@@ -181,89 +182,110 @@ export const TopBar: React.FC<TopBarProps> = ({
                     onClick={() => setIsPlaying(prev => !prev)} 
                   />
                 )}
-                <div className="relative">
-                  {setIs3D && (
-                    <ToolButton 
-                      id="3dtoggle" 
-                      icon={<Box size={20} />} 
-                      label="3D / Girar" 
-                      tooltip="Muda a perspectiva. Toque novamente para abrir os controles de rotação."
-                      active={is3D || show3DSettings} 
-                      onClick={() => {
-                        sound.playClick();
-                        if (!is3D) {
-                          setIs3D(true);
-                        } else if (is3D && !show3DSettings) {
-                          setShow3DSettings(true);
-                        } else {
-                          setIs3D(false);
-                          setShow3DSettings(false);
-                        }
-                      }} 
-                    />
-                  )}
-                  
-
-                </div>
+                {/* Grupo Expansível de Visão (Malha, 3D, Guias, Referências) */}
                 <div className="relative">
                   <ToolButton 
-                    id="gridToggle" 
-                    shortcutKey={shortcuts.grid}
+                    id="viewMenu" 
                     icon={<Grid size={20} />} 
-                    label="Malha" 
-                    tooltip="1° toque: ativa malha. 2° toque: abre config. 3° toque: desativa tudo."
-                    active={showGrid || showGridSettings} 
-                    onClick={() => {
-                       sound.playClick();
-                       if (!showGrid) {
-                         // 1st click: activate grid
-                         setShowGrid(true);
-                         setShowGridSettings(false);
-                       } else if (showGrid && !showGridSettings) {
-                         // 2nd click: open settings panel
-                         setShowGridSettings(true);
-                       } else {
-                         // 3rd click: close settings and deactivate grid
-                         setShowGridSettings(false);
-                         setShowGrid(false);
-                       }
-                    }}
+                    label="Visão" 
+                    tooltip="Ative a Malha (Grid), Modo 3D, Guias de Perspectiva ou Imagem de Referência." 
+                    active={showGrid || is3D || guideLinesVisible || referenceImages.some(r => r.visible) || showViewMenu} 
+                    onClick={() => { sound.playClick(); setShowViewMenu(!showViewMenu); }} 
                   />
+
+                  <AnimatePresence>
+                    {showViewMenu && (
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 8 }}
+                        className="absolute top-full mt-3 left-1/2 -translate-x-1/2 bg-[#141418]/95 backdrop-blur-2xl border border-white/10 p-2 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 flex items-center gap-2"
+                      >
+                        {/* 1. Malha (Grid) */}
+                        <ToolButton 
+                          id="gridToggle" 
+                          shortcutKey={shortcuts.grid}
+                          icon={<Grid size={18} />} 
+                          label="Malha" 
+                          tooltip="Toque para alternar a malha pixel a pixel."
+                          active={showGrid || showGridSettings} 
+                          onClick={() => {
+                            sound.playClick();
+                            if (!showGrid) {
+                              setShowGrid(true);
+                              setShowGridSettings(false);
+                            } else if (showGrid && !showGridSettings) {
+                              setShowGridSettings(true);
+                            } else {
+                              setShowGridSettings(false);
+                              setShowGrid(false);
+                            }
+                          }}
+                        />
+
+                        {/* 2. Modo 3D */}
+                        {setIs3D && (
+                          <ToolButton 
+                            id="3dtoggle" 
+                            icon={<Box size={18} />} 
+                            label="Modo 3D" 
+                            tooltip="Alterne a perspectiva 3D."
+                            active={is3D || show3DSettings} 
+                            onClick={() => {
+                              sound.playClick();
+                              if (!is3D) {
+                                setIs3D(true);
+                              } else if (is3D && !show3DSettings) {
+                                setShow3DSettings(true);
+                              } else {
+                                setIs3D(false);
+                                setShow3DSettings(false);
+                              }
+                            }} 
+                          />
+                        )}
+
+                        {/* 3. Guias de Perspectiva */}
+                        <ToolButton 
+                          id="guideLines" 
+                          icon={<Compass size={18} />} 
+                          label="Guias" 
+                          tooltip="Linhas de ajuda para proporção e perspectiva."
+                          active={showGuidePanel || guideLinesVisible} 
+                          onClick={() => {
+                            sound.playClick();
+                            if (!guideLinesVisible) {
+                              setGuideLinesVisible(true);
+                              setShowGuidePanel(false);
+                            } else if (guideLinesVisible && !showGuidePanel) {
+                              setShowGuidePanel(true);
+                            } else {
+                              setShowGuidePanel(false);
+                              setGuideLinesVisible(false);
+                            }
+                          }}
+                        />
+
+                        {/* 4. Imagem de Referência */}
+                        <ToolButton 
+                          id="reference" 
+                          icon={<ImageIcon size={18} />} 
+                          label="Referência" 
+                          tooltip="Adicione ou gerencie imagens de decalque." 
+                          active={referenceImages.some(r => r.visible) || showRefSettings} 
+                          onClick={() => {
+                            if (referenceImages.length > 0) setShowRefSettings(!showRefSettings);
+                            else fileInputRef.current?.click();
+                          }} 
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="relative">
-                  <ToolButton 
-                    id="guideLines" 
-                    icon={<Compass size={20} />} 
-                    label="Guias" 
-                    tooltip="Linhas de ajuda para proporção e perspectiva."
-                    active={showGuidePanel || guideLinesVisible} 
-                    onClick={() => {
-                      sound.playClick();
-                      if (!guideLinesVisible) {
-                        setGuideLinesVisible(true);
-                        setShowGuidePanel(false);
-                      } else if (guideLinesVisible && !showGuidePanel) {
-                        setShowGuidePanel(true);
-                      } else {
-                        setShowGuidePanel(false);
-                        setGuideLinesVisible(false);
-                      }
-                    }}
-                  />
-                </div>
-                  <ToolButton 
-                    id="reference" 
-                    icon={<ImageIcon size={20} />} 
-                    label="Guia" 
-                    tooltip="Ative ou gerencie suas imagens de referência (decalque)." 
-                    active={referenceImages.some(r => r.visible) || showRefSettings} 
-                    onClick={() => {
-                      if (referenceImages.length > 0) setShowRefSettings(!showRefSettings);
-                      else fileInputRef.current?.click();
-                    }} 
-                  />
-                  <ToolButton id="resize" icon={<Settings size={20} />} label="Ajustes" tooltip="Altere tamanho da folha, imagem de fundo, música e escala da interface." active={activePanel === 'resize'} onClick={() => togglePanel('resize')} />
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImportReference} />
+
+                {/* Ajustes Globais */}
+                <ToolButton id="resize" icon={<Settings size={20} />} label="Ajustes" tooltip="Altere tamanho da folha, imagem de fundo e música." active={activePanel === 'resize'} onClick={() => togglePanel('resize')} />
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImportReference} />
             </div>
 
         </div>
@@ -780,4 +802,4 @@ export const TopBar: React.FC<TopBarProps> = ({
       </AnimatePresence>
     </>
   );
-};
+});

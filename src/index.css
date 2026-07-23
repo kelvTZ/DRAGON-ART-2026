@@ -15,7 +15,8 @@
 
 
 @theme {
-  --font-sans: "Silkscreen", "Press Start 2P", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-pixel: "Silkscreen", "Press Start 2P", monospace;
   --animate-spin-slow: spin 3s linear infinite;
 }
 
@@ -36,7 +37,12 @@
 
 @media (max-width: 480px) and (orientation: portrait) {
   :root {
-    --ui-scale: 0.85;
+    --ui-scale: 0.72;
+  }
+}
+@media (max-width: 380px) and (orientation: portrait) {
+  :root {
+    --ui-scale: 0.65;
   }
 }
 
@@ -329,3 +335,79 @@ svg {
     order: -1;
   }
 }
+
+/* ==========================================================================
+   LAYOUT MODES DEFINITIONS (classic, modern, minimal)
+   ========================================================================== */
+
+/* 1. CLASSIC LAYOUT (Retro Pixel Art) - Padrão */
+html[data-layout-mode="classic"] {
+  --font-sans: "Silkscreen", "Press Start 2P", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* 2. MODERN LAYOUT (Sleek Modern UI) - Cantos arredondados, gradientes e bordas sutis */
+html[data-layout-mode="modern"] :root {
+  --bg-app: #080810;
+  --bg-surface: #0f1016;
+  --bg-panel: rgba(22, 24, 38, 0.85);
+  --bg-element: #1d1f30;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --accent-color: #3b82f6; /* Modern Blue */
+}
+
+html[data-layout-mode="modern"] {
+  font-family: "Inter", system-ui, sans-serif !important;
+}
+
+html[data-layout-mode="modern"] .pixel-icon-btn,
+html[data-layout-mode="modern"] button,
+html[data-layout-mode="modern"] .top-bar,
+html[data-layout-mode="modern"] .bottom-bar {
+  border-radius: 9999px !important; /* Arredondado moderno */
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-layout-mode="modern"] .top-bar, 
+html[data-layout-mode="modern"] .bottom-bar {
+  padding: 0.6rem !important;
+  background: rgba(15, 16, 22, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* 3. MINIMAL LAYOUT - Layout ultra-limpo, sem fundos de barra de ferramentas, transparente */
+html[data-layout-mode="minimal"] :root {
+  --accent-color: #10b981; /* Minimal Green */
+}
+
+html[data-layout-mode="minimal"] {
+  font-family: "Inter", system-ui, sans-serif !important;
+}
+
+html[data-layout-mode="minimal"] .top-bar,
+html[data-layout-mode="minimal"] .bottom-bar {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+html[data-layout-mode="minimal"] .pixel-icon-btn,
+html[data-layout-mode="minimal"] button {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html[data-layout-mode="minimal"] .pixel-icon-btn.active,
+html[data-layout-mode="minimal"] button.active {
+  background: var(--accent-color) !important;
+  color: white !important;
+  border-color: var(--accent-color) !important;
+  transform: scale(1.05);
+}
+

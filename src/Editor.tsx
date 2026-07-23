@@ -94,7 +94,7 @@ import { FramePanel, MiniCanvas } from "./components/editor/FramePanel";
 import { videoStorage, SavedVideo } from "./services/videoStorage";
 import { generateId } from "./utils";
 import { PaletteManager } from "./components/editor/PaletteManager";
-import { EffectsPanel } from "./components/editor/EffectsPanel";
+import { TimelapsePanel } from "./components/editor/TimelapsePanel";
 import OnboardingTutorial from "./components/OnboardingTutorial";
 
 
@@ -143,6 +143,7 @@ type PanelType =
   | "resize"
   | "effects"
   | "batch"
+  | "timelapse"
   | null;
 type ShapeType = "line" | "rect" | "circle" | "rope";
 type BrushType =
@@ -237,6 +238,16 @@ export default function Editor({
   // State
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [layoutMode, setLayoutMode] = useState<'classic' | 'modern' | 'minimal'>(() => {
+    const saved = localStorage.getItem("pixel_layout_mode");
+    return (saved as any) || "classic";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("pixel_layout_mode", layoutMode);
+    document.documentElement.setAttribute("data-layout-mode", layoutMode);
+  }, [layoutMode]);
+
   const [frames, setFrames] = useState<Frame[]>(() => {
     if (
       config.frames &&
@@ -267,6 +278,10 @@ export default function Editor({
 
   const [currentColor, setCurrentColor] = useState(DEFAULT_PALETTE[0]);
   const [currentTool, setCurrentTool] = useState<Tool>("pencil");
+  const currentToolRef = useRef(currentTool);
+  useEffect(() => {
+    currentToolRef.current = currentTool;
+  }, [currentTool]);
   const [currentShape, setCurrentShape] = useState<ShapeType>("line");
   const [brushSize, setBrushSize] = useState(1);
   const [eraserSize, setEraserSize] = useState(1);
@@ -782,6 +797,38 @@ export default function Editor({
   const initialPinchAngle = useRef<number | null>(null);
   const initialRotation = useRef<number>(0);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  // RAF-throttled pan/zoom accumulators — prevents 100+ re-renders/sec during gestures
+  const pendingPanDelta = useRef({ x: 0, y: 0 });
+  const pendingZoom = useRef<number | null>(null);
+  const pendingRotation = useRef<number | null>(null);
+  const rafGestureId = useRef<number | null>(null);
+
+  const flushGestureUpdates = useCallback(() => {
+    rafGestureId.current = null;
+    const dx = pendingPanDelta.current.x;
+    const dy = pendingPanDelta.current.y;
+    if (dx !== 0 || dy !== 0) {
+      setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+      pendingPanDelta.current.x = 0;
+      pendingPanDelta.current.y = 0;
+    }
+    if (pendingZoom.current !== null) {
+      setZoom(pendingZoom.current);
+      pendingZoom.current = null;
+    }
+    if (pendingRotation.current !== null) {
+      setRotation(pendingRotation.current);
+      pendingRotation.current = null;
+    }
+  }, []);
+
+  const scheduleGestureFlush = useCallback(() => {
+    if (rafGestureId.current === null) {
+      rafGestureId.current = requestAnimationFrame(flushGestureUpdates);
+    }
+  }, [flushGestureUpdates]);
+
   const [sfxEnabled, setSfxEnabled] = useState(sound.isSfxEnabled());
   const [bgmEnabled, setBgmEnabled] = useState(sound.isBgmEnabled());
 
@@ -832,13 +879,6 @@ export default function Editor({
   const symmetryLongPress = useRef<NodeJS.Timeout | null>(null);
   const [lightingEffect, setLightingEffect] = useState<LightingEffect>("none");
   const [lightingIntensity, setLightingIntensity] = useState(5);
-  const [isProcessRecording, setIsProcessRecording] = useState(false);
-  const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
-  const [recordingResolution, setRecordingResolution] = useState<
-    "normal" | "hd" | "4k"
-  >("normal");
-  const [showVideoGallery, setShowVideoGallery] = useState(false);
-  const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
 
   const [showLightingMenu, setShowLightingMenu] = useState(false);
   const lightingLongPress = useRef<NodeJS.Timeout | null>(null);
@@ -937,8 +977,90 @@ export default function Editor({
 
   const processRecorderRef = useRef<MediaRecorder | null>(null);
   const processChunksRef = useRef<BlobPart[]>([]);
-  const recorderCanvasRef = useRef<HTMLCanvasElement>(null);
+  const recorderCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const isActuallyRecording = useRef(false);
+  const [isProcessRecording, setIsProcessRecording] = useState(false);
+  const [recordingResolution, setRecordingResolution] = useState<number>(1080);
+
+  const startProcessRecording = () => {
+    if (!isPro) {
+      alert("🎥 Gravação de Processo é uma função exclusiva da Versão PRO!\n\nAtualize para o PRO para gravar seu processo criativo em até 4K.");
+      return;
+    }
+    sound.playClick();
+    const scale = recordingResolution / Math.max(width, height);
+    const rw = width * scale;
+    const rh = height * scale;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = rw;
+    canvas.height = rh;
+    recorderCanvasRef.current = canvas;
+
+    let mimeType = "video/webm";
+    if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+      mimeType = "video/webm;codecs=vp9";
+    } else if (MediaRecorder.isTypeSupported("video/mp4")) {
+      mimeType = "video/mp4";
+    }
+    
+    const stream = canvas.captureStream(10);
+    const recorder = new MediaRecorder(stream, { mimeType });
+    processChunksRef.current = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) processChunksRef.current.push(e.data);
+    };
+
+    recorder.onstop = async () => {
+      const blob = new Blob(processChunksRef.current, { type: mimeType });
+      const videoId = generateId();
+      const videoName = `Timelapse-${new Date().toLocaleTimeString().replace(/:/g, '-')}`;
+
+      await videoStorage.saveVideo({
+        id: videoId,
+        name: videoName,
+        blob,
+        timestamp: Date.now(),
+        resolution: `${Math.round(rw)}x${Math.round(rh)}`
+      });
+
+      window.dispatchEvent(new CustomEvent('video-saved'));
+    };
+
+    processRecorderRef.current = recorder;
+    recorder.start();
+    setIsProcessRecording(true);
+    isActuallyRecording.current = true;
+    
+    const rctx = canvas.getContext("2d");
+    if (rctx) {
+      rctx.imageSmoothingEnabled = false;
+    }
+    
+    // Initialize with white background
+    if (rctx) {
+      rctx.fillStyle = "#FFFFFF";
+      rctx.fillRect(0, 0, rw, rh);
+    }
+
+    // Force an immediate redraw to capture the current frame
+    setTimeout(() => {
+      drawToCanvas(frames, currentFrame);
+    }, 50);
+
+    // The drawing to recorderCanvas is now handled exclusively by drawToCanvas
+    // to ensure only complete frames are captured, eliminating flickering.
+  };
+
+  const stopProcessRecording = () => {
+    sound.playClick();
+    isActuallyRecording.current = false;
+    if (processRecorderRef.current && processRecorderRef.current.state !== "inactive") {
+      processRecorderRef.current.stop();
+    }
+    setIsProcessRecording(false);
+  };
   const pickerColorPreview = useRef<{
     color: string;
     x: number;
@@ -949,7 +1071,7 @@ export default function Editor({
     x: number;
     y: number;
   } | null>(null);
-  const [selectionOffset, setSelectionOffset] = useState(0);
+  const selectionOffsetRef = useRef(0);
   const [showQuickPalette, setShowQuickPalette] = useState(false);
   const [quickPaletteCategory, setQuickPaletteCategory] =
     useState<string>("Oceano");
@@ -1040,7 +1162,7 @@ export default function Editor({
     let interval: NodeJS.Timeout;
     if (selectionMask || selection) {
       interval = setInterval(() => {
-        setSelectionOffset((prev) => (prev + 0.5) % 8);
+        selectionOffsetRef.current = (selectionOffsetRef.current + 0.5) % 8;
       }, 50);
     }
     return () => clearInterval(interval);
@@ -1056,6 +1178,7 @@ export default function Editor({
     (type: "tool" | "color" | "intensity" | "effect", value: string) => {
       if (!isActuallyRecording.current) return;
       setRecordingFeedback({ type, value, timestamp: Date.now() });
+      setTimeout(() => setRecordingFeedback(null), 1500);
     },
     []
   );
@@ -1253,18 +1376,8 @@ export default function Editor({
     return () => cancelAnimationFrame(animationFrameId);
   }, [autoRotate3D, is3D, autoRotateSpeed]);
 
-  const loadSavedVideos = async () => {
-    try {
-      const videos = await videoStorage.getAllVideos();
-      setSavedVideos(videos.sort((a, b) => b.timestamp - a.timestamp));
-    } catch (e) {
-      console.error("Erro ao carregar vídeos:", e);
-    }
-  };
 
-  useEffect(() => {
-    loadSavedVideos();
-  }, []);
+
 
   useEffect(() => {
     return () => {
@@ -1781,7 +1894,8 @@ export default function Editor({
           Math.max(initialPinchZoom.current * scale, 0.5),
           10
         );
-        setZoom(currentZoom);
+        pendingZoom.current = currentZoom;
+        scheduleGestureFlush();
       }
 
       if (initialPinchAngle.current !== null) {
@@ -1797,7 +1911,8 @@ export default function Editor({
 
         if (Math.abs(angleDiff) > 2 || twoFingerHasMoved.current) {
           twoFingerHasMoved.current = true;
-          setRotation((prev) => prev + angleDiff);
+          pendingRotation.current = (pendingRotation.current ?? rotation) + angleDiff;
+          scheduleGestureFlush();
           initialPinchAngle.current = currentAngle;
         }
       }
@@ -1810,7 +1925,9 @@ export default function Editor({
       if (Math.abs(dx) > 2 || Math.abs(dy) > 2)
         twoFingerHasMoved.current = true;
 
-      setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+      pendingPanDelta.current.x += dx;
+      pendingPanDelta.current.y += dy;
+      scheduleGestureFlush();
       lastPanPoint.current = { x: cx, y: cy };
     } else if (isDraggingPan && activePointers.current.size < 2) {
       if (is3D) {
@@ -1824,7 +1941,9 @@ export default function Editor({
         // Pan
         const dx = (e.clientX - lastPanPoint.current.x) / zoom;
         const dy = (e.clientY - lastPanPoint.current.y) / zoom;
-        setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+        pendingPanDelta.current.x += dx;
+        pendingPanDelta.current.y += dy;
+        scheduleGestureFlush();
         lastPanPoint.current = { x: e.clientX, y: e.clientY };
       }
     }
@@ -1932,37 +2051,46 @@ export default function Editor({
   }, [refAction, refStart, referenceImages, zoom]);
 
   useEffect(() => {
-    // Auto-save to local storage (without thumbnail for performance)
+    // Auto-save to local storage — runs during idle time to avoid blocking painting
     const timeout = setTimeout(() => {
-      const projectsStr = localStorage.getItem("pixel_projects");
-      let projects: ProjectConfig[] = [];
-      if (projectsStr) {
+      const doSave = () => {
+        const projectsStr = localStorage.getItem("pixel_projects");
+        let projects: ProjectConfig[] = [];
+        if (projectsStr) {
+          try {
+            projects = JSON.parse(projectsStr);
+          } catch (e) {}
+        }
+        const existingIdx = projects.findIndex((p) => p.id === config.id);
+        
+        // Keep existing thumbnail if available
+        const existingProject = projects[existingIdx];
+        const updatedProject = { 
+          ...config, 
+          frames, 
+          width, 
+          height, 
+          thumbnail: existingProject?.thumbnail 
+        };
+
+        if (existingIdx >= 0) {
+          projects[existingIdx] = updatedProject;
+        } else {
+          projects.push(updatedProject);
+        }
+        
         try {
-          projects = JSON.parse(projectsStr);
-        } catch (e) {}
-      }
-      const existingIdx = projects.findIndex((p) => p.id === config.id);
-      
-      // Keep existing thumbnail if available
-      const existingProject = projects[existingIdx];
-      const updatedProject = { 
-        ...config, 
-        frames, 
-        width, 
-        height, 
-        thumbnail: existingProject?.thumbnail 
+          localStorage.setItem("pixel_projects", JSON.stringify(projects));
+        } catch (e) {
+          console.error("Storage quota exceeded", e);
+        }
       };
 
-      if (existingIdx >= 0) {
-        projects[existingIdx] = updatedProject;
+      // Use requestIdleCallback to avoid blocking the main thread during painting
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(doSave, { timeout: 10000 });
       } else {
-        projects.push(updatedProject);
-      }
-      
-      try {
-        localStorage.setItem("pixel_projects", JSON.stringify(projects));
-      } catch (e) {
-        console.error("Storage quota exceeded", e);
+        doSave();
       }
     }, 5000); // 5 second debounce
     return () => clearTimeout(timeout);
@@ -2106,6 +2234,15 @@ export default function Editor({
     }
   };
 
+  // Fast hex char to number lookup (avoids parseInt overhead in hot loop)
+  const hexCharToNum = (c: number): number => {
+    // c is charCode: '0'-'9' = 48-57, 'a'-'f' = 97-102, 'A'-'F' = 65-70
+    if (c >= 48 && c <= 57) return c - 48;
+    if (c >= 97 && c <= 102) return c - 87;
+    if (c >= 65 && c <= 70) return c - 55;
+    return 0;
+  };
+
   // Draw to canvas
   const drawToCanvas = useCallback(
     (frameData: Frame[], frameIdx: number) => {
@@ -2117,9 +2254,16 @@ export default function Editor({
       const render = (
         c: HTMLCanvasElement,
         context: CanvasRenderingContext2D,
-        s: number
+        s: number,
+        isRecorder: boolean = false
       ) => {
         context.clearRect(0, 0, c.width, c.height);
+        
+        // Always draw a background for the recorder to avoid transparency (black screen)
+        if (isRecorder || !transparentBackground) {
+          context.fillStyle = isRecorder ? "#FFFFFF" : canvasBackgroundColor;
+          context.fillRect(0, 0, c.width, c.height);
+        }
         // Background color is rendered by the z-5 div layer,
         // keeping canvas transparent so the grid shows through.
 
@@ -2137,27 +2281,35 @@ export default function Editor({
           willReadFrequently: true,
         });
 
+        // Reusable ImageData pool — avoids GC pressure from repeated createImageData
+        let pooledImgData = (window as any)._editorPooledImgData;
+        if (!pooledImgData || pooledImgData.width !== width || pooledImgData.height !== height) {
+          pooledImgData = tempCtx!.createImageData(width, height);
+          (window as any)._editorPooledImgData = pooledImgData;
+        }
+
         const drawLayer = (l: Layer, alpha: number) => {
           if (!l.visible || !tempCtx) return;
-          const imgData = tempCtx.createImageData(width, height);
-          const data = imgData.data;
-          for (let i = 0; i < l.data.length; i++) {
-            const color = l.data[i];
-            if (color && color !== "transparent") {
-              const r = parseInt(color.slice(1, 3), 16);
-              const g = parseInt(color.slice(3, 5), 16);
-              const b = parseInt(color.slice(5, 7), 16);
-              const a =
-                color.length === 9 ? parseInt(color.slice(7, 9), 16) : 255;
-              const idx = i * 4;
-              data[idx] = r;
-              data[idx + 1] = g;
-              data[idx + 2] = b;
-              data[idx + 3] = a;
+          const data = pooledImgData.data as Uint8ClampedArray;
+          // Zero the buffer efficiently
+          data.fill(0);
+          const layerPixels = l.data;
+          const len = layerPixels.length;
+          for (let i = 0; i < len; i++) {
+            const color = layerPixels[i];
+            if (color !== "" && color !== "transparent") {
+              // Fast hex parsing using charCode — avoids parseInt/slice overhead
+              const idx = i << 2; // i * 4
+              data[idx]     = (hexCharToNum(color.charCodeAt(1)) << 4) | hexCharToNum(color.charCodeAt(2));
+              data[idx + 1] = (hexCharToNum(color.charCodeAt(3)) << 4) | hexCharToNum(color.charCodeAt(4));
+              data[idx + 2] = (hexCharToNum(color.charCodeAt(5)) << 4) | hexCharToNum(color.charCodeAt(6));
+              data[idx + 3] = color.length === 9
+                ? (hexCharToNum(color.charCodeAt(7)) << 4) | hexCharToNum(color.charCodeAt(8))
+                : 255;
             }
           }
 
-          tempCtx.putImageData(imgData, 0, 0);
+          tempCtx.putImageData(pooledImgData, 0, 0);
           context.imageSmoothingEnabled = false;
           context.globalAlpha = alpha;
           context.drawImage(tempCanvas, 0, 0, width * s, height * s);
@@ -2232,14 +2384,14 @@ export default function Editor({
         // JS Canvas grid drawing removed in favor of SVG overlay
       };
 
-      render(canvas, ctx, 1);
+      render(canvas, ctx, 1, false);
 
       if (isActuallyRecording.current && recorderCanvasRef.current) {
         const rCanvas = recorderCanvasRef.current;
         const rCtx = rCanvas.getContext("2d");
         if (rCtx) {
-          const s = getExportScale(recordingResolution);
-          render(rCanvas, rCtx, s);
+          const s = Math.max(1, rCanvas.width / width);
+          render(rCanvas, rCtx, s, true);
 
           // Draw Feedback on Recorder Canvas
           if (recordingFeedback) {
@@ -2338,26 +2490,11 @@ export default function Editor({
     ]
   );
 
-  useEffect(() => {
-    let animFrame: number;
-    if (recordingFeedback && isActuallyRecording.current) {
-      const loop = () => {
-        const now = Date.now();
-        if (now - recordingFeedback.timestamp > 1500) {
-          setRecordingFeedback(null);
-          return;
-        }
-        drawToCanvas(frames, currentFrame);
-        animFrame = requestAnimationFrame(loop);
-      };
-      animFrame = requestAnimationFrame(loop);
-    }
-    return () => cancelAnimationFrame(animFrame);
-  }, [recordingFeedback, drawToCanvas, frames, currentFrame]);
+  // Feedback redraw loop removed to prevent flashing. drawToCanvas is already triggered by state changes.
 
   useEffect(() => {
     drawToCanvas(frames, currentFrame);
-  }, [currentFrame, frames, drawToCanvas, selectionOffset]);
+  }, [currentFrame, frames, drawToCanvas]);
 
   useEffect(() => {
     setHistory([
@@ -3449,90 +3586,7 @@ export default function Editor({
     Toast.show({ text: "Desenho colado!" });
   };
 
-  const getSupportedMimeType = (): { mimeType: string; extension: string } => {
-    const candidates = [
-      { mimeType: "video/webm;codecs=vp9", extension: "webm" },
-      { mimeType: "video/webm;codecs=vp8", extension: "webm" },
-      { mimeType: "video/webm", extension: "webm" },
-      { mimeType: "video/mp4;codecs=avc1", extension: "mp4" },
-      { mimeType: "video/mp4", extension: "mp4" },
-    ];
-    for (const c of candidates) {
-      try {
-        if (MediaRecorder.isTypeSupported(c.mimeType)) return c;
-      } catch (_) {
-        /* ignore */
-      }
-    }
-    // Fallback – let the browser pick
-    return { mimeType: "", extension: "webm" };
-  };
 
-  const startProcessRecording = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Setup recorder canvas
-    const s = getExportScale(recordingResolution);
-    const rCanvas = document.createElement("canvas");
-    rCanvas.width = width * s;
-    rCanvas.height = height * s;
-    (recorderCanvasRef as any).current = rCanvas;
-
-    try {
-      const { mimeType, extension } = getSupportedMimeType();
-      const stream = rCanvas.captureStream(30);
-      const recorderOptions: MediaRecorderOptions = {};
-      if (mimeType) recorderOptions.mimeType = mimeType;
-      const recorder = new MediaRecorder(stream, recorderOptions);
-      const activeMime = recorder.mimeType || mimeType || "video/webm";
-      processChunksRef.current = [];
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) processChunksRef.current.push(e.data);
-      };
-      recorder.onstop = async () => {
-        const blob = new Blob(processChunksRef.current, { type: activeMime });
-
-        // Save to indexedDB instead of direct download
-        const newVideo: SavedVideo = {
-          id: generateId(),
-          name: `Gravação ${new Date().toLocaleString()}`,
-          blob,
-          timestamp: Date.now(),
-          resolution: recordingResolution.toUpperCase(),
-        };
-        await videoStorage.saveVideo(newVideo);
-        loadSavedVideos();
-        setShowVideoGallery(true);
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `processo-desenho-${Date.now()}.${extension}`;
-        a.click();
-        URL.revokeObjectURL(url);
-      };
-      recorder.start();
-      processRecorderRef.current = recorder;
-      isActuallyRecording.current = true;
-
-      // Force an initial draw
-      drawToCanvas(frames, currentFrame);
-    } catch (err) {
-      console.error("Erro ao iniciar gravação:", err);
-    }
-  };
-
-  const stopProcessRecording = () => {
-    if (
-      processRecorderRef.current &&
-      processRecorderRef.current.state !== "inactive"
-    ) {
-      processRecorderRef.current.stop();
-    }
-    isActuallyRecording.current = false;
-    processRecorderRef.current = null;
-  };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.button === 1 || e.altKey || activePointers.current.size > 1) {
@@ -3705,6 +3759,9 @@ export default function Editor({
             return;
           } else {
             commitSelection();
+            setSelection(null);
+            setSelectionMask(null);
+            setSelectionAction(null);
           }
         } else if (selectionMask) {
           const idx = coords.y * width + coords.x;
@@ -3745,6 +3802,9 @@ export default function Editor({
             return;
           } else {
             commitSelection();
+            setSelection(null);
+            setSelectionMask(null);
+            setSelectionAction(null);
           }
         }
         const frame = frames[currentFrame];
@@ -4446,49 +4506,58 @@ export default function Editor({
         
         const width = maxX - minX;
         const height = maxY - minY;
+        const diag = Math.max(Math.hypot(width, height), 1);
+        
         const distStartEnd = Math.hypot(xn - x0, yn - y0);
-        const isClosed = distStartEnd < (totalPathLength * 0.2) || distStartEnd < 8;
+        // A shape is closed if start and end are close relative to bounding box size or just very close in pixels
+        const isClosed = distStartEnd < diag * 0.3 || distStartEnd < 20;
 
         let bestShape = "none";
         let lowestError = Infinity;
         let shapeData: any = {};
 
-        // 1. Line Check
-        if (!isClosed && distStartEnd > 10) {
+        // 1. Line Check (must not be a closed shape)
+        if (!isClosed && distStartEnd > diag * 0.5) {
           let lineError = 0;
           for (const p of points) {
             const d = Math.abs((yn-y0)*p.x - (xn-x0)*p.y + xn*y0 - yn*x0) / distStartEnd;
             lineError += d;
           }
           lineError /= points.length;
-          if (lineError < 2.0) {
-            lowestError = lineError;
+          const relativeLineError = lineError / diag;
+          
+          if (relativeLineError < 0.1) {
+            lowestError = relativeLineError;
             bestShape = "line";
           }
         }
 
-        // 2. Circle Check
-        if (width > 5 && height > 5 && isClosed) {
+        // 2. Circle/Ellipse Check
+        if (isClosed && width > 10 && height > 10) {
           const cx = minX + width / 2;
           const cy = minY + height / 2;
-          const radii = points.map(p => Math.hypot(p.x - cx, p.y - cy));
-          const avgR = radii.reduce((a, b) => a + b, 0) / radii.length;
-          let circleError = 0;
-          for (const r of radii) circleError += Math.abs(r - avgR);
-          circleError /= points.length;
+          const rx = width / 2;
+          const ry = height / 2;
           
-          const aspectError = Math.abs(width - height) / Math.max(width, height);
-          circleError += aspectError * 5; 
-
-          if (circleError < 2.5 && circleError < lowestError) {
-            lowestError = circleError;
+          let circleError = 0;
+          for (const p of points) {
+             const nx = (p.x - cx) / rx;
+             const ny = (p.y - cy) / ry;
+             const dist = Math.hypot(nx, ny);
+             circleError += Math.abs(dist - 1.0) * ((rx + ry) / 2);
+          }
+          circleError /= points.length;
+          const relativeCircleError = circleError / diag;
+          
+          if (relativeCircleError < 0.12 && relativeCircleError < lowestError) {
+            lowestError = relativeCircleError;
             bestShape = "circle";
-            shapeData = { cx, cy, r: avgR };
+            shapeData = { cx, cy, rx, ry };
           }
         }
 
         // 3. Rectangle Check
-        if (width > 5 && height > 5 && isClosed) {
+        if (isClosed && width > 10 && height > 10) {
           let rectError = 0;
           for (const p of points) {
             const dLeft = Math.abs(p.x - minX);
@@ -4498,54 +4567,56 @@ export default function Editor({
             rectError += Math.min(dLeft, dRight, dTop, dBottom);
           }
           rectError /= points.length;
+          const relativeRectError = rectError / diag;
           
-          if (rectError < 2.5 && rectError < lowestError) {
-            lowestError = rectError;
+          if (relativeRectError < 0.12 && relativeRectError < lowestError) {
+            lowestError = relativeRectError;
             bestShape = "rect";
           }
         }
 
         // 4. Triangle Check
-        if (width > 5 && height > 5 && isClosed) {
-          let A = points[0];
-          let B = points[0];
-          let maxDistSq = 0;
-          for (const p of points) {
-             const distSq = (p.x - A.x)**2 + (p.y - A.y)**2;
-             if (distSq > maxDistSq) { maxDistSq = distSq; B = p; }
-          }
-          let C = points[0];
-          let maxLineDist = 0;
-          const distAB = Math.hypot(B.x - A.x, B.y - A.y);
-          if (distAB > 0) {
-             for (const p of points) {
-                const d = Math.abs((B.y - A.y)*p.x - (B.x - A.x)*p.y + B.x*A.y - B.y*A.x) / distAB;
-                if (d > maxLineDist) { maxLineDist = d; C = p; }
-             }
-          }
-          
-          const distToSegment = (p1: {x:number,y:number}, p2: {x:number,y:number}, p: {x:number,y:number}) => {
-             const l2 = (p1.x - p2.x)**2 + (p1.y - p2.y)**2;
-             if (l2 === 0) return Math.hypot(p.x - p1.x, p.y - p1.y);
-             let t = ((p.x - p1.x) * (p2.x - p1.x) + (p.y - p1.y) * (p2.y - p1.y)) / l2;
-             t = Math.max(0, Math.min(1, t));
-             return Math.hypot(p.x - (p1.x + t * (p2.x - p1.x)), p.y - (p1.y + t * (p2.y - p1.y)));
-          };
-          
-          let triangleError = 0;
-          for (const p of points) {
-             const d1 = distToSegment(A, B, p);
-             const d2 = distToSegment(B, C, p);
-             const d3 = distToSegment(C, A, p);
-             triangleError += Math.min(d1, d2, d3);
-          }
-          triangleError /= points.length;
-          
-          if (triangleError < 2.5 && triangleError < lowestError) {
-             lowestError = triangleError;
-             bestShape = "triangle";
-             shapeData = { A, B, C };
-          }
+        if (isClosed && width > 10 && height > 10) {
+           let A = points[0];
+           let B = points[0];
+           let maxDistSq = 0;
+           for (const p of points) {
+              const distSq = (p.x - A.x)**2 + (p.y - A.y)**2;
+              if (distSq > maxDistSq) { maxDistSq = distSq; B = p; }
+           }
+           let C = points[0];
+           let maxLineDist = 0;
+           const distAB = Math.hypot(B.x - A.x, B.y - A.y);
+           if (distAB > 0) {
+              for (const p of points) {
+                 const d = Math.abs((B.y - A.y)*p.x - (B.x - A.x)*p.y + B.x*A.y - B.y*A.x) / distAB;
+                 if (d > maxLineDist) { maxLineDist = d; C = p; }
+              }
+           }
+           
+           const distToSegment = (p1: {x:number,y:number}, p2: {x:number,y:number}, p: {x:number,y:number}) => {
+              const l2 = (p1.x - p2.x)**2 + (p1.y - p2.y)**2;
+              if (l2 === 0) return Math.hypot(p.x - p1.x, p.y - p1.y);
+              let t = ((p.x - p1.x) * (p2.x - p1.x) + (p.y - p1.y) * (p2.y - p1.y)) / l2;
+              t = Math.max(0, Math.min(1, t));
+              return Math.hypot(p.x - (p1.x + t * (p2.x - p1.x)), p.y - (p1.y + t * (p2.y - p1.y)));
+           };
+           
+           let triangleError = 0;
+           for (const p of points) {
+              const d1 = distToSegment(A, B, p);
+              const d2 = distToSegment(B, C, p);
+              const d3 = distToSegment(C, A, p);
+              triangleError += Math.min(d1, d2, d3);
+           }
+           triangleError /= points.length;
+           const relativeTriangleError = triangleError / diag;
+           
+           if (relativeTriangleError < 0.12 && relativeTriangleError < lowestError) {
+              lowestError = relativeTriangleError;
+              bestShape = "triangle";
+              shapeData = { A, B, C };
+           }
         }
 
         if (bestShape === "line") {
@@ -4553,7 +4624,7 @@ export default function Editor({
           let finalYn = yn;
           const angle = Math.atan2(yn - y0, xn - x0) * (180 / Math.PI);
           const snappedAngle = Math.round(angle / 45) * 45;
-          if (Math.abs(angle - snappedAngle) < 12) {
+          if (Math.abs(angle - snappedAngle) < 15) {
              const rad = snappedAngle * (Math.PI / 180);
              finalXn = Math.round(x0 + distStartEnd * Math.cos(rad));
              finalYn = Math.round(y0 + distStartEnd * Math.sin(rad));
@@ -4561,27 +4632,50 @@ export default function Editor({
           finalLayerData = drawLine(x0, y0, finalXn, finalYn, currentColor, brushSize, [...strokeStartData.current]);
           if (window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]);
         } else if (bestShape === "circle") {
-          const { cx, cy, r } = shapeData;
-          finalLayerData = drawCircle(Math.round(cx), Math.round(cy), Math.round(r), currentColor, brushSize, [...strokeStartData.current]);
+          const { cx, cy, rx, ry } = shapeData;
+          if (Math.abs(rx - ry) < Math.max(rx, ry) * 0.25) {
+             const r = Math.round((rx + ry) / 2);
+             finalLayerData = drawCircle(Math.round(cx), Math.round(cy), r, currentColor, brushSize, [...strokeStartData.current]);
+          } else {
+             const numSegments = 60;
+             let temp = [...strokeStartData.current];
+             let lastEx = cx + rx;
+             let lastEy = cy;
+             for (let i = 1; i <= numSegments; i++) {
+                const angle = (i / numSegments) * Math.PI * 2;
+                const ex = cx + rx * Math.cos(angle);
+                const ey = cy + ry * Math.sin(angle);
+                temp = drawLine(Math.round(lastEx), Math.round(lastEy), Math.round(ex), Math.round(ey), currentColor, brushSize, temp);
+                lastEx = ex;
+                lastEy = ey;
+             }
+             finalLayerData = temp;
+          }
           if (window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]);
         } else if (bestShape === "rect") {
           let finalMaxX = maxX;
           let finalMaxY = maxY;
-          if (Math.abs(width - height) < Math.max(width, height) * 0.15) {
+          let finalMinX = minX;
+          let finalMinY = minY;
+          if (Math.abs(width - height) < Math.max(width, height) * 0.2) {
              const size = Math.max(width, height);
-             finalMaxX = minX + size;
-             finalMaxY = minY + size;
+             const cx = minX + width / 2;
+             const cy = minY + height / 2;
+             finalMinX = cx - size / 2;
+             finalMaxX = cx + size / 2;
+             finalMinY = cy - size / 2;
+             finalMaxY = cy + size / 2;
           }
-          let temp = drawLine(minX, minY, finalMaxX, minY, currentColor, brushSize, [...strokeStartData.current]);
-          temp = drawLine(finalMaxX, minY, finalMaxX, finalMaxY, currentColor, brushSize, temp);
-          temp = drawLine(finalMaxX, finalMaxY, minX, finalMaxY, currentColor, brushSize, temp);
-          finalLayerData = drawLine(minX, finalMaxY, minX, minY, currentColor, brushSize, temp);
+          let temp = drawLine(Math.round(finalMinX), Math.round(finalMinY), Math.round(finalMaxX), Math.round(finalMinY), currentColor, brushSize, [...strokeStartData.current]);
+          temp = drawLine(Math.round(finalMaxX), Math.round(finalMinY), Math.round(finalMaxX), Math.round(finalMaxY), currentColor, brushSize, temp);
+          temp = drawLine(Math.round(finalMaxX), Math.round(finalMaxY), Math.round(finalMinX), Math.round(finalMaxY), currentColor, brushSize, temp);
+          finalLayerData = drawLine(Math.round(finalMinX), Math.round(finalMaxY), Math.round(finalMinX), Math.round(finalMinY), currentColor, brushSize, temp);
           if (window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]);
         } else if (bestShape === "triangle") {
           const { A, B, C } = shapeData;
-          let temp = drawLine(A.x, A.y, B.x, B.y, currentColor, brushSize, [...strokeStartData.current]);
-          temp = drawLine(B.x, B.y, C.x, C.y, currentColor, brushSize, temp);
-          finalLayerData = drawLine(C.x, C.y, A.x, A.y, currentColor, brushSize, temp);
+          let temp = drawLine(Math.round(A.x), Math.round(A.y), Math.round(B.x), Math.round(B.y), currentColor, brushSize, [...strokeStartData.current]);
+          temp = drawLine(Math.round(B.x), Math.round(B.y), Math.round(C.x), Math.round(C.y), currentColor, brushSize, temp);
+          finalLayerData = drawLine(Math.round(C.x), Math.round(C.y), Math.round(A.x), Math.round(A.y), currentColor, brushSize, temp);
           if (window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]);
         } else {
           // Fallback: Smooth the freeform curve (like an 'S' shape)
@@ -5652,6 +5746,8 @@ export default function Editor({
         isTrashLongPress={isTrashLongPress}
         trashLongPressTimer={trashLongPressTimer}
         setShowDeletedHistory={setShowDeletedHistory}
+        onToggleTimelapse={() => togglePanel("timelapse")}
+        isRecordingProcess={isProcessRecording}
       />
       )}
 
@@ -5691,6 +5787,9 @@ export default function Editor({
         showLightingMenu={showLightingMenu}
         setShowLightingMenu={setShowLightingMenu}
         lightingLongPress={lightingLongPress}
+        toggleBatchActions={toggleBatchActions}
+        isRecording={isProcessRecording}
+        onToggleTimelapse={() => togglePanel("timelapse")}
       />
       )}
 
@@ -5745,6 +5844,17 @@ export default function Editor({
             backgroundColor: "transparent",
           }}
         >
+          {/* Soft Ambient Shadow (Sombra Suave) */}
+          <div 
+            className="absolute inset-2 pointer-events-none z-[1]" 
+            style={{ 
+              background: "rgba(0, 0, 0, 0.35)",
+              filter: "blur(16px)",
+              transform: "translateY(14px) scale(0.97)",
+              borderRadius: "6px",
+            }} 
+          />
+
           {/* Base Background Layer - For solid colors */}
           {/* 1. Transparency Checkerboard (Under Everything) */}
           {transparentBackground && (
@@ -5792,38 +5902,38 @@ export default function Editor({
 
           {/* 4. Professional Grid Layer - OVER BACKGROUND, UNDER DRAWING (Moved to SVG layer at z-[11]) */}
 
-          {/* 4.5 Symmetry Guidelines (z-[9]) */}
+          {/* 4.5 Symmetry Guidelines (z-[40] for top rendering over canvas) */}
           {(symmetryX || symmetryY || symmetryDiag1 || symmetryDiag2) && (
-            <div className="absolute inset-0 pointer-events-none z-[9] overflow-hidden mix-blend-difference">
+            <div className="absolute inset-0 pointer-events-none z-[40] overflow-hidden mix-blend-difference">
               {symmetryX && (
-                <div className="absolute top-0 bottom-0 w-[2px] bg-white opacity-40 shadow-[0_0_4px_rgba(255,255,255,0.8)] border-x border-black/20" style={{ left: '50%', transform: 'translateX(-50%)' }} />
+                <div className="absolute top-0 bottom-0 w-[2px] bg-white opacity-60 shadow-[0_0_6px_rgba(255,255,255,0.8)] border-x border-black/20" style={{ left: '50%', transform: 'translateX(-50%)' }} />
               )}
               {symmetryY && (
-                <div className="absolute left-0 right-0 h-[2px] bg-white opacity-40 shadow-[0_0_4px_rgba(255,255,255,0.8)] border-y border-black/20" style={{ top: '50%', transform: 'translateY(-50%)' }} />
+                <div className="absolute left-0 right-0 h-[2px] bg-white opacity-60 shadow-[0_0_6px_rgba(255,255,255,0.8)] border-y border-black/20" style={{ top: '50%', transform: 'translateY(-50%)' }} />
               )}
               {symmetryDiag1 && (
-                <div className="absolute top-1/2 left-1/2 w-[200%] h-[2px] bg-white opacity-40 shadow-[0_0_4px_rgba(255,255,255,0.8)] border-y border-black/20" style={{ transform: 'translate(-50%, -50%) rotate(45deg)', transformOrigin: 'center' }} />
+                <div className="absolute top-1/2 left-1/2 w-[200%] h-[2px] bg-white opacity-60 shadow-[0_0_6px_rgba(255,255,255,0.8)] border-y border-black/20" style={{ transform: 'translate(-50%, -50%) rotate(45deg)', transformOrigin: 'center' }} />
               )}
               {symmetryDiag2 && (
-                <div className="absolute top-1/2 left-1/2 w-[200%] h-[2px] bg-white opacity-40 shadow-[0_0_4px_rgba(255,255,255,0.8)] border-y border-black/20" style={{ transform: 'translate(-50%, -50%) rotate(-45deg)', transformOrigin: 'center' }} />
+                <div className="absolute top-1/2 left-1/2 w-[200%] h-[2px] bg-white opacity-60 shadow-[0_0_6px_rgba(255,255,255,0.8)] border-y border-black/20" style={{ transform: 'translate(-50%, -50%) rotate(-45deg)', transformOrigin: 'center' }} />
               )}
             </div>
           )}
 
-          {/* 4.6 Perspective Guide Lines (SVG Layer, z-[10]) */}
+          {/* 4.6 Perspective Guide Lines (SVG Layer, z-[41] for top rendering over canvas) */}
           {guideLinesVisible && guideLines.length > 0 && (
             <svg 
-              className="absolute inset-0 pointer-events-none z-[10] w-full h-full overflow-visible"
+              className="absolute inset-0 pointer-events-none z-[41] w-full h-full overflow-visible"
               viewBox={`0 0 ${width} ${height}`}
             >
               {guideLines.map(guide => {
                 if (guide.type === 'horizontal') {
                   const y = (guide.position / 100) * height;
-                  return <line key={guide.id} x1="0" y1={y} x2={width} y2={y} stroke={guide.color} strokeWidth={1/zoom} opacity={guideOpacity} />;
+                  return <line key={guide.id} x1="0" y1={y} x2={width} y2={y} stroke={guide.color} strokeWidth={0.6/zoom} opacity={guideOpacity + 0.15} />;
                 }
                 if (guide.type === 'vertical') {
                   const x = (guide.position / 100) * width;
-                  return <line key={guide.id} x1={x} y1="0" x2={x} y2={height} stroke={guide.color} strokeWidth={1/zoom} opacity={guideOpacity} />;
+                  return <line key={guide.id} x1={x} y1="0" x2={x} y2={height} stroke={guide.color} strokeWidth={0.6/zoom} opacity={guideOpacity + 0.15} />;
                 }
                 if (guide.type === 'angle') {
                   const originX = ((guide.originX || 50) / 100) * width;
@@ -5834,17 +5944,17 @@ export default function Editor({
                   const y2 = originY + Math.sin(angleRad) * length;
                   const x1 = originX - Math.cos(angleRad) * length;
                   const y1 = originY - Math.sin(angleRad) * length;
-                  return <line key={guide.id} x1={x1} y1={y1} x2={x2} y2={y2} stroke={guide.color} strokeWidth={1/zoom} opacity={guideOpacity} />;
+                  return <line key={guide.id} x1={x1} y1={y1} x2={x2} y2={y2} stroke={guide.color} strokeWidth={0.6/zoom} opacity={guideOpacity + 0.15} />;
                 }
                 return null;
               })}
             </svg>
           )}
 
-          {/* 4. Professional Grid Layer (SVG Vector Overlay, z-[8]) */}
+          {/* 4. Professional Grid Layer (SVG Vector Overlay, z-[42] for top rendering over canvas) */}
           {showGrid && (zoom >= 4 || !gridOnlyOnZoom) && (
             <svg
-              className="absolute inset-0 pointer-events-none z-[8] w-full h-full"
+              className="absolute inset-0 pointer-events-none z-[42] w-full h-full"
               viewBox={`0 0 ${width} ${height}`}
               preserveAspectRatio="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -6257,91 +6367,16 @@ export default function Editor({
                   )}
 
                   <div 
-                    className="absolute right-0 flex gap-1 pointer-events-auto"
+                    className="absolute right-0 flex gap-2 pointer-events-auto bg-black/90 backdrop-blur-md border border-white/10 p-1.5 rounded-2xl shadow-2xl items-center"
                     style={{ 
-                      top: -48 / zoom,
+                      top: -52 / zoom,
                       transform: `scale(${1 / zoom})`,
-                      transformOrigin: 'top right'
+                      transformOrigin: 'bottom right'
                     }}
                   >
+                    {/* Confirmar / Aplicar na Tela */}
                     <button
-                      className="bg-black/80 backdrop-blur-md border border-white/10 text-white p-2 rounded-xl shadow-2xl hover:bg-[var(--accent-color)]/80 transition-all active:scale-90"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Rotaciona em 90 graus absolutos incrementando o ângulo atual ou usa rotateSelectionData caso não haja rotação custom
-                        if (!selection.angle) {
-                           handleRotateSelection();
-                        } else {
-                           setSelection({ ...selection, angle: (selection.angle + 90) % 360 });
-                        }
-                      }}
-                    >
-                      <RotateCw size={16} />
-                    </button>
-                    <button
-                      className="bg-black/80 backdrop-blur-md border border-white/10 text-white p-2 rounded-xl shadow-2xl hover:bg-red-500/80 transition-all active:scale-90"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        sound.playClick();
-                        setSelection(null);
-                        setSelectionMask(null);
-                        setSelectionAction(null);
-                        selectTool("pencil");
-                      }}
-                      title="Remover Seleção"
-                    >
-                      <X size={18} />
-                    </button>
-                    <button
-                      className="bg-black/80 backdrop-blur-md border border-white/10 text-white p-2 rounded-xl shadow-2xl hover:bg-blue-500/80 transition-all active:scale-90"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copySelection();
-                      }}
-                      title="Copiar"
-                    >
-                      <Copy size={18} />
-                    </button>
-                    <button
-                      className="bg-black/80 backdrop-blur-md border border-white/10 text-white p-2 rounded-xl shadow-2xl hover:bg-blue-500/80 transition-all active:scale-90"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        cutSelection();
-                      }}
-                      title="Recortar"
-                    >
-                      <Scissors size={18} />
-                    </button>
-                    {clipboard && (
-                      <button
-                        className="bg-black/80 backdrop-blur-md border border-white/10 text-white p-2 rounded-xl shadow-2xl hover:bg-blue-500/80 transition-all active:scale-90"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePaste();
-                        }}
-                        title="Colar"
-                      >
-                        <ClipboardPaste size={18} />
-                      </button>
-                    )}
-                    <button
-                      className="bg-black/80 backdrop-blur-md border border-white/10 text-white p-2 rounded-xl shadow-2xl hover:bg-red-500/80 transition-all active:scale-90"
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearSelectionMask();
-                      }}
-                      title="Apagar Pixels"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                    <button
-                      className="bg-green-600/90 backdrop-blur-md border border-white/20 text-white p-2 rounded-xl shadow-2xl hover:bg-green-500 transition-all active:scale-90 scale-110 ml-1"
+                      className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center"
                       onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -6352,9 +6387,65 @@ export default function Editor({
                         setSelectionAction(null);
                         selectTool("pencil");
                       }}
-                      title="Confirmar Seleção"
+                      title="Aplicar Alterações"
                     >
-                      <Check size={20} strokeWidth={3} />
+                      <Check size={18} strokeWidth={3} />
+                    </button>
+
+                    {/* Copiar */}
+                    <button
+                      className="bg-white/5 hover:bg-white/15 text-white p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-white/5"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copySelection();
+                      }}
+                      title="Copiar Seleção"
+                    >
+                      <Copy size={16} />
+                    </button>
+
+                    {/* Recortar */}
+                    <button
+                      className="bg-white/5 hover:bg-white/15 text-white p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-white/5"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        cutSelection();
+                      }}
+                      title="Recortar Seleção"
+                    >
+                      <Scissors size={16} />
+                    </button>
+
+                    {/* Apagar conteúdo selecionado */}
+                    <button
+                      className="bg-red-500/20 hover:bg-red-500/30 text-red-400 p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-red-500/10"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearSelectionMask();
+                      }}
+                      title="Apagar Conteúdo"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+
+                    {/* Cancelar / Desmarcar */}
+                    <button
+                      className="bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-white/60 p-2 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-white/5"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        sound.playClick();
+                        setSelection(null);
+                        setSelectionMask(null);
+                        setSelectionAction(null);
+                        selectTool("pencil");
+                      }}
+                      title="Desmarcar"
+                    >
+                      <X size={16} />
                     </button>
                   </div>
                 </>
@@ -7139,6 +7230,25 @@ export default function Editor({
                       </button>
                     </div>
 
+                    {/* GRID DE CORES FAVORITAS */}
+                    {savedUserColors.length > 0 && (
+                      <div className="w-full flex gap-1.5 overflow-x-auto hide-scrollbar py-2.5 px-2 mt-2 bg-white/5 rounded-2xl border border-white/5">
+                        {savedUserColors.map((c, i) => (
+                          <button
+                            key={`fav-${i}-${c}`}
+                            onClick={() => selectColor(c)}
+                            className={`w-8 h-8 rounded-lg border-2 shrink-0 transition-all hover:scale-110 ${
+                              currentColor.toLowerCase() === c.toLowerCase()
+                                ? "border-white shadow-lg shadow-white/10"
+                                : "border-white/10 hover:border-white/30"
+                            }`}
+                            style={{ backgroundColor: c }}
+                            title={c.toUpperCase()}
+                          />
+                        ))}
+                      </div>
+                    )}
+
                     {/* Action Buttons */}
                     <div className="w-full flex gap-2 mt-6">
                       <button
@@ -7529,16 +7639,7 @@ export default function Editor({
                 />
               )}
 
-              {activePanel === "effects" && (
-                <EffectsPanel
-                  layerData={frames[currentFrame].layers[currentLayer].data}
-                  width={width}
-                  height={height}
-                  currentColor={currentColor}
-                  onApply={applyEffectToLayer}
-                  onClose={() => setActivePanel(null)}
-                />
-              )}
+
             </div>
           </motion.div>
         )}
@@ -7579,6 +7680,8 @@ export default function Editor({
             setShowUpgradeModal={setShowUpgradeModal}
             setIsPreviewMode={setIsPreviewMode}
             setPreviousAppBackground={setPreviousAppBackground}
+            layoutMode={layoutMode}
+            setLayoutMode={setLayoutMode}
           />
         )}
       </AnimatePresence>
@@ -8242,273 +8345,8 @@ export default function Editor({
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isRecordingModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-2xl p-6 w-full max-w-sm shadow-2xl"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Video size={24} className="text-red-500" /> Gravar Processo
-                </h2>
-                <button
-                  onClick={() => setIsRecordingModalOpen(false)}
-                  className="text-[var(--text-muted)] hover:text-white transition-colors"
-                >
-                  <X size={24} />
-                </button>
-              </div>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-3 uppercase tracking-wider">
-                    Resolução da Gravação
-                  </label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      {
-                        id: "normal",
-                        label: "Normal (Nativa)",
-                        desc: `${width}x${height}`,
-                        icon: <MonitorCheck size={16} />,
-                      },
-                      {
-                        id: "hd",
-                        label: "Alta Definição (HD)",
-                        desc: "1280x720 (Escalado)",
-                        icon: <Maximize2 size={16} />,
-                      },
-                      {
-                        id: "4k",
-                        label: "Ultra HD (4K)",
-                        desc: "3840x2160 (K)",
-                        icon: <Maximize size={16} />,
-                      },
-                    ].map((res) => (
-                      <button
-                        key={res.id}
-                        onClick={() => setRecordingResolution(res.id as any)}
-                        className={`w-full p-3 rounded-xl border flex items-center gap-4 transition-all ${
-                          recordingResolution === res.id
-                            ? "bg-red-500/20 border-red-500 text-white"
-                            : "bg-[var(--bg-element)] border-[var(--border-strong)] text-[var(--text-muted)] hover:text-white hover:border-[#666]"
-                        }`}
-                      >
-                        <div
-                          className={`p-2 rounded-lg ${
-                            recordingResolution === res.id
-                              ? "bg-red-500 text-white"
-                              : "bg-[var(--bg-panel)] text-gray-500"
-                          }`}
-                        >
-                          {res.icon}
-                        </div>
-                        <div className="text-left">
-                          <div className="font-bold text-sm">{res.label}</div>
-                          <div className="text-[10px] opacity-60 uppercase">
-                            {res.desc}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border-subtle)] flex gap-3 items-start">
-                  <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg shrink-0">
-                    <HelpCircle size={18} />
-                  </div>
-                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                    A gravação começará <b>automaticamente</b> assim que você
-                    tocar na folha. O vídeo será salvo na sua galeria interna.
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    sound.playClick();
-                    setIsProcessRecording(true);
-                    setIsRecordingModalOpen(false);
-                  }}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white font-bold p-4 rounded-xl shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  Confirmar e Ativar
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Video Gallery Modal */}
-      <AnimatePresence>
-        {showVideoGallery && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 md:p-10"
-            onClick={() => setShowVideoGallery(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-[var(--bg-app)] border border-[var(--border-subtle)] rounded-3xl w-full max-w-4xl h-full max-h-[85vh] shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-6 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-surface)]">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-blue-500/20 text-blue-500 rounded-2xl">
-                    <Folder size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-white tracking-tight uppercase">
-                      Minha Pasta de Vídeos
-                    </h2>
-                    <p className="text-xs text-[var(--text-muted)] font-medium">
-                      Histórico de gravações do seu processo criativo
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowVideoGallery(false)}
-                  className="text-[var(--text-muted)] hover:text-white transition-colors bg-[var(--bg-element)] p-3 rounded-2xl"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 bg-[#0a0a0a] custom-scrollbar">
-                {savedVideos.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center py-20">
-                    <div className="w-24 h-24 bg-[var(--bg-surface)] rounded-full flex items-center justify-center mb-6 border-2 border-dashed border-[var(--border-subtle)]">
-                      <Video size={40} className="text-[#333]" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-wide">
-                      Nenhuma Gravação
-                    </h3>
-                    <p className="text-sm text-[var(--text-muted)] max-w-xs">
-                      Ative a gravação no ícone lateral e comece a desenhar para
-                      ver seus vídeos aqui.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {savedVideos.map((video) => (
-                      <motion.div
-                        layout
-                        key={video.id}
-                        className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-3xl overflow-hidden group hover:border-[var(--border-strong)] transition-all shadow-xl"
-                      >
-                        <div className="aspect-video bg-black relative flex items-center justify-center">
-                          <video
-                            src={URL.createObjectURL(video.blob)}
-                            className="w-full h-full object-contain pointer-events-none"
-                            muted
-                            loop
-                            onMouseEnter={(e) => e.currentTarget.play()}
-                            onMouseLeave={(e) => e.currentTarget.pause()}
-                          />
-                          <div className="absolute top-2 right-2 px-2 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-bold text-white border border-white/10 uppercase tracking-tighter">
-                            {video.resolution}
-                          </div>
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <PlayCircle
-                              size={48}
-                              className="text-white drop-shadow-2xl"
-                            />
-                          </div>
-                        </div>
-                        <div className="p-5">
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="truncate flex-1 pr-2">
-                              <h4 className="font-bold text-white text-sm truncate uppercase tracking-tight">
-                                {video.name}
-                              </h4>
-                              <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase mt-1">
-                                {new Date(video.timestamp).toLocaleDateString()}{" "}
-                                •{" "}
-                                {new Date(video.timestamp).toLocaleTimeString()}
-                              </p>
-                            </div>
-                            <button
-                              onClick={async () => {
-                                if (confirm("Deseja excluir este vídeo?")) {
-                                  await videoStorage.deleteVideo(video.id);
-                                  loadSavedVideos();
-                                }
-                              }}
-                              className="text-gray-500 hover:text-red-500 transition-colors bg-white/5 p-2 rounded-xl"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={async () => {
-                                sound.playClick();
-                                const fileName = `${video.name}.webm`;
-                                if (Capacitor.isNativePlatform()) {
-                                  const base64 = await blobToBase64(video.blob);
-                                  const success = await saveToNativeGallery(
-                                    base64,
-                                    fileName,
-                                    true
-                                  );
-                                  if (success)
-                                    showSaveToast("🎬 Vídeo salvo na galeria!");
-                                  else
-                                    showSaveToast("❌ Erro ao salvar vídeo.");
-                                } else {
-                                  const url = URL.createObjectURL(video.blob);
-                                  const a = document.createElement("a");
-                                  a.href = url;
-                                  a.download = fileName;
-                                  a.click();
-                                  URL.revokeObjectURL(url);
-                                  showSaveToast("🎬 Vídeo salvo!");
-                                }
-                              }}
-                              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-3 rounded-2xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
-                            >
-                              <Download size={14} /> Salvar
-                            </button>
-                            <button
-                              onClick={() => {
-                                const url = URL.createObjectURL(video.blob);
-                                window.open(url, "_blank");
-                              }}
-                              className="flex-1 bg-white/5 hover:bg-white/10 text-white text-xs font-bold py-3 rounded-2xl transition-all border border-white/10 flex items-center justify-center gap-2"
-                            >
-                              <Maximize size={14} /> Ver
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="p-6 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] flex justify-between items-center text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                <span>{savedVideos.length} Vídeo(s) Armazenado(s)</span>
-                <span className="flex items-center gap-1">
-                  <MonitorCheck size={12} /> Armazenamento Local (Navegador)
-                </span>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Undo Delete Frame Animation */}
       {/* Tool Shortcut Indicator Toast */}
@@ -8724,6 +8562,30 @@ export default function Editor({
         )}
       </AnimatePresence>
 
+      {/* TIMELAPSE MODAL (Centralizado e Organizado) */}
+      <AnimatePresence>
+        {activePanel === "timelapse" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm"
+            onClick={() => setActivePanel(null)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <TimelapsePanel
+                onClose={() => setActivePanel(null)}
+                isRecording={isProcessRecording}
+                startRecording={startProcessRecording}
+                stopRecording={stopProcessRecording}
+                resolution={recordingResolution}
+                setResolution={setRecordingResolution}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hint Toast - appears when entering the editor */}
       <AnimatePresence>
         {showEditorHint && (
@@ -8808,42 +8670,133 @@ export default function Editor({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 z-[20000] flex items-center justify-center p-4 backdrop-blur-xl"
+            className="fixed inset-0 z-[99999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
             onClick={() => setShowUpgradeModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-[var(--bg-panel)] border-2 border-[var(--accent-color)] rounded-[40px] p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 30 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-gradient-to-b from-[#1a1a2e] to-[#16213e] rounded-[32px] w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border border-yellow-400/30 text-left relative"
+              onClick={e => e.stopPropagation()}
             >
-              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-[var(--accent-color)] to-transparent opacity-50" />
-              
-              <div className="w-20 h-20 bg-[var(--accent-color)]/20 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12">
-                <Star size={40} className="text-[var(--accent-color)] fill-[var(--accent-color)]" />
+              {/* Header */}
+              <div className="relative p-6 pb-2 text-center">
+                <button 
+                  onClick={() => setShowUpgradeModal(false)} 
+                  className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors bg-white/5 rounded-full"
+                >
+                  <X size={20} />
+                </button>
+                <motion.div
+                  animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-[0_0_35px_rgba(251,191,36,0.4)]"
+                >
+                  <Star size={32} className="text-black fill-black" />
+                </motion.div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-wider">WyrmPIXEL PRO</h2>
+                <p className="text-xs text-yellow-300/70 font-bold mt-1">Desbloqueie todo o poder criativo do estúdio</p>
               </div>
 
-              <h2 className="text-3xl font-black text-white mb-2 leading-tight uppercase tracking-tighter">Dragon Art PRO</h2>
-              <p className="text-[var(--text-muted)] mb-8 text-sm font-bold leading-relaxed">
-                Você atingiu o limite da versão gratuita. <br/>
-                <span className="text-white">Desbloqueie camadas e frames ilimitados</span> para levar sua arte ao próximo nível!
-              </p>
+              {/* Features List */}
+              <div className="px-6 py-3 space-y-2">
+                {[
+                  { icon: '📐', title: 'Exportação HD / 4K / 8K / 16K', desc: 'Resolução máxima para impressão e portfólio profissional' },
+                  { icon: '✨', title: 'Sem Marca D\'água', desc: 'Artes limpas, sem logos sobrepostos nas exportações' },
+                  { icon: '🏅', title: 'Selos & Badges PRO', desc: 'Destaque exclusivo no perfil e comunidade' },
+                  { icon: '📚', title: 'Camadas & Frames Ilimitados', desc: 'Sem limites de layers por frame para criações complexas' },
+                  { icon: '🎬', title: 'GIF HD / 4K', desc: 'Exporte animações em altíssima definição' },
+                  { icon: '🖼️', title: 'Sprite Sheet HD', desc: 'Exportação perfeita para desenvolvedores de jogos' },
+                  { icon: '🎨', title: 'Efeitos Avançados & Temas', desc: 'Filtros de imagem premium e personalização total' },
+                  { icon: '⚡', title: 'Suporte Prioritário', desc: 'Acesso antecipado a novas ferramentas e suporte VIP' },
+                ].map((feature, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-3 p-2.5 bg-white/[0.03] rounded-xl border border-white/5"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-lg shrink-0">{feature.icon}</span>
+                      <div className="min-w-0">
+                        <h4 className="font-black text-white text-xs truncate">{feature.title}</h4>
+                        <p className="text-[10px] text-white/40 font-bold leading-tight truncate">{feature.desc}</p>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-yellow-400/10 border border-yellow-400/30 text-yellow-300 text-[8px] font-black rounded-lg shrink-0 flex items-center gap-1">
+                      <Lock size={9} /> PRO
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-              <div className="space-y-4">
-                <button
-                  onClick={() => window.open(CONFIG.STRIPE_PRO_LINK, '_blank')}
-                  className="w-full py-4 bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/90 text-white font-black rounded-2xl transition-all shadow-lg shadow-[var(--accent-color)]/20 active:scale-95 flex items-center justify-center gap-3"
-                >
-                  <Zap size={20} fill="white" />
-                  UPGRADE PARA PRO
-                </button>
-                <button
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="w-full py-3 text-[var(--text-muted)] hover:text-white font-black text-xs uppercase tracking-widest transition-colors"
-                >
-                  Talvez mais tarde
-                </button>
+              {/* Seletor de Planos */}
+              <div className="px-6 py-4 space-y-3 bg-black/20 border-t border-white/10">
+                <div className="text-center">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-400/10 px-2.5 py-0.5 rounded-full border border-yellow-400/20">
+                    ⚡ OFERTA ESPECIAL DE LANÇAMENTO
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Plano Mensal */}
+                  <div 
+                    onClick={() => {
+                      sound.playClick();
+                      window.open(CONFIG.STRIPE_PRO_LINK, '_blank');
+                      setShowUpgradeModal(false);
+                    }}
+                    className="p-3.5 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-yellow-400/50 transition-all cursor-pointer flex flex-col justify-between gap-2 group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black uppercase text-white/50 tracking-wider">Mensal</span>
+                        <span className="text-[9px] text-white/30 line-through font-bold">R$ 29,90</span>
+                      </div>
+                      <div className="text-lg font-black text-white mt-0.5">
+                        R$ 14,90 <span className="text-[10px] text-white/40 font-normal">/mês</span>
+                      </div>
+                      <p className="text-[9px] text-white/40 leading-tight">Cancele quando quiser</p>
+                    </div>
+                    <button className="w-full py-1.5 bg-white/10 group-hover:bg-yellow-400 group-hover:text-black text-white text-[10px] font-black rounded-lg transition-all uppercase tracking-wider">
+                      Assinar
+                    </button>
+                  </div>
+
+                  {/* Plano Vitalício - Destaque */}
+                  <div 
+                    onClick={() => {
+                      sound.playClick();
+                      window.open(CONFIG.STRIPE_PRO_LINK, '_blank');
+                      setShowUpgradeModal(false);
+                    }}
+                    className="p-3.5 bg-gradient-to-br from-yellow-400/20 via-amber-500/25 to-yellow-500/20 hover:from-yellow-400/30 rounded-2xl border-2 border-yellow-400/70 transition-all cursor-pointer flex flex-col justify-between gap-2 relative overflow-hidden shadow-xl group"
+                  >
+                    <div className="absolute top-0 right-0 bg-yellow-400 text-black text-[7px] font-black px-1.5 py-0.5 rounded-bl-lg uppercase tracking-widest">
+                      80% OFF
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between pr-8">
+                        <span className="text-[9px] font-black uppercase text-yellow-300 tracking-wider flex items-center gap-1">
+                          👑 Vitalício
+                        </span>
+                        <span className="text-[9px] text-amber-200/40 line-through font-bold">R$ 299,00</span>
+                      </div>
+                      <div className="text-xl font-black text-amber-300 mt-0.5">
+                        R$ 49,90 <span className="text-[10px] text-amber-200/60 font-normal">único</span>
+                      </div>
+                      <p className="text-[9px] text-amber-100/80 font-bold leading-tight">Pague 1x e use PARA SEMPRE</p>
+                    </div>
+                    <button className="w-full py-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[10px] font-black rounded-lg shadow-md group-hover:scale-105 transition-all uppercase tracking-wider flex items-center justify-center gap-1">
+                      <span>Adquirir Vitalício</span> 🚀
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 pt-0 text-center">
+                <p className="text-[9px] text-white/30 font-bold">Pagamento 100% seguro via Stripe • Acesso imediato no aplicativo</p>
               </div>
             </motion.div>
           </motion.div>

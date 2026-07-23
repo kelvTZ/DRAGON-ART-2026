@@ -16,7 +16,7 @@ interface ToolButtonProps {
   tooltip?: string;
 }
 
-export const ToolButton: React.FC<ToolButtonProps> = ({ 
+export const ToolButton: React.FC<ToolButtonProps> = React.memo(({ 
   id, 
   icon, 
   active, 
@@ -66,11 +66,10 @@ export const ToolButton: React.FC<ToolButtonProps> = ({
     if (onPointerUp) onPointerUp(e);
   }, [clearTimer, hide, onPointerUp]);
 
-  const btnSize = 'calc(54px * var(--ui-scale))';
+  const btnSize = 'calc(44px * var(--ui-scale))';
 
   return (
-    <div className="flex flex-col items-center gap-0.5 flex-shrink-0 relative" style={{ width: btnSize }}>
-
+    <div className="flex items-center justify-center flex-shrink-0 relative" style={{ width: btnSize, height: btnSize }}>
       <button 
         ref={btnRef}
         onClick={(e) => { sound.playClick(); if (onClick) onClick(e); }}
@@ -79,29 +78,24 @@ export const ToolButton: React.FC<ToolButtonProps> = ({
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
         onPointerCancel={handlePointerLeave}
-        className={`flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-200 ${active ? 'bg-[var(--accent-color)]/20 border border-[var(--accent-color)]/50 shadow-[0_0_15px_rgba(var(--accent-color-rgb),0.2)] text-[var(--accent-color)] scale-105' : 'hover:bg-white/5 border border-transparent text-[var(--text-secondary)]'} relative`}
+        className={`flex items-center justify-center rounded-2xl transition-all duration-200 ${active ? 'bg-[var(--accent-color)] text-white shadow-[0_0_16px_rgba(99,102,241,0.5)] scale-105 border border-white/30' : 'hover:bg-white/10 border border-transparent text-white/70 hover:text-white'} relative`}
         style={{ 
-          width: 'calc(54px * var(--ui-scale))', 
-          height: 'calc(54px * var(--ui-scale))',
-          minWidth: 'calc(54px * var(--ui-scale))',
-          minHeight: 'calc(54px * var(--ui-scale))'
+          width: 'calc(42px * var(--ui-scale))', 
+          height: 'calc(42px * var(--ui-scale))',
+          minWidth: 'calc(42px * var(--ui-scale))',
+          minHeight: 'calc(42px * var(--ui-scale))'
         }}
       >
-        <div style={{ transform: 'scale(var(--ui-scale))', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="mt-0.5">
+        <div style={{ transform: 'scale(calc(1.05 * var(--ui-scale)))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {icon}
         </div>
-        {label && (
-          <span className="text-[8px] md:text-[9px] font-black uppercase tracking-tight text-center truncate w-full px-1 opacity-90">
-            {label}
-          </span>
-        )}
-        {color && <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-[#000]" style={{ backgroundColor: color }} />}
+        {color && <div className="absolute top-1 right-1 w-3 h-3 rounded-full border border-black/60 shadow-sm" style={{ backgroundColor: color }} />}
         {shortcutKey && (
-          <div className="absolute top-0 right-0 -mt-1 -mr-1 bg-[var(--bg-surface)] text-[var(--text-primary)] text-[8px] font-bold px-0.5 rounded-sm border border-[var(--border-strong)] z-20 shadow-sm pointer-events-none uppercase hidden lg:block">
+          <div className="absolute top-0 right-0 -mt-1 -mr-1 bg-[var(--bg-surface)] text-[var(--text-primary)] text-[8px] font-bold px-1 rounded-sm border border-[var(--border-strong)] z-20 shadow-sm pointer-events-none uppercase hidden lg:block">
             {shortcutKey}
           </div>
         )}
       </button>
     </div>
   );
-};
+});

@@ -283,47 +283,30 @@ function FrameItem({
   moveFrame: (idx: number, dir: 'left' | 'right') => void, cloneFrame: (idx: number) => void, insertFrameAt: (idx: number) => void, hasSetFrames: boolean
 }) {
   const [isDragging, setIsDragging] = useState(false);
-  const [isReadyToDrag, setIsReadyToDrag] = useState(false);
   const [hoveredAction, setHoveredAction] = useState<string | null>(null);
-  const controls = useDragControls();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   const isActive = currentFrame === idx;
 
   const handlePointerDown = (e: React.PointerEvent) => {
     sound.playClick();
     setCurrentFrame(idx);
-    timerRef.current = setTimeout(() => {
-      setIsReadyToDrag(true);
-      controls.start(e);
-      if (window.navigator.vibrate) window.navigator.vibrate(40);
-    }, 200); 
-  };
-
-  const clearTimers = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setIsReadyToDrag(false);
   };
 
   return (
     <Reorder.Item 
       value={frame}
-      dragListener={false}
-      dragControls={controls}
-      onDragStart={() => { setIsDragging(true); setIsReadyToDrag(false); }}
-      onDragEnd={() => { setIsDragging(false); setIsReadyToDrag(false); }}
-      style={{ touchAction: isReadyToDrag || isDragging ? 'none' : 'auto' }}
+      dragListener={true}
+      onDragStart={() => { setIsDragging(true); }}
+      onDragEnd={() => { setIsDragging(false); }}
       className="relative shrink-0 cursor-pointer"
       onPointerDown={handlePointerDown}
-      onPointerUp={clearTimers}
-      onPointerLeave={clearTimers}
     >
       <motion.div 
         animate={{ 
-          scale: isDragging || isReadyToDrag ? 1.05 : 1, 
-          y: isDragging || isReadyToDrag ? -5 : 0 
+          scale: isDragging ? 1.05 : 1, 
+          y: isDragging ? -5 : 0 
         }}
-        className={`w-28 flex flex-col items-center gap-1.5 transition-all ${isDragging || isReadyToDrag ? 'z-50' : 'z-10'}`}
+        className={`w-28 flex flex-col items-center gap-1.5 transition-all ${isDragging ? 'z-50' : 'z-10'}`}
       >
         {/* Frame Number */}
         <div className={`w-full flex justify-between items-center px-1 transition-colors ${isActive ? 'text-[var(--accent-color)]' : 'text-white/30'}`}>
@@ -333,7 +316,7 @@ function FrameItem({
 
         {/* Thumbnail Box - Preview Only */}
         <div className={`relative w-full aspect-square rounded-xl border-2 transition-all overflow-hidden ${
-          isDragging || isReadyToDrag 
+          isDragging 
             ? 'bg-[var(--accent-color)]/20 border-[var(--accent-color)] shadow-xl scale-105' 
             : isActive 
               ? 'bg-white border-[var(--accent-color)] shadow-lg shadow-[var(--accent-color)]/20' 

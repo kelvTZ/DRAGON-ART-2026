@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🦎 Lizard Quest 2D — Dragon Art</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;700;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #060c08;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: linear-gradient(to bottom, rgba(6,12,8,0.85), transparent);
+    pointer-events: none;
+    z-index: 10;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .hud-left { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+  .hud-right { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+  .hud-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 999px;
+    padding: 8px 24px;
+    pointer-events: none;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+  .btn-hud {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    font-size: 18px;
+    backdrop-filter: blur(8px);
+  }
+  .btn-hud:hover { background: rgba(255,255,255,0.1); }
+  .btn-hud:active { transform: scale(0.93); }
+  .btn-hud.muted { color: #ef4444; }
+
+  .badge-title {
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.35);
+    color: #4ade80;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .score-box { text-align: center; }
+  .score-label { font-size: 7px; font-weight: 900; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; display: block; }
+  .score-value {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 15px;
+    color: #4ade80;
+    text-shadow: 0 0 8px rgba(74,222,128,0.6);
+  }
+  .score-value.gold { color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.6); }
+  .score-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.1); }
+
+  /* Help bar */
+  #help {
+    position: absolute;
+    bottom: 14px; left: 14px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    z-index: 10;
+    pointer-events: none;
+    line-height: 1.8;
+    max-width: 230px;
+  }
+  #help .htitle { color: #4ade80; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; font-size: 9px; margin-bottom: 4px; display: block; }
+  kbd {
+    background: rgba(255,255,255,0.12);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: 9px;
+    color: #fff;
+  }
+
+  /* Settings panel */
+  #settings-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(12px);
+    z-index: 30;
+    align-items: center;
+    justify-content: center;
+  }
+  #settings-overlay.open { display: flex; }
+
+  #settings-panel {
+    width: 100%;
+    max-width: 420px;
+    background: #0c140f;
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 28px;
+    padding: 28px;
+    margin: 16px;
+  }
+  #settings-panel h3 {
+    font-size: 15px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #fff;
+    margin-bottom: 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; gap: 8px;
+  }
+  #settings-panel p.desc { font-size: 11px; color: #6b7280; line-height: 1.6; margin-bottom: 20px; }
+
+  .settings-label { font-size: 9px; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; display: block; }
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .mode-btn {
+    padding: 10px 8px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .mode-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .mode-btn.active { background: rgba(34,197,94,0.2); border-color: #22c55e; color: #fff; }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  input[type=range] { flex: 1; accent-color: #22c55e; height: 5px; border-radius: 5px; }
+  .slider-val { font-family: monospace; font-size: 12px; font-weight: 700; color: #4ade80; min-width: 28px; text-align: right; }
+  .slider-hint { font-size: 9px; color: #4b5563; margin-bottom: 20px; line-height: 1.5; }
+
+  .settings-close {
+    width: 100%;
+    padding: 14px;
+    background: #22c55e;
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .settings-close:hover { background: #16a34a; }
+  .settings-close:active { transform: scale(0.97); }
+
+  /* Pause overlay */
+  #pause-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  #pause-overlay.open { display: flex; }
+  #pause-overlay h2 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 22px;
+    color: #fff;
+  }
+  #resume-btn {
+    padding: 14px 32px;
+    background: #22c55e;
+    color: #000;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  #resume-btn:hover { background: #16a34a; }
+  #resume-btn:active { transform: scale(0.95); }
+
+  /* Floating score popup */
+  .score-popup {
+    position: absolute;
+    pointer-events: none;
+    z-index: 15;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    font-weight: 900;
+    text-shadow: 0 0 6px currentColor;
+    animation: floatUp 0.9s ease-out forwards;
+  }
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    80%  { opacity: 1; transform: translateY(-55px) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-70px) scale(0.9); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-left">
+    <button class="btn-hud" id="back-btn" title="Voltar">←</button>
+    <div class="badge-title">🦎 Lizard Quest 2D</div>
+  </div>
+
+  <div class="hud-center">
+    <div class="score-box">
+      <span class="score-label">Cristais</span>
+      <span class="score-value" id="score-display">0</span>
+    </div>
+    <div class="score-divider"></div>
+    <div class="score-box">
+      <span class="score-label">🏆 Recorde</span>
+      <span class="score-value gold" id="high-display">0</span>
+    </div>
+  </div>
+
+  <div class="hud-right">
+    <button class="btn-hud" id="mute-btn" title="Mute/Unmute">🔊</button>
+    <button class="btn-hud" id="pause-btn" title="Pausar">⏸</button>
+    <button class="btn-hud" id="settings-btn" title="Calibrar Sprites">⚙️</button>
+  </div>
+</div>
+
+<!-- Help bar -->
+<div id="help">
+  <span class="htitle">🛡 Como Jogar</span>
+  <div><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> Correr</div>
+  <div><kbd>Toque+Arrastar</kbd> Joystick Mobile</div>
+  <div style="color:#fbbf24;font-weight:900;font-size:9px;margin-top:4px;">⚡ Pegue os cristais coloridos!</div>
+</div>
+
+<!-- Settings Panel -->
+<div id="settings-overlay">
+  <div id="settings-panel">
+    <h3>⚙️ Calibrador do Lagarto</h3>
+    <p class="desc">Como os sprites são JPEGs sem transparência, use o <strong style="color:#4ade80">Chroma Key</strong> para remover a cor de fundo em tempo real!</p>
+
+    <span class="settings-label">Remover Fundo</span>
+    <div class="mode-grid">
+      <button class="mode-btn active" data-mode="auto">Auto (Detectar)</button>
+      <button class="mode-btn" data-mode="white">Remover Branco</button>
+      <button class="mode-btn" data-mode="black">Remover Preto</button>
+      <button class="mode-btn" data-mode="none">Manter Fundo</button>
+    </div>
+
+    <span class="settings-label">Tolerância: <span id="thresh-label">40</span></span>
+    <div class="slider-row">
+      <input type="range" id="thresh-slider" min="1" max="180" value="40" />
+      <span class="slider-val" id="thresh-val">40</span>
+    </div>
+    <p class="slider-hint">⬆ Aumente se o fundo ainda aparecer. ⬇ Reduza se partes do lagarto sumírem.</p>
+
+    <button class="settings-close" id="settings-close">✓ Concluir Calibração</button>
+  </div>
+</div>
+
+<!-- Pause Overlay -->
+<div id="pause-overlay">
+  <div style="font-size:48px">🦎</div>
+  <h2>Pausado</h2>
+  <button id="resume-btn">▶ Retomar</button>
+</div>
+
+<script>
+(function() {
+"use strict";
+
+// ─── CONFIG ──────────────────────────────────────────────────────────────
+const WORLD_W = 2600, WORLD_H = 2000;
+const MAX_CRYSTALS = 45;
+const MAX_GRASS = 200;
+const MAX_OBSTACLES = 28;
+
+// ─── STATE ───────────────────────────────────────────────────────────────
+let score = 0;
+let highScore = parseInt(localStorage.getItem('lq_hs') || '0', 10);
+let muted = false;
+let paused = false;
+let audioCtx = null;
+
+// Chroma Key
+let chromaMode = 'auto';  // 'auto' | 'white' | 'black' | 'none'
+let chromaThreshold = 40;
+
+// Sprites
+const sprites = { idle: null, run1: null, run2: null, idleC: null, run1C: null, run2C: null };
+let spritesLoaded = 0;
+
+// ─── CANVAS SETUP ────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ─── AUDIO ───────────────────────────────────────────────────────────────
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playStep(isLeft) {
+  if (muted) return;
+  const ac = getAudioCtx(); if (!ac) return;
+  try {
+    const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.05), ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const noise = ac.createBufferSource(); noise.buffer = buf;
+    const filt = ac.createBiquadFilter(); filt.type = 'bandpass';
+    filt.frequency.value = isLeft ? 370 : 430; filt.Q.value = 4;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.07, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.045);
+    const osc = ac.createOscillator(); osc.type = 'triangle';
+    osc.frequency.setValueAtTime(65, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(28, ac.currentTime + 0.04);
+    const g2 = ac.createGain();
+    g2.gain.setValueAtTime(0.14, ac.currentTime);
+    g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.05);
+    noise.connect(filt); filt.connect(g); g.connect(ac.destination);
+    osc.connect(g2); g2.connect(ac.destination);
+    noise.start(); noise.stop(ac.currentTime + 0.05);
+    osc.start(); osc.stop(ac.currentTime + 0.05);
+  } catch(e){}
+}
+
+function playCollect() {
+  if (muted) return;
+  const ac = getAudioCtx(); if (!ac) return;
+  try {
+    const now = ac.currentTime;
+    const freqs = [523.25, 659.25, 783.99, 1046.50];
+    const o = ac.createOscillator(); o.type = 'sine';
+    const o2 = ac.createOscillator(); o2.type = 'triangle';
+    freqs.forEach((f, i) => { o.frequency.setValueAtTime(f, now + i * 0.065); });
+    o2.frequency.setValueAtTime(freqs[0] * 2.01, now);
+    o2.frequency.setValueAtTime(freqs[2] * 2, now + 0.13);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.11, now);
+    g.gain.setValueAtTime(0.11, now + 0.17);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+    o.connect(g); o2.connect(g); g.connect(ac.destination);
+    o.start(now); o.stop(now + 0.4);
+    o2.start(now); o2.stop(now + 0.4);
+  } catch(e){}
+}
+
+// ─── CHROMA KEY ──────────────────────────────────────────────────────────
+function applyChromaKey(img, mode, threshold) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || img.width;
+  c.height = img.naturalHeight || img.height;
+  const cx = c.getContext('2d'); cx.drawImage(img, 0, 0);
+  if (mode === 'none') return c;
+  const id = cx.getImageData(0, 0, c.width, c.height);
+  const data = id.data;
+  let kr = 255, kg = 255, kb = 255;
+  if (mode === 'black') { kr = 0; kg = 0; kb = 0; }
+  else if (mode === 'auto') {
+    const corners = [[0,0],[c.width-1,0],[0,c.height-1],[c.width-1,c.height-1]];
+    let rs=0,gs=0,bs=0;
+    corners.forEach(([x,y]) => {
+      const idx = (y*c.width+x)*4;
+      rs+=data[idx]; gs+=data[idx+1]; bs+=data[idx+2];
+    });
+    kr=Math.round(rs/4); kg=Math.round(gs/4); kb=Math.round(bs/4);
+  }
+  for (let i=0; i<data.length; i+=4) {
+    const dr=data[i]-kr, dg=data[i+1]-kg, db=data[i+2]-kb;
+    if (Math.sqrt(dr*dr+dg*dg+db*db) < threshold) data[i+3]=0;
+  }
+  cx.putImageData(id,0,0);
+  return c;
+}
+
+function reprocessAll() {
+  if (sprites.idle) sprites.idleC = applyChromaKey(sprites.idle, chromaMode, chromaThreshold);
+  if (sprites.run1) sprites.run1C = applyChromaKey(sprites.run1, chromaMode, chromaThreshold);
+  if (sprites.run2) sprites.run2C = applyChromaKey(sprites.run2, chromaMode, chromaThreshold);
+}
+
+function loadSprite(key, src) {
+  const img = new Image();
+  img.onload = () => { sprites[key] = img; spritesLoaded++; if (spritesLoaded === 3) reprocessAll(); };
+  img.onerror = () => { spritesLoaded++; }; // graceful fallback if file missing
+  img.src = src;
+  return img;
+}
+
+loadSprite('idle',  'public/largato/parado.jpeg');
+loadSprite('run1',  'public/largato/correndo1.jpeg');
+loadSprite('run2',  'public/largato/correndo2.jpeg');
+
+// ─── ENTITY CLASSES ──────────────────────────────────────────────────────
+class Particle {
+  constructor(x, y, color, vx, vy) {
+    this.x=x; this.y=y; this.color=color;
+    this.vx = vx ?? (Math.random()-0.5)*5;
+    this.vy = vy ?? (Math.random()-0.5)*5;
+    this.size = Math.random()*4+2;
+    this.maxLife = Math.random()*22+18;
+    this.life = this.maxLife;
+  }
+  update() { this.x+=this.vx; this.y+=this.vy; this.vy+=0.06; this.life--; this.size=Math.max(0,this.size-0.12); }
+  draw(cx) {
+    cx.save(); cx.globalAlpha=this.life/this.maxLife;
+    cx.fillStyle=this.color; cx.shadowBlur=6; cx.shadowColor=this.color;
+    cx.beginPath(); cx.arc(this.x,this.y,this.size,0,Math.PI*2); cx.fill();
+    cx.restore();
+  }
+}
+
+class Dust {
+  constructor(x, y) {
+    this.x=x; this.y=y;
+    this.vx=(Math.random()-0.5)*0.8; this.vy=-Math.random()*0.5-0.15;
+    this.size=Math.random()*7+4;
+    this.maxLife=Math.random()*18+14; this.life=this.maxLife;
+  }
+  update() { this.x+=this.vx; this.y+=this.vy; this.size+=0.12; this.life--; }
+  draw(cx) {
+    cx.save(); cx.globalAlpha=(this.life/this.maxLife)*0.38;
+    cx.fillStyle='#c4b49e';
+    cx.beginPath(); cx.arc(this.x,this.y,this.size,0,Math.PI*2); cx.fill();
+    cx.restore();
+  }
+}
+
+class Crystal {
+  constructor(x, y, color, pts) {
+    this.x=x; this.y=y; this.color=color; this.pts=pts;
+    this.size=14; this.angle=Math.random()*Math.PI*2;
+    this.speed=0.05+Math.random()*0.03; this.collected=false;
+  }
+  update() { this.angle+=this.speed; }
+  draw(cx) {
+    const bob = Math.sin(this.angle)*4;
+    const sz = this.size + Math.sin(this.angle*2)*2;
+    cx.save();
+    cx.shadowBlur=16; cx.shadowColor=this.color;
+    cx.fillStyle=this.color;
+    cx.beginPath();
+    cx.moveTo(this.x, this.y+bob-sz);
+    cx.lineTo(this.x+sz*0.65, this.y+bob);
+    cx.lineTo(this.x, this.y+bob+sz);
+    cx.lineTo(this.x-sz*0.65, this.y+bob);
+    cx.closePath(); cx.fill();
+    cx.shadowBlur=0; cx.fillStyle='rgba(255,255,255,0.75)';
+    cx.beginPath();
+    cx.moveTo(this.x, this.y+bob-sz*0.65);
+    cx.lineTo(this.x+sz*0.22, this.y+bob);
+    cx.lineTo(this.x, this.y+bob+sz*0.28);
+    cx.lineTo(this.x-sz*0.22, this.y+bob);
+    cx.closePath(); cx.fill();
+    cx.restore();
+  }
+}
+
+class GrassTuft {
+  constructor(x, y) {
+    this.x=x; this.y=y;
+    this.sw=Math.random()*Math.PI*2; this.ss=0.018+Math.random()*0.02;
+    this.rustle=0;
+  }
+  update() {
+    this.sw+=this.ss;
+    if (this.rustle>0.01) this.rustle*=0.91; else this.rustle=0;
+  }
+  bump() { this.rustle=14; }
+  draw(cx) {
+    const nat=Math.sin(this.sw)*3;
+    const sway=nat + Math.sin(Date.now()*0.08)*this.rustle;
+    cx.save(); cx.translate(this.x,this.y); cx.rotate(sway*Math.PI/180);
+    cx.fillStyle='#1f7a38';
+    cx.beginPath();
+    cx.moveTo(-6,0); cx.quadraticCurveTo(-9,-12,-13,-17); cx.quadraticCurveTo(-4,-11,0,0);
+    cx.moveTo(-2,0); cx.quadraticCurveTo(0,-17,2,-23); cx.quadraticCurveTo(3,-11,4,0);
+    cx.moveTo(1,0); cx.quadraticCurveTo(6,-13,10,-19); cx.quadraticCurveTo(4,-9,5,0);
+    cx.closePath(); cx.fill();
+    cx.fillStyle='#3dcf62';
+    cx.beginPath();
+    cx.moveTo(-0.5,0); cx.quadraticCurveTo(0,-17,1,-21); cx.quadraticCurveTo(1.5,-11,2,0);
+    cx.closePath(); cx.fill();
+    cx.restore();
+  }
+}
+
+// ─── WORLD POPULATION ────────────────────────────────────────────────────
+const CRYSTAL_COLORS = ['#f43f5e','#a855f7','#06b6d4','#eab308','#10b981','#f97316'];
+
+let crystals = [];
+let grassTufts = [];
+let particles = [];
+let dustParts = [];
+let obstacles = [];
+
+function spawnCrystal() {
+  const x = 120 + Math.random()*(WORLD_W-240);
+  const y = 120 + Math.random()*(WORLD_H-240);
+  const color = CRYSTAL_COLORS[Math.floor(Math.random()*CRYSTAL_COLORS.length)];
+  const pts = color === '#f43f5e' ? 50 : (color === '#a855f7' ? 35 : 20);
+  crystals.push(new Crystal(x, y, color, pts));
+}
+
+function initWorld() {
+  for (let i=0;i<MAX_GRASS;i++) grassTufts.push(new GrassTuft(Math.random()*WORLD_W, Math.random()*WORLD_H));
+  for (let i=0;i<MAX_CRYSTALS;i++) spawnCrystal();
+  for (let i=0;i<MAX_OBSTACLES;i++) {
+    obstacles.push({ x:150+Math.random()*(WORLD_W-300), y:150+Math.random()*(WORLD_H-300), r:30+Math.random()*25 });
+  }
+}
+initWorld();
+
+// ─── PLAYER ──────────────────────────────────────────────────────────────
+const player = {
+  x: WORLD_W/2, y: WORLD_H/2,
+  vx:0, vy:0,
+  radius:28, maxSpeed:5.5, accel:0.45, friction:0.84,
+  // animation
+  animFrame:0, animTimer:0, runSpeed:8,
+  isWalking:false,
+  // squash & stretch spring
+  sx:1, sy:1, svx:0, svy:0,
+  springK:0.16, springD:0.82,
+  // bob & tilt
+  bobAngle:0, tiltAngle:0, facingDir:1,
+  // shake
+  shakeStr:0,
+  // step alt
+  stepAlt: false,
+};
+
+// ─── INPUT ───────────────────────────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.key]=true; });
+window.addEventListener('keyup',   e => { keys[e.key]=false; });
+
+let joystickOn=false, joyStart={x:0,y:0}, joyVec={x:0,y:0};
+
+canvas.addEventListener('touchstart', e => {
+  if (paused) return;
+  getAudioCtx(); // unlock audio on first touch
+  const t = e.touches[0];
+  if (t.clientX < window.innerWidth * 0.65) {
+    joystickOn=true; joyStart={x:t.clientX,y:t.clientY}; joyVec={x:0,y:0};
+  }
+  e.preventDefault();
+}, {passive:false});
+
+canvas.addEventListener('touchmove', e => {
+  if (!joystickOn) return;
+  const t=e.touches[0];
+  const dx=t.clientX-joyStart.x, dy=t.clientY-joyStart.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  const max=55;
+  const fac = Math.min(dist,max)/max;
+  joyVec = dist===0 ? {x:0,y:0} : {x:(dx/dist)*fac, y:(dy/dist)*fac};
+  e.preventDefault();
+}, {passive:false});
+
+canvas.addEventListener('touchend', () => { joystickOn=false; joyVec={x:0,y:0}; });
+
+// ─── CAMERA ──────────────────────────────────────────────────────────────
+const cam = { x: WORLD_W/2 - canvas.width/2, y: WORLD_H/2 - canvas.height/2 };
+
+// ─── GAME LOOP ───────────────────────────────────────────────────────────
+function update() {
+  if (paused) return;
+
+  // Input
+  let ax=0, ay=0;
+  if (keys['w']||keys['W']||keys['ArrowUp'])    ay-=1;
+  if (keys['s']||keys['S']||keys['ArrowDown'])  ay+=1;
+  if (keys['a']||keys['A']||keys['ArrowLeft'])  ax-=1;
+  if (keys['d']||keys['D']||keys['ArrowRight']) ax+=1;
+  const kl=Math.sqrt(ax*ax+ay*ay); if(kl>0){ax/=kl;ay/=kl;}
+  if (joystickOn) { ax=joyVec.x; ay=joyVec.y; }
+
+  // Physics
+  player.vx += ax*player.accel;
+  player.vy += ay*player.accel;
+  player.vx *= player.friction;
+  player.vy *= player.friction;
+  const spd=Math.sqrt(player.vx*player.vx+player.vy*player.vy);
+  if (spd>player.maxSpeed) { player.vx*=player.maxSpeed/spd; player.vy*=player.maxSpeed/spd; }
+
+  const wasWalking = player.isWalking;
+  player.isWalking = spd > 0.25;
+
+  // Squash & stretch trigger at run-start (achatamento!)
+  if (player.isWalking && !wasWalking) {
+    player.sx = 1.28; player.sy = 0.74;
+    player.svx = 0; player.svy = 0;
+  }
+  // Spring physics
+  const fsx = -player.springK*(player.sx-1); player.svx+=fsx; player.svx*=player.springD; player.sx+=player.svx;
+  const fsy = -player.springK*(player.sy-1); player.svy+=fsy; player.svy*=player.springD; player.sy+=player.svy;
+
+  // Animation & audio
+  if (player.isWalking) {
+    player.bobAngle += spd*0.13;
+    const tgt = player.vx*0.045;
+    player.tiltAngle += (tgt-player.tiltAngle)*0.16;
+    if (player.vx < -0.1) player.facingDir=-1;
+    else if (player.vx > 0.1) player.facingDir=1;
+
+    player.animTimer += spd;
+    if (player.animTimer >= player.runSpeed) {
+      player.animTimer = 0;
+      player.animFrame = player.animFrame===1 ? 2 : 1;
+      player.stepAlt = !player.stepAlt;
+      playStep(player.stepAlt);
+      dustParts.push(new Dust(player.x+(Math.random()-0.5)*22, player.y+24));
+    }
+  } else {
+    player.animFrame=0; player.animTimer=0;
+    player.bobAngle+=0.04;
+    player.tiltAngle+=(0-player.tiltAngle)*0.1;
+  }
+
+  // Move & clamp
+  player.x += player.vx; player.y += player.vy;
+  player.x = Math.max(player.radius, Math.min(WORLD_W-player.radius, player.x));
+  player.y = Math.max(player.radius, Math.min(WORLD_H-player.radius, player.y));
+
+  // Obstacle collisions
+  obstacles.forEach(obs => {
+    const dx=player.x-obs.x, dy=player.y-obs.y;
+    const d=Math.sqrt(dx*dx+dy*dy), min=player.radius+obs.r-6;
+    if (d<min && d>0) {
+      player.x+=dx/d*(min-d); player.y+=dy/d*(min-d);
+      player.vx*=0.78; player.vy*=0.78;
+    }
+  });
+
+  // Grass rustle
+  grassTufts.forEach(g => {
+    if (!player.isWalking) return;
+    const dx=player.x-g.x, dy=player.y-(g.y-10);
+    if (Math.sqrt(dx*dx+dy*dy)<player.radius+14 && Math.random()<0.12) g.bump();
+  });
+
+  // Crystal pickup
+  for (let i=crystals.length-1;i>=0;i--) {
+    const c=crystals[i];
+    const dx=player.x-c.x, dy=player.y-c.y;
+    if (Math.sqrt(dx*dx+dy*dy)<player.radius+c.size) {
+      score += c.pts;
+      if (score>highScore) { highScore=score; localStorage.setItem('lq_hs',highScore); }
+      document.getElementById('score-display').textContent=score;
+      document.getElementById('high-display').textContent=highScore;
+      playCollect();
+      player.shakeStr=7;
+      // Score popup on screen
+      showScorePopup(c.x-cam.x, c.y-cam.y, '+'+c.pts, c.color);
+      // Particle fountain
+      for (let j=0;j<18;j++) particles.push(new Particle(c.x,c.y,c.color));
+      crystals.splice(i,1);
+    }
+  }
+
+  // Respawn crystals
+  while (crystals.length < MAX_CRYSTALS) spawnCrystal();
+
+  // Camera LERP
+  cam.x += ((player.x-canvas.width/2)-cam.x)*0.09;
+  cam.y += ((player.y-canvas.height/2)-cam.y)*0.09;
+  cam.x = Math.max(0, Math.min(WORLD_W-canvas.width, cam.x));
+  cam.y = Math.max(0, Math.min(WORLD_H-canvas.height, cam.y));
+
+  // Decay shake
+  if (player.shakeStr>0.1) player.shakeStr*=0.88; else player.shakeStr=0;
+
+  // Update entities
+  grassTufts.forEach(g=>g.update());
+  crystals.forEach(c=>c.update());
+  particles.forEach(p=>p.update()); particles=particles.filter(p=>p.life>0);
+  dustParts.forEach(d=>d.update()); dustParts=dustParts.filter(d=>d.life>0);
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+
+  // Screen shake
+  if (player.shakeStr>0) {
+    ctx.translate((Math.random()-0.5)*player.shakeStr, (Math.random()-0.5)*player.shakeStr);
+  }
+
+  // Camera offset
+  ctx.translate(-cam.x,-cam.y);
+
+  // ── BACKGROUND ───────────────────────────────────────────────────────
+  ctx.fillStyle='#14231a';
+  ctx.fillRect(0,0,WORLD_W,WORLD_H);
+  // subtle grid
+  ctx.strokeStyle='rgba(255,255,255,0.025)'; ctx.lineWidth=2;
+  for(let x=0;x<WORLD_W;x+=140){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD_H);ctx.stroke();}
+  for(let y=0;y<WORLD_H;y+=140){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD_W,y);ctx.stroke();}
+  // world border glow
+  ctx.strokeStyle='#22c55e'; ctx.lineWidth=14; ctx.shadowBlur=18; ctx.shadowColor='#22c55e';
+  ctx.strokeRect(0,0,WORLD_W,WORLD_H); ctx.shadowBlur=0;
+
+  // ── DUST ─────────────────────────────────────────────────────────────
+  dustParts.forEach(d=>d.draw(ctx));
+
+  // ── GRASS ────────────────────────────────────────────────────────────
+  grassTufts.forEach(g=>g.draw(ctx));
+
+  // ── CRYSTALS ─────────────────────────────────────────────────────────
+  crystals.forEach(c=>c.draw(ctx));
+
+  // ── OBSTACLES ────────────────────────────────────────────────────────
+  obstacles.forEach(obs => {
+    // Shadow
+    ctx.save(); ctx.fillStyle='rgba(0,0,0,0.28)';
+    ctx.beginPath(); ctx.ellipse(obs.x, obs.y+obs.r*0.38, obs.r*1.1, obs.r*0.45, 0, 0, Math.PI*2); ctx.fill();
+    // Stone
+    const g=ctx.createLinearGradient(obs.x-obs.r,obs.y-obs.r,obs.x+obs.r,obs.y+obs.r);
+    g.addColorStop(0,'#475569'); g.addColorStop(1,'#1e293b');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(obs.x,obs.y,obs.r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#64748b'; ctx.lineWidth=4; ctx.stroke();
+    ctx.font=`${obs.r*0.8}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.globalAlpha=0.55; ctx.fillText('🐉',obs.x,obs.y); ctx.globalAlpha=1;
+    ctx.restore();
+  });
+
+  // ── PLAYER ───────────────────────────────────────────────────────────
+  const bob = Math.sin(player.bobAngle) * 3;
+  // Shadow
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.38)';
+  ctx.beginPath();
+  ctx.ellipse(player.x, player.y+player.radius*0.72, player.radius*1.25*player.sx, player.radius*0.52*player.sy, 0, 0, Math.PI*2);
+  ctx.fill(); ctx.restore();
+
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.rotate(player.tiltAngle);
+  ctx.scale(player.sx * player.facingDir, player.sy);
+
+  // Pick sprite frame
+  let src = null;
+  if (player.animFrame===1) src = sprites.run1C || sprites.run1;
+  else if (player.animFrame===2) src = sprites.run2C || sprites.run2;
+  else src = sprites.idleC || sprites.idle;
+
+  const dw = player.radius*2.35, dh = player.radius*2.35;
+  if (src) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(src, -dw/2, -dh/2+bob, dw, dh);
+  } else {
+    // Pretty fallback if sprites haven't loaded
+    ctx.fillStyle='#dc2626'; ctx.shadowBlur=10; ctx.shadowColor='#ef4444';
+    ctx.beginPath(); ctx.arc(0,bob,player.radius,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#1e293b'; ctx.fillRect(8,bob+3,22,9);
+    ctx.fillStyle='#fff'; ctx.beginPath();
+    ctx.arc(-8,bob-7,6,0,Math.PI*2); ctx.arc(8,bob-7,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#000'; ctx.beginPath();
+    ctx.arc(-8,bob-7,2.5,0,Math.PI*2); ctx.arc(8,bob-7,2.5,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // ── PARTICLES ────────────────────────────────────────────────────────
+  particles.forEach(p=>p.draw(ctx));
+
+  ctx.restore(); // end world transform
+
+  // ── VIGNETTE / LIGHTING ──────────────────────────────────────────────
+  const sx=player.x-cam.x, sy=player.y-cam.y;
+  const maxR = Math.max(canvas.width,canvas.height)*0.82;
+  const vg=ctx.createRadialGradient(sx,sy,55,sx,sy,maxR);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(0.28,'rgba(0,0,0,0.18)');
+  vg.addColorStop(1,'rgba(3,10,5,0.88)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // ── JOYSTICK ─────────────────────────────────────────────────────────
+  if (joystickOn) {
+    const jx=joyStart.x, jy=joyStart.y, jr=55;
+    ctx.save();
+    ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.strokeStyle='rgba(255,255,255,0.22)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(jx,jy,jr,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    const ix=jx+joyVec.x*jr, iy=jy+joyVec.y*jr;
+    const ig=ctx.createRadialGradient(ix,iy,2,ix,iy,22);
+    ig.addColorStop(0,'#4ade80'); ig.addColorStop(1,'#15803d');
+    ctx.fillStyle=ig; ctx.shadowBlur=12; ctx.shadowColor='#4ade80';
+    ctx.beginPath(); ctx.arc(ix,iy,20,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+// ─── SCORE POPUPS ────────────────────────────────────────────────────────
+function showScorePopup(x, y, text, color) {
+  const el=document.createElement('div');
+  el.className='score-popup';
+  el.textContent=text;
+  el.style.color=color;
+  el.style.left=Math.round(x-30)+'px';
+  el.style.top=Math.round(y-30)+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 950);
+}
+
+// ─── UI BUTTONS ──────────────────────────────────────────────────────────
+document.getElementById('back-btn').addEventListener('click', () => {
+  if (confirm('Sair do Lizard Quest?')) history.back();
+});
+
+const muteBtn=document.getElementById('mute-btn');
+muteBtn.addEventListener('click', () => {
+  muted=!muted; muteBtn.textContent=muted?'🔇':'🔊';
+  if (muted) muteBtn.classList.add('muted'); else muteBtn.classList.remove('muted');
+  getAudioCtx();
+});
+
+const pauseBtn=document.getElementById('pause-btn');
+const pauseOverlay=document.getElementById('pause-overlay');
+pauseBtn.addEventListener('click', () => { paused=true; pauseOverlay.classList.add('open'); pauseBtn.textContent='▶'; });
+document.getElementById('resume-btn').addEventListener('click', () => {
+  paused=false; pauseOverlay.classList.remove('open'); pauseBtn.textContent='⏸';
+  getAudioCtx();
+});
+
+// Settings
+const settingsBtn=document.getElementById('settings-btn');
+const settingsOverlay=document.getElementById('settings-overlay');
+settingsBtn.addEventListener('click', () => settingsOverlay.classList.add('open'));
+document.getElementById('settings-close').addEventListener('click', () => settingsOverlay.classList.remove('open'));
+settingsOverlay.addEventListener('click', e => { if(e.target===settingsOverlay) settingsOverlay.classList.remove('open'); });
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    chromaMode = btn.dataset.mode;
+    reprocessAll();
+  });
+});
+
+const threshSlider=document.getElementById('thresh-slider');
+const threshVal=document.getElementById('thresh-val');
+const threshLabel=document.getElementById('thresh-label');
+threshSlider.addEventListener('input', () => {
+  chromaThreshold=parseInt(threshSlider.value,10);
+  threshVal.textContent=chromaThreshold;
+  threshLabel.textContent=chromaThreshold;
+  reprocessAll();
+});
+
+// Init high score display
+document.getElementById('high-display').textContent=highScore;
+
+// Unlock audio on first keyboard press too
+window.addEventListener('keydown', () => getAudioCtx(), {once:true});
+
+})();
+</script>
+</body>
+</html>

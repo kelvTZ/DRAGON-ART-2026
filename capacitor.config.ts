@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.dragonart.app',
-  appName: 'Dragon Art',
+  appName: 'WyrmPIXEL',
   webDir: 'dist',
   android: {
     backgroundColor: '#000000',

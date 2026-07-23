@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Merge, ChevronDown, Sun, Moon, X, ZoomIn, Maximize, ZoomOut, Sparkles, Wand2, Zap, Hand, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Merge, ChevronDown, Sun, Moon, X, ZoomIn, Maximize, ZoomOut, Sparkles, Wand2, Zap, Hand, Trash2, Eye, EyeOff, Video } from 'lucide-react';
 import { sound } from '../../sound';
 import { useTooltip } from '../../contexts/TooltipContext';
 
@@ -28,9 +28,11 @@ interface FloatingControlsProps {
   isTrashLongPress: React.MutableRefObject<boolean>;
   trashLongPressTimer: React.MutableRefObject<NodeJS.Timeout | null>;
   setShowDeletedHistory: (show: boolean) => void;
+  onToggleTimelapse: () => void;
+  isRecordingProcess?: boolean;
 }
 
-export const FloatingControls: React.FC<FloatingControlsProps> = ({
+export const FloatingControls: React.FC<FloatingControlsProps> = React.memo(({
   uiVisible,
   symmetryX,
   setSymmetryX,
@@ -53,7 +55,9 @@ export const FloatingControls: React.FC<FloatingControlsProps> = ({
   clearCurrentLayer,
   isTrashLongPress,
   trashLongPressTimer,
-  setShowDeletedHistory
+  setShowDeletedHistory,
+  onToggleTimelapse,
+  isRecordingProcess
 }) => {
   const { show: showTooltip, hide: hideTooltip } = useTooltip();
   const isSymmetryActive = symmetryX || symmetryY || symmetryDiag1 || symmetryDiag2;
@@ -87,7 +91,7 @@ export const FloatingControls: React.FC<FloatingControlsProps> = ({
         drag
         dragMomentum={false}
         initial={{ x: 0, y: 0 }}
-        className={`fixed right-3 top-20 z-[60] flex flex-col items-center gap-3 transition-opacity duration-300 ${!uiVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className={`fixed right-3 top-1/2 -translate-y-1/2 z-[60] flex flex-col items-center gap-2 transition-opacity duration-300 ${!uiVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         style={{ cursor: 'grab' }}
         whileDrag={{ cursor: 'grabbing', scale: 1.05, opacity: 0.9 }}
       >
@@ -195,6 +199,17 @@ export const FloatingControls: React.FC<FloatingControlsProps> = ({
               {/* Expanded Tools Group (Zoom + Move + Trash) */}
               <div className="bg-[var(--bg-panel)]/80 backdrop-blur-xl border border-[var(--border-strong)] rounded-[2rem] p-2 flex flex-col gap-2 shadow-2xl scale-95 hover:scale-100 transition-all pointer-events-auto">
                 <button 
+                  onClick={() => { sound.playClick(); onToggleTimelapse(); }} 
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 relative ${isRecordingProcess ? 'bg-red-500/20 text-red-500 shadow-lg shadow-red-500/30 border border-red-500/50' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+                  title="Timelapse / Gravar Processo"
+                >
+                  <Video size={18} />
+                  {isRecordingProcess && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                  )}
+                </button>
+                <div className="w-8 h-[1px] bg-white/10 mx-auto" />
+                <button 
                   onClick={() => { sound.playClick(); selectTool('hand'); }} 
                   className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${currentTool === 'hand' ? 'bg-[var(--accent-color)] text-white shadow-lg shadow-[var(--accent-color)]/30' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
                 >
@@ -238,4 +253,4 @@ export const FloatingControls: React.FC<FloatingControlsProps> = ({
       </motion.div>
     </>
   );
-};
+});
