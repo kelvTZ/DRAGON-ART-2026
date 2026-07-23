@@ -20,8 +20,8 @@ export const CONFIG = {
   MAX_POSTS_PER_PAGE: 20,
   
   // CONFIGURAÇÕES DO SUPABASE
-  SUPABASE_URL: (import.meta as any).env?.VITE_SUPABASE_URL || "",
-  SUPABASE_ANON_KEY: (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || "",
+  SUPABASE_URL: (import.meta as any).env?.VITE_SUPABASE_URL || "https://sggovojcazdfdkjsqzfm.supabase.co",
+  SUPABASE_ANON_KEY: (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || "sb_publishable_IJnpMH1ZJ1j6t-clyqNSjg_iqXFQ_Y_",
 
   WEB_URL: "http://192.168.3.172:3000",
 };
