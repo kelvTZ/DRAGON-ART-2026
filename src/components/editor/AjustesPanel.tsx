@@ -4,7 +4,7 @@ import {
   Settings, X, Download, BookOpen, Maximize, Image as ImageIcon, 
   Volume2, Monitor, Layout, Paintbrush, ChevronLeft, ChevronRight, 
   Eye, EyeOff, Trash2, MousePointer2, Grid3X3, Circle, Square, 
-  Lock, Unlock, FlipHorizontal, FlipVertical, ZoomIn
+  Lock, Unlock, FlipHorizontal, FlipVertical, ZoomIn, Keyboard, RotateCcw
 } from 'lucide-react';
 
 interface AjustesPanelProps {
@@ -45,6 +45,10 @@ interface AjustesPanelProps {
   setPreviousAppBackground: (val: string) => void;
   layoutMode: 'classic' | 'modern' | 'minimal';
   setLayoutMode: (v: 'classic' | 'modern' | 'minimal') => void;
+  shortcuts?: Record<string, string>;
+  setShortcuts?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  shortcutConfigMode?: string | null;
+  setShortcutConfigMode?: (key: string | null) => void;
 }
 
 export const AjustesPanel: React.FC<AjustesPanelProps> = ({
@@ -82,12 +86,41 @@ export const AjustesPanel: React.FC<AjustesPanelProps> = ({
   isPro = false,
   setShowUpgradeModal,
   layoutMode,
-  setLayoutMode
+  setLayoutMode,
+  shortcuts = {},
+  setShortcuts,
+  shortcutConfigMode,
+  setShortcutConfigMode
 }) => {
-  const [activeTab, setActiveTab] = useState<'tela' | 'ambiente' | 'sistema'>('tela');
+  const [activeTab, setActiveTab] = useState<'tela' | 'ambiente' | 'sistema' | 'atalhos'>('tela');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAmbienteTab = activeTab === 'ambiente';
+
+  const defaultShortcuts: Record<string, string> = {
+    pencil: 'b', eraser: 'e', fill: 'g', picker: 'i',
+    shape: 'u', select: 'm', hand: 'h', text: 't',
+    undo: 'ctrl+z', redo: 'ctrl+y', grid: 'k', play: ' ',
+    clear: 'delete', sound: 's',
+    zoomIn: '=', zoomOut: '-', resetView: '0',
+    save: 'ctrl+s', newFrame: 'n',
+  };
+
+  const shortcutLabels: Record<string, string> = {
+    pencil: 'Lápis (B)', eraser: 'Borracha (E)', fill: 'Balde de Tinta (G)', picker: 'Conta-gotas (I)',
+    shape: 'Formas (U)', select: 'Seleção (M)', hand: 'Mover Folha (H)', text: 'Texto (T)',
+    undo: 'Desfazer (Ctrl+Z)', redo: 'Refazer (Ctrl+Y)', grid: 'Alternar Grade (K)', play: 'Play Animação (Espaço)',
+    clear: 'Limpar Camada (Delete)', sound: 'Som (S)',
+    zoomIn: 'Zoom + (=)', zoomOut: 'Zoom - (-)', resetView: 'Resetar Zoom (0)',
+    save: 'Salvar Projeto (Ctrl+S)', newFrame: 'Novo Quadro (N)',
+  };
+
+  const shortcutCategories = [
+    { name: 'Ferramentas', keys: ['pencil', 'eraser', 'fill', 'picker', 'shape', 'select', 'hand', 'text'] },
+    { name: 'Edição', keys: ['undo', 'redo', 'clear', 'newFrame'] },
+    { name: 'Visualização', keys: ['grid', 'play', 'zoomIn', 'zoomOut', 'resetView'] },
+    { name: 'Sistema', keys: ['save', 'sound'] },
+  ];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center pointer-events-auto" onClick={() => setActivePanel(null)}>
@@ -127,12 +160,13 @@ export const AjustesPanel: React.FC<AjustesPanelProps> = ({
           {[
             { id: 'tela', label: 'Tela', icon: <Layout size={12} /> },
             { id: 'ambiente', label: 'Ambiente', icon: <Paintbrush size={12} /> },
-            { id: 'sistema', label: 'Sistema', icon: <Monitor size={12} /> }
+            { id: 'sistema', label: 'Sistema', icon: <Monitor size={12} /> },
+            { id: 'atalhos', label: 'Atalhos', icon: <Keyboard size={12} /> }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => { sound.playClick(); setActiveTab(tab.id as any); }}
-              className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase transition-all ${activeTab === tab.id ? 'text-[var(--accent-color)] border-b-2 border-[var(--accent-color)] bg-[var(--accent-color)]/5' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+              className={`flex-1 py-3 flex items-center justify-center gap-1 text-[10px] font-bold uppercase transition-all ${activeTab === tab.id ? 'text-[var(--accent-color)] border-b-2 border-[var(--accent-color)] bg-[var(--accent-color)]/5' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
             >
               {tab.icon} {tab.label}
             </button>
@@ -411,6 +445,71 @@ export const AjustesPanel: React.FC<AjustesPanelProps> = ({
                   >
                     <BookOpen size={18} /> MANUAL DO USUÁRIO
                   </button>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === 'atalhos' && (
+              <motion.div key="atalhos" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
+                <div className="flex items-center justify-between bg-black/30 p-4 rounded-2xl border border-white/5">
+                  <div>
+                    <h3 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-2">
+                      <Keyboard size={16} className="text-[var(--accent-color)]" /> Atalhos do Teclado (PC)
+                    </h3>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Clique em qualquer atalho para alterar a tecla</p>
+                  </div>
+                  {setShortcuts && (
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        setShortcuts(defaultShortcuts);
+                        localStorage.removeItem('pixel_shortcuts');
+                      }}
+                      className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-[10px] font-bold rounded-xl transition-all border border-white/5 flex items-center gap-1.5"
+                      title="Restaurar Atalhos Padrão"
+                    >
+                      <RotateCcw size={12} /> Resetar
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-5">
+                  {shortcutCategories.map(cat => (
+                    <div key={cat.name} className="space-y-2">
+                      <div className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">{cat.name}</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {cat.keys.map(keyId => {
+                          const isConfiguring = shortcutConfigMode === keyId;
+                          const currentKey = shortcuts[keyId] || defaultShortcuts[keyId] || '';
+                          return (
+                            <div 
+                              key={keyId}
+                              onClick={() => {
+                                sound.playClick();
+                                if (setShortcutConfigMode) {
+                                  setShortcutConfigMode(isConfiguring ? null : keyId);
+                                }
+                              }}
+                              className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                                isConfiguring 
+                                  ? 'bg-[var(--accent-color)]/20 border-[var(--accent-color)] animate-pulse' 
+                                  : 'bg-black/20 hover:bg-white/5 border-white/5 hover:border-white/10'
+                              }`}
+                            >
+                              <span className="text-[11px] font-bold text-white/90">{shortcutLabels[keyId] || keyId}</span>
+                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                                isConfiguring
+                                  ? 'bg-[var(--accent-color)] text-white'
+                                  : 'bg-white/10 text-amber-300 border border-white/10'
+                              }`}>
+                                {isConfiguring ? 'Pressione Tecla...' : currentKey.toUpperCase()}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             )}

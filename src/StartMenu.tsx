@@ -1528,33 +1528,34 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left w-full md:w-auto">
                     
-                    {/* Foto de Perfil / Avatar Clean */}
-                    <div className="relative group shrink-0">
-                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-[var(--accent-color)] shadow-[0_0_25px_rgba(99,102,241,0.3)] bg-black/60 flex items-center justify-center relative">
+                    {/* Foto de Perfil / Avatar Ultra Profissional */}
+                    <div 
+                      className="relative group shrink-0 cursor-pointer" 
+                      onClick={() => { sound.playClick(); setShowAvatarPicker(true); }}
+                      title="Clique para alterar sua foto de perfil"
+                    >
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-[var(--accent-color)] shadow-[0_0_25px_rgba(99,102,241,0.35)] bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center relative transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_35px_rgba(99,102,241,0.6)]">
                         {profileImage ? (
                           <img src={profileImage} alt="Perfil" className="w-full h-full object-cover" />
                         ) : (
-                          <User size={48} className="text-white/40" />
+                          <User size={48} className="text-white/40 group-hover:text-white/70 transition-colors" />
                         )}
+                        
+                        {/* Hover Overlay Profissional */}
+                        <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white backdrop-blur-[2px]">
+                          <ImageIcon size={22} className="text-amber-400 mb-1" />
+                          <span className="text-[9px] font-black uppercase tracking-widest text-center px-1">Alterar Foto</span>
+                        </div>
                       </div>
 
-                      {/* Botões de Alteração de Foto */}
-                      <div className="absolute bottom-0 right-0 flex items-center gap-1 z-20">
-                        <button
-                          onClick={() => { sound.playClick(); avatarFileInputRef.current?.click(); }}
-                          className="p-2 bg-[var(--accent-color)] hover:brightness-110 text-white rounded-full shadow-lg active:scale-95 transition-all border border-white/30"
-                          title="Enviar Foto da Galeria"
-                        >
-                          <ImageIcon size={14} />
-                        </button>
-                        <button
-                          onClick={() => { sound.playClick(); setShowAvatarPicker(true); }}
-                          className="p-2 bg-purple-600 hover:brightness-110 text-white rounded-full shadow-lg active:scale-95 transition-all border border-white/30"
-                          title="Escolher Avatar Padrão"
-                        >
-                          <User size={14} />
-                        </button>
-                      </div>
+                      {/* Selo único e elegante da Câmera no Canto */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); sound.playClick(); avatarFileInputRef.current?.click(); }}
+                        className="absolute bottom-0 right-0 p-2.5 bg-gradient-to-r from-[var(--accent-color)] to-purple-600 hover:brightness-110 text-white rounded-full shadow-xl border-2 border-[#121216] group-hover:scale-110 transition-transform"
+                        title="Enviar Foto da Galeria / PC"
+                      >
+                        <ImageIcon size={14} />
+                      </button>
                       <input 
                         type="file" 
                         ref={avatarFileInputRef} 

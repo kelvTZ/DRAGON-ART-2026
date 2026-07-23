@@ -7687,6 +7687,10 @@ export default function Editor({
             setPreviousAppBackground={setPreviousAppBackground}
             layoutMode={layoutMode}
             setLayoutMode={setLayoutMode}
+            shortcuts={shortcuts}
+            setShortcuts={setShortcuts}
+            shortcutConfigMode={shortcutConfigMode}
+            setShortcutConfigMode={setShortcutConfigMode}
           />
         )}
       </AnimatePresence>
