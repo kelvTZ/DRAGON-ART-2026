@@ -1620,9 +1620,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Opção Mensal */}
+                    {/* Opção Mensal (R$ 17,90 / mês) */}
                     <div 
-                      onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00', '_blank'); }}
+                      onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_dRmbJ00FW91e6NU10SaIM01', '_blank'); }}
                       className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-blue-400/50 transition-all cursor-pointer group flex items-center justify-between"
                     >
                       <div>
@@ -1630,7 +1630,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                           <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Plano Mensal</span>
                           <span className="text-[10px] text-white/30 line-through font-bold">R$ 29,90</span>
                         </div>
-                        <div className="text-xl font-black text-white mt-0.5">R$ 9,90 <span className="text-xs text-white/40 font-normal">/ mês</span></div>
+                        <div className="text-xl font-black text-white mt-0.5">R$ 17,90 <span className="text-xs text-white/40 font-normal">/ mês</span></div>
                         <p className="text-[11px] text-white/50 mt-1">Cancele quando quiser</p>
                       </div>
                       <button className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider shadow-md">
@@ -1638,9 +1638,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                       </button>
                     </div>
 
-                    {/* Opção Vitalícia - Destaque */}
+                    {/* Opção Vitalícia (R$ 49,90 único) */}
                     <div 
-                      onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00', '_blank'); }}
+                      onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_5kQfZgagw4KYa06fVMaIM02', '_blank'); }}
                       className="p-4 bg-gradient-to-br from-yellow-400/10 via-amber-500/15 to-yellow-500/10 hover:from-yellow-400/20 rounded-2xl border-2 border-yellow-400/50 transition-all cursor-pointer group flex items-center justify-between relative overflow-hidden shadow-lg"
                     >
                       <div className="absolute top-0 right-0 bg-yellow-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-bl-xl uppercase tracking-widest">

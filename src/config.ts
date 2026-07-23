@@ -3,8 +3,9 @@
  * Altere estas informações para personalizar sua plataforma.
  */
 export const CONFIG = {
-  // LINK DA STRIPE (Substitua pelo seu link real do Stripe Payment Links)
-  STRIPE_PRO_LINK: "https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00",
+  // LINKS DO STRIPE
+  STRIPE_MONTHLY_LINK: "https://buy.stripe.com/test_dRmbJ00FW91e6NU10SaIM01",
+  STRIPE_PRO_LINK: "https://buy.stripe.com/test_5kQfZgagw4KYa06fVMaIM02",
   
   // INFORMAÇÕES DA PLATAFORMA
   VERSION: "1.13.1",
