@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Art PRO - O Estúdio Definitivo</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Dragon Art PRO - O estúdio de pixel art definitivo para mobile com traço inteligente AI, gravação de timelapse profissional e exportação em até 8K.">
+    <meta name="keywords" content="pixel art, dragon art, pixel art android, editor de pixel art, timelapse 8k, pixel art ai">
+    <meta name="author" content="Dragon Art Studio">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://dragonart.app/">
+    <meta property="og:title" content="Dragon Art PRO - Crie Arte em Nível Épico">
+    <meta property="og:description" content="O único estúdio de Pixel Art com traço inteligente AI, gravação de timelapse e exportação sem marca d'água. Baixe Grátis!">
+    <meta property="og:image" content="https://dragonart.app/assets/logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://dragonart.app/">
+    <meta property="twitter:title" content="Dragon Art PRO - Crie Arte em Nível Épico">
+    <meta property="twitter:description" content="O único estúdio de Pixel Art com traço inteligente AI, gravação de timelapse e exportação sem marca d'água. Baixe Grátis!">
+    <meta property="twitter:image" content="https://dragonart.app/assets/logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { accent: '#EF4444', bgApp: '#0A0505' } } } }
+    </script>
+    <!-- Supabase for Tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body { background: #0A0505; color: white; overflow-x: hidden; }
+        .pixel-bg { position: fixed; inset: 0; z-index: -2; background: url('assets/bg_pixelart_1.png') center/cover; opacity: .18; mix-blend-mode: overlay; }
+        .glass { background: rgba(20,5,5,.75); backdrop-filter: blur(20px); border: 1px solid rgba(239,68,68,.15); box-shadow: 0 20px 40px rgba(0,0,0,.5); }
+        .tg { background: linear-gradient(135deg,#FCA5A5,#EF4444,#991B1B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .zi { cursor: zoom-in; transition: .4s; } .zi:hover { transform: scale(1.03); filter: brightness(1.1); }
+        #lb { opacity:0; visibility:hidden; transition:.3s; backdrop-filter:blur(25px); }
+        #lb.on { opacity:1; visibility:visible; }
+        #lb img { transform:scale(.9); transition:.4s cubic-bezier(.16,1,.3,1); }
+        #lb.on img { transform:scale(1); }
+        .rv { opacity:0; transform:translateY(30px); transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1); will-change: opacity, transform; }
+        .rv.on { opacity:1; transform:translateY(0); }
+        .rv-delay-1 { transition-delay: 100ms; }
+        .rv-delay-2 { transition-delay: 200ms; }
+        .rv-delay-3 { transition-delay: 300ms; }
+        
+        .floating { animation: floating 6s ease-in-out infinite; }
+        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        ::-webkit-scrollbar{width:8px} ::-webkit-scrollbar-track{background:#0A0505} ::-webkit-scrollbar-thumb{background:#451a1a;border-radius:4px;border:2px solid #0A0505} ::-webkit-scrollbar-thumb:hover{background:#EF4444}
+        .badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; border: 1px solid rgba(255,255,255,0.1); }
+        #music-toggle { position:fixed; bottom:24px; left:24px; z-index:90; width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center; transition:.3s; cursor: pointer; }
+        #music-toggle:hover { transform: scale(1.1); }
+        .music-pulse { animation: music-pulse 2s infinite; }
+        @keyframes music-pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+    </style>
+</head>
+<body class="antialiased selection:bg-accent selection:text-black">
+<div class="pixel-bg"></div>
+<div class="fixed inset-0 z-[-1] pointer-events-none">
+    <div class="absolute top-[10%] left-[10%] w-[30vw] h-[30vw] bg-red-600/15 rounded-full blur-[100px]"></div>
+    <div class="absolute bottom-[20%] right-[10%] w-[20vw] h-[20vw] bg-rose-700/15 rounded-full blur-[120px]"></div>
+</div>
+
+<!-- Audio -->
+<audio id="bgMusic" src="assets/background_music.mp3" loop></audio>
+<button id="music-toggle" class="glass music-pulse text-accent" onclick="toggleMusic()">
+    <svg id="music-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+</button>
+
+<!-- Lightbox -->
+<div id="lb" class="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out">
+    <button onclick="closeLb()" class="absolute top-6 right-6 text-white hover:bg-white/20 p-3 rounded-full bg-white/10 backdrop-blur-md">✕</button>
+    <img id="lbi" src="" class="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10"/>
+</div>
+
+<!-- Hero Section Refatorada -->
+<header class="min-h-screen flex flex-col items-center justify-center pt-10 pb-20 overflow-hidden">
+    <div class="container mx-auto px-6 text-center z-10 flex flex-col items-center">
+        
+        <!-- 10 Testemunhos Grid - NO TOPO -->
+        <div class="w-full max-w-6xl mb-12 rv">
+            <div class="flex items-center justify-center gap-2 mb-6">
+                <div class="flex text-yellow-500 text-sm">★★★★★</div>
+                <span class="text-white/60 text-[10px] font-bold uppercase tracking-widest">Aprovado por +5.000 Artistas</span>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <!-- 1 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-blue-500 text-left rv rv-delay-1">
+                    <div class="text-[10px] font-black text-white mb-1">Gabi Pixel ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">Melhor app de pixel art que já usei no celular. Traço muito suave!</p>
+                </div>
+                <!-- 2 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-orange-500 text-left rv rv-delay-2">
+                    <div class="text-[10px] font-black text-white mb-1">Jão Dev ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">Exportação em 4K é sensacional para os meus jogos. Nota 10!</p>
+                </div>
+                <!-- 3 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-purple-500 text-left rv rv-delay-3">
+                    <div class="text-[10px] font-black text-white mb-1">Rafa Art ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">As animações são muito fáceis de fazer. O traço AI ajuda demais.</p>
+                </div>
+                <!-- 4 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-green-500 text-left">
+                    <div class="text-[10px] font-black text-white mb-1">Dani ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">Interface limpa e sem anúncios chatos. Perfeito para o dia a dia.</p>
+                </div>
+                <!-- 5 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-red-500 text-left">
+                    <div class="text-[10px] font-black text-white mb-1">Kevin ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">Finalmente um app que salva tudo na nuvem sem erro. Recomendo!</p>
+                </div>
+                <!-- 6 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-yellow-500 text-left">
+                    <div class="text-[10px] font-black text-white mb-1">Mel ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">Os selos PRO são lindos e dão um destaque massa no perfil.</p>
+                </div>
+                <!-- 7 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-cyan-500 text-left">
+                    <div class="text-[10px] font-black text-white mb-1">Leo ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">A ferramenta de contorno automático economiza horas de trabalho.</p>
+                </div>
+                <!-- 8 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-pink-500 text-left">
+                    <div class="text-[10px] font-black text-white mb-1">Paula ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">Gostei muito dos temas, o modo Cyberpunk é o meu favorito.</p>
+                </div>
+                <!-- 9 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-emerald-500 text-left">
+                    <div class="text-[10px] font-black text-white mb-1">Bruno ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">O suporte é rápido e o app tá sempre atualizando com novidades.</p>
+                </div>
+                <!-- 10 -->
+                <div class="glass p-3 rounded-xl border-l-2 border-rose-500 text-left">
+                    <div class="text-[10px] font-black text-white mb-1">Vini ✓</div>
+                    <p class="text-[9px] text-gray-400 leading-tight">Melhor investimento que fiz para o meu portfólio de games.</p>
+                </div>
+            </div>
+        </div>
+
+        <img src="assets/logo.png" alt="Dragon Art PRO" class="h-48 md:h-64 object-contain mb-8 rv floating drop-shadow-[0_0_40px_rgba(239,68,68,0.5)]" style="image-rendering: pixelated;">
+        
+        <div class="max-w-4xl mx-auto rv">
+            <div class="flex flex-col items-center gap-2 mb-6">
+                <div class="badge bg-accent/20 text-accent">Versão 1.10.1 Disponível</div>
+                <div id="download-counter" class="text-[10px] font-black text-white/40 uppercase tracking-[0.25em] hidden">
+                    <span class="text-accent" id="count-value">...</span> Downloads Realizados
+                </div>
+            </div>
+            <h1 class="text-5xl md:text-8xl font-black mb-8 leading-tight tracking-tighter">
+                Crie Arte em <span class="tg">Nível Épico</span>
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+                O único estúdio de Pixel Art com traço inteligente AI, gravação de timelapse profissional e exportação em 8K.
+            </p>
+            
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+                <a href="https://drive.google.com/uc?export=download&id=1TWz60_idJJy5mBWfi1Ng-l2s81_ZshdU" class="group relative px-10 py-5 bg-accent rounded-2xl font-black text-black hover:scale-105 transition-all overflow-hidden">
+                    <span class="relative z-10">BAIXAR GRÁTIS AGORA</span>
+                    <div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"></div>
+                </a>
+                <div class="text-left">
+                    <div class="text-white font-bold text-sm">Vitalício Disponível</div>
+                    <div class="text-white/40 text-[10px] font-black uppercase">Pagamento Único</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-6 pb-32 space-y-28">
+
+<!-- 1. TRAÇO PERFEITO (NOVO) -->
+<section class="rv">
+    <div class="flex flex-col lg:flex-row items-center gap-12 max-w-6xl mx-auto">
+        <div class="lg:w-1/2">
+            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/30 mb-6">
+                <span class="text-red-500 text-xl">✨</span>
+                <span class="text-red-500 font-bold tracking-widest text-[10px] uppercase">Inteligência Artificial</span>
+            </div>
+            <h2 class="text-4xl md:text-6xl font-black mb-6">Traço Perfeito <span class="tg">(AI)</span></h2>
+            <p class="text-red-100/80 text-lg md:text-xl font-medium mb-6">Desenhe de forma livre e deixe a IA cuidar da matemática.</p>
+            <p class="text-gray-400 mb-8 leading-relaxed">O novo sistema inteligente analisa o padrão do seu movimento em tempo real. Apenas desenhe de forma livre e a IA corrige magicamente os seus traços. Qualquer movimento é estabilizado instantaneamente, eliminando os tremores da mão e garantindo um resultado impecável e profissional na posição exata.</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass p-4 rounded-2xl border-red-500/30">
+                    <div class="text-red-500 font-bold mb-1">Traços Perfeitos</div>
+                    <div class="text-xs text-gray-500">Correção geométrica exata</div>
+                </div>
+                <div class="glass p-4 rounded-2xl border-red-500/30">
+                    <div class="text-red-500 font-bold mb-1">Ângulos Precisos</div>
+                    <div class="text-xs text-gray-500">Snap inteligente de linhas</div>
+                </div>
+                <div class="glass p-4 rounded-2xl border-red-500/30 col-span-2">
+                    <div class="text-red-500 font-bold mb-1">Suavização Avançada</div>
+                    <div class="text-xs text-gray-500">Qualquer curva estabilizada livre de imperfeições</div>
+                </div>
+            </div>
+        </div>
+        <div class="lg:w-1/2 w-full">
+            <div class="glass rounded-[32px] overflow-hidden border border-red-500/40 p-4 relative shadow-[0_0_60px_rgba(239,68,68,0.2)]">
+                <div class="absolute inset-0 opacity-30 z-0 bg-[url('assets/bg_pixelart_1.png')] bg-cover mix-blend-overlay"></div>
+                <div class="relative z-10">
+                    <img src="assets/traco_perfeito.png" alt="Demonstração Traço Perfeito" class="w-full h-auto rounded-2xl border-4 border-[#222] shadow-[0_0_30px_rgba(239,68,68,0.4)] zi object-contain" onerror="this.src='https://placehold.co/800x600/0A0505/EF4444?text=Coloque+a+imagem+como+traco_perfeito.png+em+assets'"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- 2. TEMAS DO DRAGON ART (NOVO - muito visual) -->
+<section class="rv mt-32">
+    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">🎨</div><h2 class="text-4xl font-black">Temas Exclusivos PRO</h2></div>
+    <p class="text-gray-400 text-lg mb-4 max-w-3xl">Mais de 10 temas visuais exclusivos para personalizar completamente o seu estúdio. De Cyberpunk a Retrowave, Neon a Pastel — cada tema transforma toda a interface do app.</p>
+    <p class="text-gray-500 mb-8">Escolha o visual que combina com seu estilo criativo. Cores, ícones e fundos mudam completamente!</p>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010802.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010825.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010846.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010856.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010905.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010913.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010924.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010932.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010941.png" class="w-full h-48 object-cover zi"></div>
+        <div class="glass rounded-2xl overflow-hidden"><img src="assets/temas_do_dragon_art_Captura_de_tela_2026-05-11_010953.png" class="w-full h-48 object-cover zi"></div>
+    </div>
+</section>
+
+<!-- 3. VISÃO 3D (com vídeo novo) -->
+<section class="rv">
+    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">🧊</div><h2 class="text-4xl font-black">Visão 3D em Tempo Real</h2></div>
+    <p class="text-gray-400 text-lg mb-4 max-w-3xl">Transforme sua pixel art em texturas 3D instantaneamente! Gire, amplie e visualize como sua arte ficaria em objetos reais — tudo dentro do app, sem exportar nada.</p>
+    <p class="text-gray-500 mb-8">Perfeito para game developers e artistas que querem visualizar sprites em perspectiva 3D.</p>
+    <div class="grid lg:grid-cols-2 gap-8">
+        <div class="glass rounded-[32px] overflow-hidden border border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,.12)]">
+            <video autoplay loop muted playsinline class="w-full h-[400px] object-contain bg-[#050505]"><source src="assets/VISO_3D_Desktop_2026-05-11_00-50-54.mp4" type="video/mp4"></video>
+            <div class="p-6 bg-[#111] border-t border-white/5"><h4 class="font-bold text-xl">Rotação 3D ao Vivo</h4><p class="text-sm text-gray-500 mt-1">Veja sua arte ganhar vida em três dimensões</p></div>
+        </div>
+        <div class="grid gap-6">
+            <div class="glass rounded-3xl p-4 bg-[#050505]"><img src="assets/VISO_3D_Captura_de_tela_2026-05-10_192321.png" class="w-full h-44 object-contain zi"><div class="pt-3 text-center"><h4 class="font-bold">Visualização em Perspectiva</h4></div></div>
+            <div class="glass rounded-3xl p-4 bg-[#050505]"><img src="assets/VISO_3D_Captura_de_tela_2026-05-10_192343.png" class="w-full h-44 object-contain zi"><div class="pt-3 text-center"><h4 class="font-bold">Textura Aplicada ao Modelo</h4></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- 4. LINHA DO TEMPO / ANIMAÇÃO -->
+<section class="rv text-center">
+    <div class="max-w-4xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-6">
+            <span class="text-accent text-xl">🎬</span>
+            <span class="text-accent font-bold tracking-widest text-[10px] uppercase">Timeline Profissional</span>
+        </div>
+        <h2 class="text-4xl md:text-6xl font-black mb-6">Animação Simplificada</h2>
+        <p class="text-gray-300 text-lg md:text-xl font-medium mb-4">O estúdio de animação mais intuitivo para mobile. Crie movimentos fluidos com ferramentas profissionais simplificadas para você.</p>
+        <p class="text-gray-500 text-base max-w-2xl mx-auto">Sistema completo com Onion Skin, controle de FPS preciso e exportação em GIF/MP4 sem marca d'água — tudo em uma interface centralizada e fácil de usar.</p>
+    </div>
+
+    <div class="relative max-w-5xl mx-auto">
+        <!-- Glow decorativo de fundo -->
+        <div class="absolute -inset-10 bg-accent/10 rounded-full blur-[120px] -z-10 opacity-60"></div>
+        
+        <div class="glass rounded-[40px] overflow-hidden border border-accent/20 shadow-[0_0_60px_rgba(0,0,0,.5)]">
+            <div class="grid lg:grid-cols-12">
+                <!-- Video Showcase -->
+                <div class="lg:col-span-7 bg-[#050505] p-6 lg:p-10 border-b lg:border-b-0 lg:border-r border-white/5 flex items-center justify-center relative">
+                    <div class="absolute top-6 left-10 badge bg-accent/20 text-accent border border-accent/30 text-[10px]">PREVIEW EM TEMPO REAL</div>
+                    <video autoplay loop muted playsinline class="w-full h-auto max-h-[400px] object-contain rounded-2xl shadow-2xl">
+                        <source src="assets/LINHA_DO_TEMPO_lv_0_20260510163755.mp4" type="video/mp4">
+                    </video>
+                </div>
+                
+                <!-- Feature List -->
+                <div class="lg:col-span-5 p-8 lg:p-12 flex flex-col justify-center text-left bg-[#0D0D0D]">
+                    <div class="space-y-10">
+                        <div class="flex gap-5">
+                            <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-2xl">🧅</div>
+                            <div>
+                                <h4 class="font-bold text-xl mb-2">Onion Skin</h4>
+                                <p class="text-gray-400 text-sm leading-relaxed">Visualize quadros anteriores e posteriores para criar transições perfeitas entre cada movimento.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-5">
+                            <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-2xl">⚡</div>
+                            <div>
+                                <h4 class="font-bold text-xl mb-2">Controle de FPS</h4>
+                                <p class="text-gray-400 text-sm leading-relaxed">Ajuste a velocidade da animação instantaneamente. Controle total sobre a fluidez do seu projeto.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-white/5 grid grid-cols-2 gap-4">
+                            <div class="bg-white/5 rounded-2xl p-4 text-center">
+                                <span class="block text-accent font-black text-2xl mb-1">GIF</span>
+                                <span class="block text-[10px] text-gray-500 font-bold uppercase tracking-widest">Sem Logotipo</span>
+                            </div>
+                            <div class="bg-white/5 rounded-2xl p-4 text-center">
+                                <span class="block text-accent font-black text-2xl mb-1">MP4</span>
+                                <span class="block text-[10px] text-gray-500 font-bold uppercase tracking-widest">Alta Qualidade</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Elemento de Interface Flutuante -->
+        <div class="hidden xl:block absolute -right-20 -bottom-10 w-72 glass rounded-3xl p-4 border border-white/10 shadow-2xl rv rotate-2" style="transition-delay: .5s">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <span class="text-[10px] text-gray-500 font-bold ml-2">INTERFACE DE EDIÇÃO</span>
+            </div>
+            <img src="assets/LINHA_DO_TEMPO_Screenshot_20260510-163455_1.png" class="w-full h-44 object-contain rounded-xl bg-black/50 zi mb-2">
+            <p class="text-[11px] text-gray-400 font-medium text-center italic">"Simples de operar, resultados profissionais"</p>
+        </div>
+    </div>
+</section>
+<!-- 6. CONTORNO AUTOMÁTICO (NOVO) -->
+<section class="rv">
+    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-2xl bg-sky-500/20 flex items-center justify-center border border-sky-500/30">✨</div><h2 class="text-4xl font-black">Contorno Automático</h2></div>
+    <p class="text-gray-400 text-lg mb-4 max-w-3xl">Gere contornos perfeitos automaticamente! O algoritmo inteligente detecta as bordas da sua arte e aplica outlines precisos — economizando horas de trabalho manual.</p>
+    <p class="text-gray-500 mb-8">Ideal para sprites de jogos e arte com bordas limpas e definidas.</p>
+    <div class="glass rounded-[32px] overflow-hidden border border-sky-500/20 p-4 bg-[#050505] max-w-2xl mx-auto">
+        <img src="assets/contorno_automatic_Captura_de_tela_2026-05-11_005911.png" class="w-full h-80 object-contain zi">
+        <div class="pt-4 text-center"><h4 class="font-bold text-lg">Detecção Inteligente de Bordas</h4><p class="text-sm text-gray-500 mt-1">Contornos perfeitos em um toque</p></div>
+    </div>
+</section>
+
+<!-- NOVO: TIMELAPSE / GRAVAÇÃO DE PROCESSO -->
+<section class="rv">
+    <div class="flex flex-col lg:flex-row items-center gap-12 max-w-6xl mx-auto">
+        <div class="lg:w-1/2">
+            <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/30 mb-6">
+                <span class="text-red-500 text-xl">🎥</span>
+                <span class="text-red-500 font-bold tracking-widest text-[10px] uppercase">Exclusivo PRO</span>
+            </div>
+            <h2 class="text-4xl md:text-6xl font-black mb-6">Grave seu <span class="tg">Processo</span></h2>
+            <p class="text-red-100/80 text-lg md:text-xl font-medium mb-6">Timelapse em até 4K. A maior prova de autoria da sua arte.</p>
+            <p class="text-gray-400 mb-8 leading-relaxed">O Dragon Art PRO grava cada pincelada do seu processo criativo diretamente na folha de desenho, gerando um vídeo timelapse profissional em tempo real. Exporte em HD, Full HD, 4K ou até 8K — perfeito para postar no TikTok, Reels, YouTube ou usar como prova irrefutável de que a arte é sua.</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass p-4 rounded-2xl border-red-500/30">
+                    <div class="text-red-500 font-bold mb-1">Anti-Roubo de Arte</div>
+                    <div class="text-xs text-gray-500">Prova de autoria com vídeo do processo</div>
+                </div>
+                <div class="glass p-4 rounded-2xl border-red-500/30">
+                    <div class="text-red-500 font-bold mb-1">Até 4K / 8K</div>
+                    <div class="text-xs text-gray-500">Resolução Ultra HD para portfólio</div>
+                </div>
+                <div class="glass p-4 rounded-2xl border-red-500/30">
+                    <div class="text-red-500 font-bold mb-1">Fundo Branco Limpo</div>
+                    <div class="text-xs text-gray-500">Só grava a folha e seus traços</div>
+                </div>
+                <div class="glass p-4 rounded-2xl border-red-500/30">
+                    <div class="text-red-500 font-bold mb-1">Galeria Interna</div>
+                    <div class="text-xs text-gray-500">Salve, baixe ou apague vídeos</div>
+                </div>
+            </div>
+        </div>
+        <div class="lg:w-1/2 w-full">
+            <div class="flex flex-col gap-6">
+                <div class="glass rounded-[32px] overflow-hidden border border-red-500/40 p-4 relative shadow-[0_0_60px_rgba(239,68,68,0.15)]">
+                    <div class="absolute top-6 right-6 badge bg-red-500/20 text-red-500 border border-red-500/30 text-[10px] z-20">🔴 REC — PRO</div>
+                    <img src="assets/timelapse_painel.png" alt="Painel de Gravação Timelapse" class="w-full h-auto rounded-2xl border-2 border-[#222] shadow-[0_0_20px_rgba(239,68,68,0.3)] zi object-contain">
+                    <div class="pt-4 text-center"><h4 class="font-bold">Painel de Gravação</h4><p class="text-xs text-gray-500">Controle total sobre a gravação do processo</p></div>
+                </div>
+                <div class="glass rounded-[32px] overflow-hidden border border-red-500/30 p-4 relative shadow-[0_0_40px_rgba(239,68,68,0.1)]">
+                    <img src="assets/timelapse_resolucoes.png" alt="Resoluções até 8K" class="w-full h-auto rounded-2xl border-2 border-[#222] shadow-[0_0_20px_rgba(239,68,68,0.2)] zi object-contain">
+                    <div class="pt-4 text-center"><h4 class="font-bold">Resoluções HD até 8K</h4><p class="text-xs text-gray-500">Escolha a qualidade ideal para sua finalidade</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- 7. GUIAS E LINHAS -->
+<section class="rv">
+    <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30">📐</div><h2 class="text-4xl font-black">Guias e Simetria</h2></div>
+    <p class="text-gray-400 text-lg mb-4 max-w-3xl">Precisão profissional com grades de perspectiva, réguas de simetria e linhas-guia configuráveis para criar cenários e personagens perfeitamente alinhados.</p>
+    <div class="grid lg:grid-cols-2 gap-8">
+        <div class="glass rounded-[32px] overflow-hidden border border-white/10 p-4 bg-[#050505]"><img src="assets/GUIAS_REFERNCIA_Captura_de_tela_2026-05-10_193008.png" class="w-full h-72 object-contain zi"><div class="pt-4 text-center"><h4 class="font-bold">Guias de Referência</h4></div></div>
+        <div class="glass rounded-[32px] overflow-hidden border border-white/10 p-4 bg-[#050505]"><img src="assets/LINHA_GUIAS_Captura_de_tela_2026-05-11_005641.png" class="w-full h-72 object-contain zi"><div class="pt-4 text-center"><h4 class="font-bold">Linhas de Simetria</h4></div></div>
+    </div>
+</section>
+
+<!-- 8. AMBIENTE, CAMADAS, CORES, EXPORTAÇÃO -->
+<section class="rv">
+    <div class="grid lg:grid-cols-2 gap-10">
+        <div>
+            <div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">📚</div><h3 class="text-2xl font-black">Camadas Ilimitadas</h3></div>
+            <p class="text-gray-400 mb-6">Múltiplos modos de mesclagem, reorganização por arrastar e soltar, e organização avançada para projetos complexos.</p>
+            <div class="glass rounded-3xl p-4 bg-[#050505]"><img src="assets/camadas_Captura_de_tela_2026-05-10_192521.png" class="w-full h-64 object-contain zi"></div>
+        </div>
+        <div>
+            <div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">🎨</div><h3 class="text-2xl font-black">Paleta de Cores PRO</h3></div>
+            <p class="text-gray-400 mb-6">Seletor HSL/HEX profissional, histórico de cores, extração de paletas de fotos e paletas salvas para manter consistência.</p>
+            <div class="glass rounded-3xl p-4 bg-[#050505]"><img src="assets/PALETA_DE_CORES_Captura_de_tela_2026-05-10_192647.png" class="w-full h-64 object-contain zi"></div>
+        </div>
+        <div>
+            <div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">🏠</div><h3 class="text-2xl font-black">Ambientes Personalizáveis</h3></div>
+            <p class="text-gray-400 mb-6">Fundos e ambientes exclusivos para deixar seu espaço de trabalho com a sua cara.</p>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="glass rounded-2xl overflow-hidden"><img src="assets/AMBIENTE_Captura_de_tela_2026-05-10_191934.png" class="w-full h-36 object-cover zi"></div>
+                <div class="glass rounded-2xl overflow-hidden"><img src="assets/AMBIENTE_Captura_de_tela_2026-05-10_192001.png" class="w-full h-36 object-cover zi"></div>
+                <div class="glass rounded-2xl overflow-hidden"><img src="assets/AMBIENTE_Captura_de_tela_2026-05-10_192014.png" class="w-full h-36 object-cover zi"></div>
+                <div class="glass rounded-2xl overflow-hidden"><img src="assets/AMBIENTE_Captura_de_tela_2026-05-10_192028.png" class="w-full h-36 object-cover zi"></div>
+            </div>
+        </div>
+        <div>
+            <div class="flex items-center gap-3 mb-4"><div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">💾</div><h3 class="text-2xl font-black">Exportação Ultra HD</h3></div>
+            <p class="text-gray-400 mb-6">Salve em PNG, GIF e MP4 em resoluções de até 4K, totalmente sem marca d'água. Pronto para jogos e portfólio.</p>
+            <div class="glass rounded-3xl p-4 bg-[#050505]"><img src="assets/SALVAR_Captura_de_tela_2026-05-10_193129.png" class="w-full h-64 object-contain zi"></div>
+        </div>
+    </div>
+</section>
+
+<!-- 9. SELOS DE PERFIL (NOVO) -->
+<section id="badges" class="rv">
+    <div class="text-center max-w-3xl mx-auto mb-16">
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-6">
+            <span class="text-yellow-500 text-xl">👑</span>
+            <span class="text-yellow-500 font-bold tracking-widest text-[10px] uppercase">Identidade Visual</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-black mb-6">Sua Conquista, <span class="tg">Seu Estilo</span></h2>
+        <p class="text-gray-400 text-lg font-medium">Exiba seu status de artista com selos exclusivos no seu perfil. Diferencie-se na comunidade com a estética PRO.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+        <!-- Selos Grátis -->
+        <div class="glass p-8 rounded-[40px] border-white/5 bg-white/[0.02]">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-2xl font-black flex items-center gap-3">Selos <span class="text-gray-400 uppercase text-sm tracking-widest">Grátis</span></h3>
+                <span class="px-3 py-1 bg-white/10 rounded-lg text-[10px] font-bold text-gray-400">INCLUSO</span>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-4">
+                <!-- Badge Free 1 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-white/20 transition-all">
+                        <img src="assets/badges/free_1.png" class="w-10 h-10 object-contain" alt="Folha">
+                    </div>
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Folha</span>
+                </div>
+                <!-- Badge Free 2 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-white/20 transition-all">
+                        <img src="assets/badges/free_2.png" class="w-10 h-10 object-contain" alt="Pedra">
+                    </div>
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Pedra</span>
+                </div>
+                <!-- Badge Free 3 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-white/20 transition-all">
+                        <img src="assets/badges/free_3.png" class="w-10 h-10 object-contain" alt="Lápis">
+                    </div>
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Lápis</span>
+                </div>
+                <!-- Badge Free 4 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-white/20 transition-all">
+                        <img src="assets/badges/free_4.png" class="w-10 h-10 object-contain" alt="Coração">
+                    </div>
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Coração</span>
+                </div>
+                <!-- Badge Free 5 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:border-white/20 transition-all">
+                        <img src="assets/badges/free_5.png" class="w-10 h-10 object-contain" alt="Selo">
+                    </div>
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Selo</span>
+                </div>
+            </div>
+            <p class="mt-8 text-xs text-gray-500 italic">Disponíveis para todos os usuários logo após a instalação.</p>
+        </div>
+
+        <!-- Selos PRO -->
+        <div class="glass p-8 rounded-[40px] border-yellow-500/30 bg-yellow-500/[0.03] relative overflow-hidden shadow-[0_0_50px_rgba(234,179,8,0.05)]">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 blur-[60px] -z-10"></div>
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-2xl font-black flex items-center gap-3">Selos <span class="text-yellow-500 uppercase text-sm tracking-widest">PRO</span></h3>
+                <span class="px-3 py-1 bg-yellow-500 text-black rounded-lg text-[10px] font-black">PREMIUM</span>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-4">
+                <!-- Badge PRO 1 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="relative w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300">
+                        <div class="absolute inset-0 bg-sky-400/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <img src="assets/badges/pro_1.png" class="w-10 h-10 object-contain relative z-10" alt="Cristal Pro">
+                    </div>
+                    <span class="text-[9px] font-black text-yellow-500/70 uppercase tracking-tighter">Cristal</span>
+                </div>
+                <!-- Badge PRO 2 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="relative w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300">
+                        <div class="absolute inset-0 bg-red-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <img src="assets/badges/pro_2.png" class="w-10 h-10 object-contain relative z-10" alt="Fogo Pro">
+                    </div>
+                    <span class="text-[9px] font-black text-yellow-500/70 uppercase tracking-tighter">Fogo</span>
+                </div>
+                <!-- Badge PRO 3 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="relative w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300">
+                        <div class="absolute inset-0 bg-purple-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <img src="assets/badges/pro_3.png" class="w-10 h-10 object-contain relative z-10" alt="Cósmico Pro">
+                    </div>
+                    <span class="text-[9px] font-black text-yellow-500/70 uppercase tracking-tighter">Cósmico</span>
+                </div>
+                <!-- Badge PRO 4 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="relative w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300">
+                        <div class="absolute inset-0 bg-green-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <img src="assets/badges/pro_4.png" class="w-10 h-10 object-contain relative z-10" alt="Game Pro">
+                    </div>
+                    <span class="text-[9px] font-black text-yellow-500/70 uppercase tracking-tighter">Gaming</span>
+                </div>
+                <!-- Badge PRO 5 -->
+                <div class="flex flex-col items-center gap-2 group">
+                    <div class="relative w-16 h-16 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-center justify-center hover:scale-110 transition-all duration-300">
+                        <div class="absolute inset-0 bg-yellow-400/30 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <img src="assets/badges/pro_5.png" class="w-10 h-10 object-contain relative z-10" alt="Dourado Pro">
+                    </div>
+                    <span class="text-[9px] font-black text-yellow-500/70 uppercase tracking-tighter">Dourado</span>
+                </div>
+            </div>
+            <p class="mt-8 text-xs text-yellow-500/60 font-bold italic flex items-center gap-2">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Exclusivos para usuários PRO. Ative no app para desbloquear.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+<!-- SEÇÃO DE PLANOS & ASSINATURA STRIPE (NOVO) -->
+<section id="planos" class="rv py-16">
+    <div class="text-center max-w-3xl mx-auto mb-12">
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-6">
+            <span class="text-yellow-500 text-xl">⚡</span>
+            <span class="text-yellow-500 font-bold tracking-widest text-[10px] uppercase">Planos WyrmPIXEL PRO</span>
+        </div>
+        <h2 class="text-4xl md:text-5xl font-black mb-4">Escolha seu <span class="tg">Plano de Acesso</span></h2>
+        <p class="text-gray-400 text-lg font-medium">Desbloqueie exportação em HD/4K/16K, sem marca d'água, camadas ilimitadas e gravação de processo em vídeo.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto px-4">
+        <!-- Plano Mensal -->
+        <div class="glass p-8 rounded-[36px] border-white/10 hover:border-yellow-500/30 transition-all flex flex-col justify-between relative">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-black uppercase tracking-wider text-gray-400">Assinatura Mensal</span>
+                    <span class="text-xs text-gray-500 line-through font-bold">R$ 29,90</span>
+                </div>
+                <div class="text-4xl font-black text-white mb-2">R$ 14,90 <span class="text-sm text-gray-400 font-normal">/ mês</span></div>
+                <p class="text-sm text-gray-400 mb-6">Renovação mensal flexível. Cancele a qualquer momento sem taxas.</p>
+                <ul class="space-y-3 mb-8 text-sm text-gray-300">
+                    <li class="flex items-center gap-2">✨ Exportações em HD / 4K</li>
+                    <li class="flex items-center gap-2">✨ Sem Marca D'água</li>
+                    <li class="flex items-center gap-2">✨ Camadas & Frames Ilimitados</li>
+                    <li class="flex items-center gap-2">✨ Efeitos Avançados</li>
+                </ul>
+            </div>
+            <a href="https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00" target="_blank" class="w-full py-4 bg-white/10 hover:bg-yellow-400 hover:text-black text-white font-black rounded-2xl transition-all text-center uppercase tracking-wider no-underline">
+                Assinar Mensal
+            </a>
+        </div>
+
+        <!-- Plano Vitalício (Destaque 80% OFF) -->
+        <div class="glass p-8 rounded-[36px] border-2 border-yellow-400/80 bg-gradient-to-br from-yellow-400/10 via-amber-500/15 to-yellow-500/10 transition-all flex flex-col justify-between relative shadow-[0_0_50px_rgba(251,191,36,0.2)]">
+            <div class="absolute top-0 right-0 bg-yellow-400 text-black text-[9px] font-black px-4 py-1 rounded-bl-2xl uppercase tracking-widest">
+                MAIS VENDIDO (80% OFF)
+            </div>
+            <div>
+                <div class="flex items-center justify-between mb-4 pr-20">
+                    <span class="text-xs font-black uppercase tracking-wider text-yellow-300 flex items-center gap-1">👑 Acesso Vitalício</span>
+                    <span class="text-xs text-amber-200/50 line-through font-bold">R$ 299,00</span>
+                </div>
+                <div class="text-4xl font-black text-amber-300 mb-2">R$ 49,90 <span class="text-sm text-amber-200/60 font-normal">único</span></div>
+                <p class="text-sm text-amber-100/80 font-bold mb-6">Pague 1x e use PARA SEMPRE em todos os seus dispositivos.</p>
+                <ul class="space-y-3 mb-8 text-sm text-amber-100">
+                    <li class="flex items-center gap-2">👑 Exportações em HD / 4K / 8K / 16K</li>
+                    <li class="flex items-center gap-2">👑 Gravação Timelapse do Processo em 4K</li>
+                    <li class="flex items-center gap-2">👑 Sem Marca D'água para sempre</li>
+                    <li class="flex items-center gap-2">👑 Todos os Selos PRO Exclusivos</li>
+                    <li class="flex items-center gap-2">👑 Suporte Prioritário VIP</li>
+                </ul>
+            </div>
+            <a href="https://buy.stripe.com/test_9B6fZjc1vaD46Ro0WM57W00" target="_blank" class="w-full py-4 bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black rounded-2xl shadow-lg hover:scale-105 transition-all text-center uppercase tracking-wider no-underline flex items-center justify-center gap-2">
+                <span>Garantir Vitalício</span> 🚀
+            </a>
+        </div>
+    </div>
+</section>
+
+
+<!-- DOWNLOAD + COMO FUNCIONA -->
+<section id="download" class="pt-10 rv">
+    <div class="glass rounded-[48px] border-2 border-accent/30 p-10 md:p-16 text-center shadow-[0_0_80px_rgba(251,191,36,.15)] relative overflow-hidden">
+        <div class="absolute inset-0 bg-accent/5"></div>
+        <div class="relative z-10">
+            <h2 class="text-4xl md:text-6xl font-black mb-6">Comece sua <span class="tg">Jornada</span></h2>
+            <p class="text-xl text-gray-300 font-medium mb-10 max-w-2xl mx-auto">Instale grátis agora mesmo, explore todas as funcionalidades e descubra por que o Dragon Art é o estúdio favorito dos artistas de pixel art.</p>
+            <a href="https://drive.google.com/uc?export=download&id=1TWz60_idJJy5mBWfi1Ng-l2s81_ZshdU" target="_blank" class="inline-flex items-center gap-3 px-12 py-6 bg-gradient-to-r from-accent to-orange-500 hover:brightness-110 text-black text-xl md:text-2xl font-black rounded-full transition-all duration-300 transform hover:scale-105 shadow-[0_10px_40px_rgba(251,191,36,.4)] no-underline">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                BAIXAR DRAGON ART
+            </a>
+            <p class="text-xs text-gray-500 mt-6">Android 8.0+ • Grátis • Sem anúncios</p>
+
+            <!-- Como Funciona -->
+            <div class="mt-14 pt-10 border-t border-white/10">
+                <h3 class="text-2xl font-black mb-8 text-gray-200">Como funciona?</h3>
+                <div class="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto text-left">
+                    <div class="bg-white/5 rounded-2xl p-6 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-xl mb-4">1️⃣</div>
+                        <h4 class="font-bold text-white mb-2">Instale grátis</h4>
+                        <p class="text-sm text-gray-400">Baixe o APK e comece a desenhar na hora. Todas as ferramentas básicas já funcionam.</p>
+                    </div>
+                    <div class="bg-white/5 rounded-2xl p-6 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-xl mb-4">2️⃣</div>
+                        <h4 class="font-bold text-white mb-2">Crie sua conta</h4>
+                        <p class="text-sm text-gray-400">Faça login para salvar seus projetos na nuvem com total segurança.</p>
+                    </div>
+                    <div class="bg-white/5 rounded-2xl p-6 border border-white/5">
+                        <div class="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center text-xl mb-4">3️⃣</div>
+                        <h4 class="font-bold text-white mb-2">Desbloqueie o PRO</h4>
+                        <p class="text-sm text-gray-400">Dentro do app, ative o PRO na sua conta. Compre uma vez e tenha acesso permanente em qualquer dispositivo.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</main>
+
+<footer class="py-16 text-center border-t border-white/10 bg-black/80 backdrop-blur-md">
+    <div class="flex items-center justify-center gap-6 mb-8">
+        <a href="https://www.instagram.com/dragonart_pixel/" target="_blank" class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:bg-pink-600/20 hover:text-pink-500 transition-all border border-white/5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://discord.gg/gFvckFY5" target="_blank" class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center hover:bg-indigo-600/20 hover:text-indigo-400 transition-all border border-white/5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </a>
+    </div>
+    <p class="text-gray-400 text-sm font-bold tracking-widest uppercase">Dragon Art Studio</p>
+    <p class="text-gray-600 text-[10px] font-bold mt-2 tracking-wide uppercase">© 2026. Todos os direitos reservados. v1.10.1</p>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+    const rv = document.querySelectorAll('.rv');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('on');
+                // observer.unobserve(entry.target); // Optional: keep animating on scroll back
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    
+    rv.forEach(el => observer.observe(el));
+    const lb=document.getElementById('lb'),lbi=document.getElementById('lbi');
+    document.querySelectorAll('.zi').forEach(i=>i.addEventListener('click',e=>{lbi.src=e.target.src;lb.classList.add('on');document.body.style.overflow='hidden'}));
+    window.closeLb=()=>{lb.classList.remove('on');document.body.style.overflow='auto';setTimeout(()=>{if(!lb.classList.contains('on'))lbi.src=''},300)};
+    lb.addEventListener('click',closeLb);
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLb()});
+
+    // Music Logic
+    const music = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('music-toggle');
+    const musicIcon = document.getElementById('music-icon');
+    let isPlaying = false;
+
+    window.toggleMusic = () => {
+        if (isPlaying) {
+            music.pause();
+            musicBtn.classList.remove('music-pulse');
+            musicIcon.innerHTML = '<path d="M11 5L6 9H2V15H6L11 19V5Z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+        } else {
+            music.play();
+            musicBtn.classList.add('music-pulse');
+            musicIcon.innerHTML = '<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>';
+        }
+        isPlaying = !isPlaying;
+    };
+
+    // Auto-play attempt on first interaction
+    const startMusic = () => {
+        if (!isPlaying) {
+            music.play().then(() => {
+                isPlaying = true;
+                musicBtn.classList.add('music-pulse');
+            }).catch(() => {});
+        }
+        ['click', 'scroll', 'touchstart'].forEach(e => document.removeEventListener(e, startMusic));
+    };
+    ['click', 'scroll', 'touchstart'].forEach(e => document.addEventListener(e, startMusic));
+
+    // Supabase Configuration
+    const supabaseUrl = 'https://rtxnjcvjpawtjwzuumwo.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0eG5qY3ZqcGF3dGp3enV1bXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzc0MTAsImV4cCI6MjA5Mzc1MzQxMH0.jJrn-NozdhPFCObR8gF6Cr50HR6LsrxzqpYwJIMeF_I';
+    const supa = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    async function trackDownload() {
+        try {
+            const { data } = await supa.from('app_metrics').select('value').eq('id', 'downloads').maybeSingle();
+            if (data) {
+                await supa.from('app_metrics').update({ value: data.value + 1 }).eq('id', 'downloads');
+                updateCounterUI(data.value + 1);
+            } else {
+                await supa.from('app_metrics').insert([{ id: 'downloads', value: 1 }]);
+                updateCounterUI(1);
+            }
+        } catch (err) {}
+    }
+
+    async function loadDownloads() {
+        const { data } = await supa.from('app_metrics').select('value').eq('id', 'downloads').maybeSingle();
+        if (data) updateCounterUI(data.value);
+    }
+
+    function updateCounterUI(val) {
+        const el = document.getElementById('download-counter');
+        const valEl = document.getElementById('count-value');
+        if (el && valEl) {
+            valEl.innerText = val.toLocaleString();
+            el.classList.remove('hidden');
+        }
+    }
+
+    document.querySelectorAll('a[href*="drive.google.com"]').forEach(btn => {
+        btn.addEventListener('click', trackDownload);
+    });
+
+    loadDownloads();
+});
+</script>
+</body>
+</html>
