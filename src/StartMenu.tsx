@@ -220,6 +220,19 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         localStorage.setItem('pixel_is_pro', 'true');
         localStorage.setItem('wyrm_pro_plan', plan);
         setIsPro(true);
+
+        // Se o usuário estiver logado, salva direto no Supabase
+        if (isSupabaseConfigured()) {
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+              supabase.auth.updateUser({
+                data: { is_pro: true, wyrm_is_pro: true, pro_plan: plan }
+              }).then(() => {}).catch(() => {});
+              supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
+            }
+          });
+        }
+
         alert(`🎉 PARABÉNS! Seu Plano WyrmPIXEL ${plan === 'monthly' ? 'Mensal' : 'PRO Vitalício'} foi ativado com sucesso! Aproveite todos os recursos ilimitados.`);
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -690,8 +703,8 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session?.user?.user_metadata) {
-        const meta = session.user.user_metadata;
+      if (session?.user) {
+        const meta = session.user.user_metadata || {};
         if (meta.display_name) {
           setProfileName(meta.display_name);
           localStorage.setItem('pixel_profile_name', meta.display_name);
@@ -699,14 +712,26 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         if (meta.avatar_url) {
           setProfileImage(meta.avatar_url);
           localStorage.setItem('pixel_profile_image', meta.avatar_url);
+        }
+        // Se a conta for PRO no Supabase, ativa localmente
+        if (meta.is_pro || meta.wyrm_is_pro) {
+          localStorage.setItem('wyrm_is_pro', 'true');
+          localStorage.setItem('pixel_is_pro', 'true');
+          setIsPro(true);
+        } else if (localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true') {
+          // Se o navegador tem PRO, sincroniza com o Supabase do usuário
+          supabase.auth.updateUser({
+            data: { is_pro: true, wyrm_is_pro: true, pro_plan: localStorage.getItem('wyrm_pro_plan') || 'pro' }
+          }).then(() => {}).catch(() => {});
+          supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
         }
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session?.user?.user_metadata) {
-        const meta = session.user.user_metadata;
+      if (session?.user) {
+        const meta = session.user.user_metadata || {};
         if (meta.display_name) {
           setProfileName(meta.display_name);
           localStorage.setItem('pixel_profile_name', meta.display_name);
@@ -714,6 +739,16 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         if (meta.avatar_url) {
           setProfileImage(meta.avatar_url);
           localStorage.setItem('pixel_profile_image', meta.avatar_url);
+        }
+        if (meta.is_pro || meta.wyrm_is_pro) {
+          localStorage.setItem('wyrm_is_pro', 'true');
+          localStorage.setItem('pixel_is_pro', 'true');
+          setIsPro(true);
+        } else if (localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true') {
+          supabase.auth.updateUser({
+            data: { is_pro: true, wyrm_is_pro: true, pro_plan: localStorage.getItem('wyrm_pro_plan') || 'pro' }
+          }).then(() => {}).catch(() => {});
+          supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
         }
       }
     });
