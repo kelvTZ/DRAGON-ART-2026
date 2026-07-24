@@ -44,7 +44,11 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);  
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  const [isPro, setIsPro] = useState(() => Capacitor.isNativePlatform());
+  const [isPro, setIsPro] = useState(() => {
+    return Capacitor.isNativePlatform() || 
+           localStorage.getItem('wyrm_is_pro') === 'true' || 
+           localStorage.getItem('pixel_is_pro') === 'true';
+  });
   const [showProModal, setShowProModal] = useState(false);
   const [selectedFeatureNotice, setSelectedFeatureNotice] = useState<string | null>(null);
   const plansSectionRef = useRef<HTMLDivElement>(null);
@@ -213,7 +217,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       if (urlParams.get('payment') === 'success') {
         const plan = urlParams.get('plan') || 'pro';
         localStorage.setItem('wyrm_is_pro', 'true');
+        localStorage.setItem('pixel_is_pro', 'true');
         localStorage.setItem('wyrm_pro_plan', plan);
+        setIsPro(true);
         alert(`🎉 PARABÉNS! Seu Plano WyrmPIXEL ${plan === 'monthly' ? 'Mensal' : 'PRO Vitalício'} foi ativado com sucesso! Aproveite todos os recursos ilimitados.`);
         window.history.replaceState({}, document.title, window.location.pathname);
       }

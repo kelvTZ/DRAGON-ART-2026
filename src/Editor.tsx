@@ -221,7 +221,7 @@ export default function Editor({
   onBack,
   onRegisterBackHandler,
   onUnregisterBackHandler,
-  isPro = false,
+  isPro: isProProp = false,
   userName = "Artista Pixel",
 }: {
   config: ProjectConfig;
@@ -231,6 +231,7 @@ export default function Editor({
   isPro?: boolean;
   userName?: string;
 }) {
+  const isPro = isProProp || (typeof window !== 'undefined' && (localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true'));
   const [width, setWidth] = useState(() => Math.max(1, Number(config.width) || 32));
   const [height, setHeight] = useState(() => Math.max(1, Number(config.height) || 32));
   const canvasRef = useRef<HTMLCanvasElement>(null);
