@@ -771,6 +771,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         return;
       }
 
+      const userIsPro = localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true';
+      const userPlan = localStorage.getItem('wyrm_pro_plan') || 'free';
+
       const { data, error } = await supabase.auth.signUp({
         email: authEmail,
         password: authPassword,
@@ -778,6 +781,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           data: {
             display_name: registerName || profileName,
             avatar_url: profileImage || null,
+            is_pro: userIsPro,
+            wyrm_is_pro: userIsPro,
+            pro_plan: userPlan,
             experience_level: experienceLevel,
             badge: selectedBadge,
           }
@@ -785,6 +791,20 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       });
 
       if (error) throw error;
+
+      if (data.user) {
+        // Insere ou atualiza na tabela profiles do Supabase
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            display_name: registerName || profileName,
+            avatar_url: profileImage || null,
+            is_pro: userIsPro,
+            pro_plan: userPlan,
+            updated_at: new Date().toISOString()
+          });
+        } catch (_) {}
+      }
 
       if (data.session) {
         setSession(data.session);
@@ -794,8 +814,11 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         localStorage.setItem('pixel_profile_name', registerName);
       }
 
-      setAuthSuccess('Conta criada no Supabase com sucesso! ✨');
-      setTimeout(() => setAuthSuccess(null), 4000);
+      setAuthSuccess(data.session ? 'Conta criada no Supabase com sucesso! ✨' : 'Conta criada! Se necessário, confirme seu e-mail para entrar.');
+      setTimeout(() => {
+        setAuthSuccess(null);
+        if (data.session) setOnboardingStep(null);
+      }, 2500);
     } catch (err: any) {
       setAuthError(err.message || 'Erro ao criar conta no Supabase.');
     } finally {
