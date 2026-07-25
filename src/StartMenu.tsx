@@ -2523,31 +2523,33 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                       <Palette className="text-[var(--accent-color)]" /> Cores de Fundo (Temas)
                     </h4>
                     {/* Free Themes */}
-                    <span className="text-[10px] font-black text-green-400 uppercase tracking-[0.2em] mb-1 block flex items-center gap-1">✦ Gratuitos</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6">
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
+                      ✦ Cores Opacas & Suaves (Gratuitos)
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 mb-6">
                       {themes.filter(t => FREE_THEME_IDS.has(t.id)).map((theme) => (
                         <button
                           key={theme.id}
                           onClick={() => changeTheme(theme.id)}
-                          className={`relative flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 ${currentThemeId === theme.id ? 'border-[var(--accent-color)] bg-[var(--accent-color)]/10 scale-105 shadow-md' : 'border-white/5 bg-white/5 hover:border-white/20 hover:-translate-y-1'}`}
+                          className={`relative flex flex-col items-center gap-2.5 p-3.5 rounded-2xl border-2 transition-all duration-200 ${currentThemeId === theme.id ? 'border-emerald-400 bg-emerald-400/10 scale-105 shadow-lg shadow-emerald-500/10' : 'border-white/5 bg-white/5 hover:border-white/20 hover:-translate-y-1'}`}
                         >
-                          <div className="w-12 h-12 rounded-full overflow-hidden shadow-inner flex relative" style={{ backgroundColor: theme.colors.bgApp }}>
+                          <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-inner flex relative border border-white/10" style={{ backgroundColor: theme.colors.bgApp }}>
                             <div className="w-1/2 h-full" style={{ backgroundColor: theme.colors.bgSurface }}></div>
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-6 h-6 rounded-full border-2" style={{ backgroundColor: theme.colors.accentColor, borderColor: theme.colors.bgElement }}></div>
+                              <div className="w-5 h-5 rounded-lg border-2 shadow" style={{ backgroundColor: theme.colors.accentColor, borderColor: theme.colors.bgElement }}></div>
                             </div>
                           </div>
-                          <span className="text-xs font-bold text-center">{theme.name}</span>
-                          {currentThemeId === theme.id && <span className="absolute top-2 right-2 text-[var(--accent-color)] bg-white/10 rounded-full p-0.5"><Check size={14} /></span>}
+                          <span className="text-xs font-bold text-center text-white/90">{theme.name}</span>
+                          {currentThemeId === theme.id && <span className="absolute top-2 right-2 text-emerald-400 bg-black/40 rounded-full p-0.5"><Check size={12} /></span>}
                         </button>
                       ))}
                     </div>
 
-                    {/* PRO Themes */}
-                    <span className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.2em] mb-1 block flex items-center gap-1">
-                      <Star size={10} className="fill-yellow-400" /> Temas PRO {!isPro && <Lock size={10} className="ml-1 opacity-60" />}
+                    {/* PRO Animated Themes */}
+                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
+                      <Star size={12} className="fill-amber-400 text-amber-400 animate-pulse" /> 👑 Temas Animados & Cinemáticos (PRO) {!isPro && <Lock size={11} className="ml-1 opacity-70" />}
                     </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[35vh] overflow-y-auto pr-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 max-h-[40vh] overflow-y-auto pr-2">
                       {themes.filter(t => !FREE_THEME_IDS.has(t.id)).map((theme) => {
                         const isActive = currentThemeId === theme.id;
                         const isLocked = !isPro;
@@ -2555,31 +2557,31 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                           <button
                             key={theme.id}
                             onClick={() => changeTheme(theme.id)}
-                            className={`relative flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200 ${
+                            className={`relative flex flex-col items-center gap-2.5 p-3.5 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
                               isActive
-                                ? 'border-yellow-400 bg-yellow-400/10 scale-105 shadow-md shadow-yellow-400/20'
+                                ? 'border-amber-400 bg-amber-400/10 scale-105 shadow-xl shadow-amber-400/25 ring-2 ring-amber-400/50'
                                 : isLocked
-                                  ? 'border-white/5 bg-white/[0.03] hover:border-yellow-400/30 hover:-translate-y-1 group'
-                                  : 'border-white/5 bg-white/5 hover:border-white/20 hover:-translate-y-1'
+                                  ? 'border-amber-500/20 bg-white/[0.03] hover:border-amber-400/50 hover:-translate-y-1 group'
+                                  : 'border-white/10 bg-white/5 hover:border-amber-400/40 hover:-translate-y-1'
                             }`}
                           >
                             <div className="relative">
-                              <div className="w-12 h-12 rounded-full overflow-hidden shadow-inner flex relative" style={{ backgroundColor: theme.colors.bgApp }}>
-                                <div className="w-1/2 h-full" style={{ backgroundColor: theme.colors.bgSurface }}></div>
+                              <div className={`w-12 h-12 rounded-2xl overflow-hidden shadow-xl flex relative border-2 border-amber-400/40 ${theme.animatedClass || ''}`} style={{ backgroundColor: theme.colors.bgApp }}>
+                                <div className="w-1/2 h-full opacity-60" style={{ backgroundColor: theme.colors.bgSurface }}></div>
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-6 h-6 rounded-full border-2" style={{ backgroundColor: theme.colors.accentColor, borderColor: theme.colors.bgElement }}></div>
+                                  <div className="w-5 h-5 rounded-lg border-2 shadow-lg animate-pulse" style={{ backgroundColor: theme.colors.accentColor, borderColor: '#ffffff' }}></div>
                                 </div>
                               </div>
                               {isLocked && (
-                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-400/90 rounded-full flex items-center justify-center shadow-sm">
-                                  <Lock size={9} className="text-black" />
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-400 text-black rounded-full flex items-center justify-center shadow-md font-black">
+                                  <Lock size={10} />
                                 </div>
                               )}
                             </div>
-                            <span className={`text-xs font-bold text-center ${isLocked ? 'opacity-60' : ''}`}>{theme.name}</span>
-                            {isActive && <span className="absolute top-2 right-2 text-yellow-400 bg-white/10 rounded-full p-0.5"><Check size={14} /></span>}
+                            <span className={`text-xs font-bold text-center ${isLocked ? 'text-amber-200/70' : 'text-white'}`}>{theme.name}</span>
+                            {isActive && <span className="absolute top-2 right-2 text-amber-400 bg-black/60 rounded-full p-0.5"><Check size={12} /></span>}
                             {isLocked && (
-                              <span className="absolute top-1.5 left-1.5 text-[8px] font-black text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded-full">PRO</span>
+                              <span className="absolute top-1.5 left-1.5 text-[8px] font-black text-amber-400 bg-amber-400/20 border border-amber-400/30 px-1.5 py-0.5 rounded-full uppercase">PRO</span>
                             )}
                           </button>
                         );

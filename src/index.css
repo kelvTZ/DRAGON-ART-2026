@@ -411,3 +411,102 @@ html[data-layout-mode="minimal"] button.active {
   transform: scale(1.05);
 }
 
+/* =========================================================
+   EFEITOS E ANIMAÇÕES CINEMÁTICAS DOS TEMAS PRO
+   ========================================================= */
+
+@keyframes bgGradientPurpleEclipse {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body.theme-anim-purple-eclipse {
+  background: linear-gradient(-45deg, #07030c, #1a082b, #2b0b4a, #0b0514) !important;
+  background-size: 400% 400% !important;
+  animation: bgGradientPurpleEclipse 12s ease infinite !important;
+}
+
+@keyframes bgGradientAurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body.theme-anim-aurora {
+  background: linear-gradient(125deg, #041214, #0b2e2b, #124d45, #081d22, #183b48) !important;
+  background-size: 300% 300% !important;
+  animation: bgGradientAurora 10s ease-in-out infinite !important;
+}
+
+@keyframes bgGradientCyberPulse {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+body.theme-anim-cyber-pulse {
+  background: linear-gradient(135deg, #12031a, #35084a, #08294a, #260538) !important;
+  background-size: 350% 350% !important;
+  animation: bgGradientCyberPulse 9s ease infinite !important;
+}
+
+@keyframes bgGradientCosmicNebula {
+  0% { background-position: 50% 0%; }
+  50% { background-position: 50% 100%; }
+  100% { background-position: 50% 0%; }
+}
+
+body.theme-anim-cosmic-nebula {
+  background: linear-gradient(180deg, #0a0818, #181238, #2a164c, #0a0818) !important;
+  background-size: 200% 200% !important;
+  animation: bgGradientCosmicNebula 14s ease-in-out infinite !important;
+}
+
+@keyframes bgGradientDragonFire {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body.theme-anim-dragon-fire {
+  background: linear-gradient(-45deg, #170404, #360808, #570c0c, #260505) !important;
+  background-size: 300% 300% !important;
+  animation: bgGradientDragonFire 10s ease infinite !important;
+}
+
+@keyframes bgGradientOceanAbyss {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body.theme-anim-ocean-abyss {
+  background: linear-gradient(135deg, #030e16, #092336, #0e3b5c, #051624) !important;
+  background-size: 300% 300% !important;
+  animation: bgGradientOceanAbyss 11s ease-in-out infinite !important;
+}
+
+@keyframes bgGradientRoyalGold {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body.theme-anim-royal-gold {
+  background: linear-gradient(135deg, #140f03, #2b1f07, #45320a, #1a1404) !important;
+  background-size: 300% 300% !important;
+  animation: bgGradientRoyalGold 12s ease infinite !important;
+}
+
+@keyframes bgGradientMatrixFlow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 200%; }
+}
+
+body.theme-anim-matrix-flow {
+  background: linear-gradient(180deg, #021206, #062b0e, #0c4217, #021206) !important;
+  background-size: 100% 200% !important;
+  animation: bgGradientMatrixFlow 8s linear infinite !important;
+}
+
