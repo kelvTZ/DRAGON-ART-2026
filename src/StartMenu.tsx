@@ -120,8 +120,57 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [bgmEnabled, setBgmEnabled] = useState(() => sound.isBgmEnabled());
   
   // Audio state
+  // Quiz & Onboarding State
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<'welcome' | 'auth' | 'avatar' | 'name' | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<'welcome' | 'auth' | 'quiz' | 'thankyou' | null>(() => {
+    // Se não tiver sessão salva e não completou onboarding, abre no login
+    const completedOnboarding = localStorage.getItem('pixel_onboarding_completed') === 'true';
+    return completedOnboarding ? null : 'auth';
+  });
+  const [quizIndex, setQuizIndex] = useState(0);
+
+  const quizQuestions = [
+    {
+      question: "Qual é o seu objetivo principal no WyrmPIXEL?",
+      options: ["🎮 Criar Sprites para Jogos 2D", "🎬 Fazer Animações Pixel Art", "🎨 Ilustrações para Redes Sociais", "🚀 Aprender Pixel Art do Zero"]
+    },
+    {
+      question: "Qual tamanho de tela você mais pretende usar?",
+      options: ["16x16 px (Retrô 8-bit Clássico)", "32x32 px (Estilo SNES/GBA)", "64x64 px (Pixel Art HD Detalhada)", "Tamanhos Livres Personalizados"]
+    },
+    {
+      question: "Como você prefere exportar suas artes?",
+      options: ["🎞️ Spritesheet para Engines (Unity/Godot)", "📹 Vídeo Timelapse 4K/8K para Redes", "🖼️ GIF Animado de Alta Resolução", "📷 Imagem PNG sem Perda de Qualidade"]
+    },
+    {
+      question: "Qual o seu nível atual com Pixel Art?",
+      options: ["🌱 Iniciante (Querendo aprender)", "🌿 Já sei o básico", "🌳 Intermediário / Avançado", "⚡ Sou Artista Profissional"]
+    },
+    {
+      question: "O que mais te apaixona na arte em pixels?",
+      options: ["🕹️ A nostalgia dos games antigos", "🧩 O desafio de transformar cada pixel", "✨ O visual moderno e vibrante", "💡 A liberdade de criar mundos"]
+    },
+    {
+      question: "Qual estilo de paleta de cores mais combina com você?",
+      options: ["⚡ Neon & Cyberpunk", "🍂 Vintage & Paletas Retrô", "🌈 Cores Vibrantes & Alegres", "🌙 Tons Escuros & Fantasia"]
+    },
+    {
+      question: "Quanto tempo pretende se dedicar ao estúdio?",
+      options: ["⏱️ 15 a 30 min por dia (Hobby)", "⌛ 1 hora por dia", "🔥 Várias horas (Foco Profissional)", "🎉 Finais de semana"]
+    },
+    {
+      question: "Deseja compartilhar suas artes na comunidade do App?",
+      options: ["🚀 Com certeza! Quero mostrar minhas criações", "💬 Sim, quero feedback e sugestões", "👀 Quero ver artes de outros criadores", "🔒 Prefiro manter no meu dispositivo"]
+    },
+    {
+      question: "Qual recurso do WyrmPIXEL você quer testar primeiro?",
+      options: ["🤖 Traço Inteligente com IA", "🎥 Gravação de Timelapse em HD/4K", "🖌️ Pincéis e Texturas Especiais", "🧅 Animação Onion Skin de Camadas"]
+    },
+    {
+      question: "Pronto para liberar todo o seu potencial criativo?",
+      options: ["🚀 SIM! VAMOS COMEÇAR A CRIAR AGORA!", "🔥 Com certeza, bora pra cima!", "✨ Estou super motivado!"]
+    }
+  ];
 
   const avatars = Array.from({ length: 15 }, (_, i) => `/avatars/avatar_${i + 1}.jpg`);
   const proAvatars = [
@@ -814,11 +863,12 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         localStorage.setItem('pixel_profile_name', registerName);
       }
 
-      setAuthSuccess(data.session ? 'Conta criada no Supabase com sucesso! ✨' : 'Conta criada! Se necessário, confirme seu e-mail para entrar.');
+      setAuthSuccess(data.session ? 'Conta criada com sucesso! Redirecionando...' : 'Conta criada! Confirme seu e-mail ou entre.');
       setTimeout(() => {
         setAuthSuccess(null);
-        if (data.session) setOnboardingStep(null);
-      }, 2500);
+        setQuizIndex(0);
+        setOnboardingStep('quiz');
+      }, 1500);
     } catch (err: any) {
       setAuthError(err.message || 'Erro ao criar conta no Supabase.');
     } finally {
@@ -857,6 +907,13 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         }
       }
 
+      setAuthSuccess('Login efetuado com sucesso! Redirecionando...');
+      setTimeout(() => {
+        setAuthSuccess(null);
+        setQuizIndex(0);
+        setOnboardingStep('quiz');
+      }, 1500);
+
       setAuthSuccess('Login realizado com sucesso! 🎉');
       setTimeout(() => setAuthSuccess(null), 3000);
     } catch (err: any) {
@@ -873,8 +930,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         await supabase.auth.signOut();
       }
       setSession(null);
+      localStorage.removeItem('pixel_onboarding_completed');
       setAuthSuccess('Desconectado com sucesso.');
-      setTimeout(() => setAuthSuccess(null), 3000);
+      setOnboardingStep('auth');
     } catch (err: any) {
       console.error(err);
     } finally {
@@ -1151,6 +1209,123 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                   Continuar sem Logar
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Modal do Quiz de 10 Perguntas Motivacionais */}
+        {onboardingStep === 'quiz' && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl overflow-y-auto"
+          >
+            <motion.div 
+              key={quizIndex}
+              initial={{ scale: 0.9, opacity: 0, x: 30 }}
+              animate={{ scale: 1, opacity: 1, x: 0 }}
+              exit={{ scale: 0.9, opacity: 0, x: -30 }}
+              className="w-full max-w-lg bg-[#0d0d12] rounded-[36px] border border-white/10 shadow-2xl overflow-hidden relative my-auto p-6 md:p-8 text-center"
+            >
+              {/* Barra de Progresso do Quiz */}
+              <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden mb-6">
+                <div 
+                  className="bg-gradient-to-r from-[var(--accent-color)] to-amber-400 h-full transition-all duration-300"
+                  style={{ width: `${((quizIndex + 1) / quizQuestions.length) * 100}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-gray-400 mb-4">
+                <span>Pergunta {quizIndex + 1} de {quizQuestions.length}</span>
+                <span className="text-[var(--accent-color)]">{Math.round(((quizIndex + 1) / quizQuestions.length) * 100)}% Concluído</span>
+              </div>
+
+              <h3 className="text-xl md:text-2xl font-black text-white mb-6 uppercase tracking-tight leading-snug">
+                {quizQuestions[quizIndex].question}
+              </h3>
+
+              {/* Opções de Resposta */}
+              <div className="w-full space-y-3 mb-6">
+                {quizQuestions[quizIndex].options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      sound.playAction();
+                      if (quizIndex + 1 < quizQuestions.length) {
+                        setQuizIndex(quizIndex + 1);
+                      } else {
+                        localStorage.setItem('pixel_onboarding_completed', 'true');
+                        setOnboardingStep('thankyou');
+                      }
+                    }}
+                    className="w-full p-4 bg-white/5 hover:bg-[var(--accent-color)]/20 hover:border-[var(--accent-color)] text-white text-left font-bold text-sm rounded-2xl border border-white/10 transition-all duration-200 active:scale-98 flex items-center justify-between group"
+                  >
+                    <span>{opt}</span>
+                    <ChevronRight size={18} className="text-gray-500 group-hover:text-white transition-colors" />
+                  </button>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => {
+                  sound.playClick();
+                  localStorage.setItem('pixel_onboarding_completed', 'true');
+                  setOnboardingStep('thankyou');
+                }}
+                className="text-gray-500 hover:text-white text-xs font-bold uppercase tracking-widest"
+              >
+                Pular Questionário ➔
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Modal de Agradecimento & Boas-Vindas */}
+        {onboardingStep === 'thankyou' && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl overflow-y-auto"
+          >
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 20 }}
+              className="w-full max-w-md bg-gradient-to-b from-[#161622] to-[#0a0a0f] rounded-[40px] border border-amber-500/30 shadow-[0_0_50px_rgba(245,158,11,0.2)] p-8 text-center relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/10 blur-3xl rounded-full -z-10" />
+
+              {/* Avatar do Artista */}
+              <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-amber-400 shadow-2xl mb-4 relative">
+                {profileImage ? (
+                  <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User size={40} className="text-white/60 m-auto" />
+                )}
+                <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-black font-black text-[9px] uppercase tracking-widest py-0.5">ARTISTA</div>
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight mb-2">
+                OBRIGADO E BEM-VINDO, <br />
+                <span className="text-amber-400">{profileName}!</span> 🎉
+              </h2>
+
+              <p className="text-xs text-gray-300 font-medium leading-relaxed mb-6">
+                Seu perfil e preferências foram configurados com sucesso! Você está 100% pronto para criar obras-primas incríveis no WyrmPIXEL.
+              </p>
+
+              <button 
+                onClick={() => {
+                  sound.playAction();
+                  setOnboardingStep(null);
+                }}
+                className="w-full py-4 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 hover:brightness-110 text-black font-black text-sm uppercase tracking-widest rounded-2xl shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <span>ENTRAR NO ESTÚDIO DE ARTES</span>
+                <Sparkles size={18} />
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -1753,14 +1928,26 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                       <p className="text-xs text-white/50">Gerencie sua foto, nome e veja suas estatísticas</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => { sound.playClick(); setActiveTab('home'); }}
-                    className="p-2.5 bg-white/5 hover:bg-red-500/20 hover:border-red-500/40 text-white/70 hover:text-red-400 rounded-2xl border border-white/10 transition-all active:scale-95 flex items-center gap-2 font-bold text-xs"
-                    title="Voltar aos Projetos (X)"
-                  >
-                    <span>Voltar</span>
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {session && (
+                      <button
+                        onClick={() => { sound.playClick(); handleSignOut(); }}
+                        className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-2xl border border-red-500/30 transition-all active:scale-95 flex items-center gap-2 font-bold text-xs"
+                        title="Sair da Conta (Logout)"
+                      >
+                        <LogOut size={16} />
+                        <span>Deslogar</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { sound.playClick(); setActiveTab('home'); }}
+                      className="p-2.5 bg-white/5 hover:bg-red-500/20 hover:border-red-500/40 text-white/70 hover:text-red-400 rounded-2xl border border-white/10 transition-all active:scale-95 flex items-center gap-2 font-bold text-xs"
+                      title="Voltar aos Projetos (X)"
+                    >
+                      <span>Voltar</span>
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Perfil & Detalhes do Usuário */}
