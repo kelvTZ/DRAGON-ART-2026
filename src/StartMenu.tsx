@@ -45,8 +45,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);  
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(() => {
-    return Capacitor.isNativePlatform() || 
-           localStorage.getItem('wyrm_is_pro') === 'true' || 
+    return localStorage.getItem('wyrm_is_pro') === 'true' || 
            localStorage.getItem('pixel_is_pro') === 'true';
   });
   const [showProModal, setShowProModal] = useState(false);
@@ -758,17 +757,19 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           setProfileImage(meta.avatar_url);
           localStorage.setItem('pixel_profile_image', meta.avatar_url);
         }
-        // Se a conta for PRO no Supabase, ativa localmente
-        if (meta.is_pro || meta.wyrm_is_pro) {
+
+        // PRO vem estritamente da conta do Supabase
+        const isUserProInSupabase = meta.is_pro === true || meta.wyrm_is_pro === true;
+        if (isUserProInSupabase) {
           localStorage.setItem('wyrm_is_pro', 'true');
           localStorage.setItem('pixel_is_pro', 'true');
           setIsPro(true);
-        } else if (localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true') {
-          // Se o navegador tem PRO, sincroniza com o Supabase do usuário
-          supabase.auth.updateUser({
-            data: { is_pro: true, wyrm_is_pro: true, pro_plan: localStorage.getItem('wyrm_pro_plan') || 'pro' }
-          }).then(() => {}).catch(() => {});
-          supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
+        } else {
+          // Conta Grátis -> Limpa PRO do navegador para não vazar de outros testes
+          localStorage.removeItem('wyrm_is_pro');
+          localStorage.removeItem('pixel_is_pro');
+          localStorage.removeItem('wyrm_pro_plan');
+          setIsPro(false);
         }
         // Se já está logado, remove o onboarding de login
         setOnboardingStep(null);
@@ -790,15 +791,16 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           setProfileImage(meta.avatar_url);
           localStorage.setItem('pixel_profile_image', meta.avatar_url);
         }
-        if (meta.is_pro || meta.wyrm_is_pro) {
+        const isUserProInSupabase = meta.is_pro === true || meta.wyrm_is_pro === true;
+        if (isUserProInSupabase) {
           localStorage.setItem('wyrm_is_pro', 'true');
           localStorage.setItem('pixel_is_pro', 'true');
           setIsPro(true);
-        } else if (localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true') {
-          supabase.auth.updateUser({
-            data: { is_pro: true, wyrm_is_pro: true, pro_plan: localStorage.getItem('wyrm_pro_plan') || 'pro' }
-          }).then(() => {}).catch(() => {});
-          supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
+        } else {
+          localStorage.removeItem('wyrm_is_pro');
+          localStorage.removeItem('pixel_is_pro');
+          localStorage.removeItem('wyrm_pro_plan');
+          setIsPro(false);
         }
         setOnboardingStep(null);
       } else {
@@ -818,14 +820,17 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         const newName = registerName || 'Artista Pixel';
         setProfileName(newName);
         localStorage.setItem('pixel_profile_name', newName);
-        setAuthSuccess('Perfil criado localmente! Adicione a SUPABASE_URL e ANON_KEY no config.ts para salvar no Supabase online.');
+        setAuthSuccess('Perfil criado localmente!');
         setTimeout(() => setAuthSuccess(null), 4000);
         setAuthLoading(false);
         return;
       }
 
-      const userIsPro = localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true';
-      const userPlan = localStorage.getItem('wyrm_pro_plan') || 'free';
+      // Conta NOVA é SEMPRE GRATUITA (is_pro = false) por padrão!
+      localStorage.removeItem('wyrm_is_pro');
+      localStorage.removeItem('pixel_is_pro');
+      localStorage.removeItem('wyrm_pro_plan');
+      setIsPro(false);
 
       const { data, error } = await supabase.auth.signUp({
         email: authEmail,
@@ -834,9 +839,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           data: {
             display_name: registerName || profileName,
             avatar_url: profileImage || null,
-            is_pro: userIsPro,
-            wyrm_is_pro: userIsPro,
-            pro_plan: userPlan,
+            is_pro: false,
+            wyrm_is_pro: false,
+            pro_plan: 'free',
             experience_level: experienceLevel,
             badge: selectedBadge,
           }
@@ -846,15 +851,14 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       if (error) throw error;
 
       if (data.user) {
-        // Insere ou atualiza na tabela profiles do Supabase (incluindo o email)
         try {
           await supabase.from('profiles').upsert({
             id: data.user.id,
             email: authEmail,
             display_name: registerName || profileName,
             avatar_url: profileImage || null,
-            is_pro: userIsPro,
-            pro_plan: userPlan,
+            is_pro: false,
+            pro_plan: 'free',
             updated_at: new Date().toISOString()
           });
         } catch (_) {}
@@ -901,7 +905,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
 
       if (data.session && data.user) {
         setSession(data.session);
-        const meta = data.user.user_metadata;
+        const meta = data.user.user_metadata || {};
         if (meta?.display_name) {
           setProfileName(meta.display_name);
           localStorage.setItem('pixel_profile_name', meta.display_name);
@@ -911,17 +915,27 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           localStorage.setItem('pixel_profile_image', meta.avatar_url);
         }
 
-        // Garante a atualizacao da tabela profiles no Supabase
-        const userIsPro = localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true';
-        const userPlan = localStorage.getItem('wyrm_pro_plan') || 'free';
+        // Valida PRO estritamente do Supabase do usuário
+        const isUserProInSupabase = meta.is_pro === true || meta.wyrm_is_pro === true;
+        if (isUserProInSupabase) {
+          localStorage.setItem('wyrm_is_pro', 'true');
+          localStorage.setItem('pixel_is_pro', 'true');
+          setIsPro(true);
+        } else {
+          localStorage.removeItem('wyrm_is_pro');
+          localStorage.removeItem('pixel_is_pro');
+          localStorage.removeItem('wyrm_pro_plan');
+          setIsPro(false);
+        }
+
         try {
           await supabase.from('profiles').upsert({
             id: data.user.id,
             email: authEmail,
             display_name: meta?.display_name || profileName,
             avatar_url: meta?.avatar_url || profileImage,
-            is_pro: userIsPro,
-            pro_plan: userPlan,
+            is_pro: isUserProInSupabase,
+            pro_plan: isUserProInSupabase ? (meta.pro_plan || 'pro') : 'free',
             updated_at: new Date().toISOString()
           });
         } catch (_) {}
@@ -950,7 +964,12 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         await supabase.auth.signOut();
       }
       setSession(null);
+      localStorage.removeItem('wyrm_is_pro');
+      localStorage.removeItem('pixel_is_pro');
+      localStorage.removeItem('wyrm_pro_plan');
       localStorage.removeItem('pixel_onboarding_completed');
+      setIsPro(false);
+      setAuthError(null);
       setAuthSuccess('Desconectado com sucesso.');
       setOnboardingStep('auth');
     } catch (err: any) {
