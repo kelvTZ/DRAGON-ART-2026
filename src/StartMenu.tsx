@@ -122,11 +122,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   // Audio state
   // Quiz & Onboarding State
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<'welcome' | 'auth' | 'quiz' | 'thankyou' | null>(() => {
-    // Se não tiver sessão salva e não completou onboarding, abre no login
-    const completedOnboarding = localStorage.getItem('pixel_onboarding_completed') === 'true';
-    return completedOnboarding ? null : 'auth';
-  });
+  const [onboardingStep, setOnboardingStep] = useState<'welcome' | 'auth' | 'quiz' | 'thankyou' | null>('auth');
   const [quizIndex, setQuizIndex] = useState(0);
 
   const quizQuestions = [
@@ -774,6 +770,11 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           }).then(() => {}).catch(() => {});
           supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
         }
+        // Se já está logado, remove o onboarding de login
+        setOnboardingStep(null);
+      } else {
+        // Se não está logado, força o modal de login
+        setOnboardingStep('auth');
       }
     });
 
@@ -799,6 +800,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           }).then(() => {}).catch(() => {});
           supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
         }
+        setOnboardingStep(null);
+      } else {
+        setOnboardingStep('auth');
       }
     });
 

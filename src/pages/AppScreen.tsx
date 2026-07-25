@@ -107,17 +107,16 @@ export default function App() {
 
     } catch (e) {}
 
-    const logoTimer = setTimeout(() => setSplashSequence(1), 1200);
-    const instaTimer = setTimeout(() => setSplashSequence(2), 2400);
-    const headTimer = setTimeout(() => {
-      setSplashSequence(3);
+    const logoTimer = setTimeout(() => setSplashSequence(1), 700);
+    const instaTimer = setTimeout(() => setSplashSequence(2), 1400);
+    const finishTimer = setTimeout(() => {
       setShowSplash(false);
-    }, 3600);
+    }, 2100);
 
     return () => {
       clearTimeout(logoTimer);
       clearTimeout(instaTimer);
-      clearTimeout(headTimer);
+      clearTimeout(finishTimer);
     };
   }, []);
 
@@ -204,8 +203,9 @@ export default function App() {
           key="splash"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.5 }}
-          className="fixed inset-0 min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden z-50"
+          transition={{ duration: 0.5 }}
+          onClick={() => setShowSplash(false)}
+          className="fixed inset-0 min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white overflow-hidden z-[9999] cursor-pointer"
         >
           <AnimatePresence mode="wait">
             {splashSequence === 0 && (
