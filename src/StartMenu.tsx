@@ -272,7 +272,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
               supabase.auth.updateUser({
                 data: { is_pro: true, wyrm_is_pro: true, pro_plan: plan }
               }).then(() => {}).catch(() => {});
-              supabase.from('profiles').update({ is_pro: true }).eq('id', session.user.id).then(() => {});
+              supabase.from('profiles').upsert({ id: session.user.id, is_pro: true, pro_plan: plan, updated_at: new Date().toISOString() }).then(() => {});
             }
           });
         }
@@ -283,6 +283,33 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     } catch (e) {
       console.warn('Failed to parse payment status:', e);
     }
+
+    // Escutador de Foco/Retorno para o App (Sincroniza PRO do Supabase para o APK ao voltar do navegador)
+    const checkProStatusInSupabase = async () => {
+      if (!isSupabaseConfigured()) return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          // Busca atualizacao do Supabase
+          const { data: profile } = await supabase.from('profiles').select('is_pro, pro_plan').eq('id', session.user.id).single();
+          const meta = session.user.user_metadata || {};
+          
+          if (profile?.is_pro || meta?.is_pro || meta?.wyrm_is_pro) {
+            localStorage.setItem('wyrm_is_pro', 'true');
+            localStorage.setItem('pixel_is_pro', 'true');
+            if (profile?.pro_plan) localStorage.setItem('wyrm_pro_plan', profile.pro_plan);
+            setIsPro(true);
+          }
+        }
+      } catch (_) {}
+    };
+
+    window.addEventListener('focus', checkProStatusInSupabase);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkProStatusInSupabase();
+      }
+    });
 
     // Load Theme
     try {
@@ -808,7 +835,28 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Escutador em Tempo Real (Realtime Channel) para detectar atualizacao PRO no APK imediatamente
+    let realtimeChannel: any = null;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        realtimeChannel = supabase
+          .channel('profile_pro_sync_' + session.user.id)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` }, (payload: any) => {
+            if (payload.new && payload.new.is_pro) {
+              localStorage.setItem('wyrm_is_pro', 'true');
+              localStorage.setItem('pixel_is_pro', 'true');
+              if (payload.new.pro_plan) localStorage.setItem('wyrm_pro_plan', payload.new.pro_plan);
+              setIsPro(true);
+            }
+          })
+          .subscribe();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    };
   }, []);
 
   const handleSignUp = async () => {
