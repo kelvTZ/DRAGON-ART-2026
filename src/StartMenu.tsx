@@ -846,10 +846,11 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       if (error) throw error;
 
       if (data.user) {
-        // Insere ou atualiza na tabela profiles do Supabase
+        // Insere ou atualiza na tabela profiles do Supabase (incluindo o email)
         try {
           await supabase.from('profiles').upsert({
             id: data.user.id,
+            email: authEmail,
             display_name: registerName || profileName,
             avatar_url: profileImage || null,
             is_pro: userIsPro,
@@ -898,9 +899,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
 
       if (error) throw error;
 
-      if (data.session) {
+      if (data.session && data.user) {
         setSession(data.session);
-        const meta = data.user?.user_metadata;
+        const meta = data.user.user_metadata;
         if (meta?.display_name) {
           setProfileName(meta.display_name);
           localStorage.setItem('pixel_profile_name', meta.display_name);
@@ -909,6 +910,21 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           setProfileImage(meta.avatar_url);
           localStorage.setItem('pixel_profile_image', meta.avatar_url);
         }
+
+        // Garante a atualizacao da tabela profiles no Supabase
+        const userIsPro = localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true';
+        const userPlan = localStorage.getItem('wyrm_pro_plan') || 'free';
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email: authEmail,
+            display_name: meta?.display_name || profileName,
+            avatar_url: meta?.avatar_url || profileImage,
+            is_pro: userIsPro,
+            pro_plan: userPlan,
+            updated_at: new Date().toISOString()
+          });
+        } catch (_) {}
       }
 
       setAuthSuccess('Login efetuado com sucesso! Redirecionando...');
