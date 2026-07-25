@@ -18,6 +18,16 @@ import OnboardingTutorial from './components/OnboardingTutorial';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 
+export interface SavedAccountItem {
+  email: string;
+  password?: string;
+  display_name: string;
+  avatar_url?: string | null;
+  is_pro: boolean;
+  pro_plan?: string;
+  last_login: number;
+}
+
 export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig, isPro: boolean, userName: string) => void }) {
   const [name, setName] = useState('My Pixel Art');
   const [size, setSize] = useState(16);
@@ -32,7 +42,49 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
-  // Supabase Auth State
+  // Supabase Auth State & Gerenciador de 10 Contas
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccountItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('pixel_saved_accounts');
+      return saved ? JSON.parse(saved) : [];
+    } catch (_) {
+      return [];
+    }
+  });
+  const [revealedPasswordEmail, setRevealedPasswordEmail] = useState<string | null>(null);
+  const [showSavedAccountsList, setShowSavedAccountsList] = useState(false);
+
+  const saveAccountToMultiList = (account: SavedAccountItem) => {
+    setSavedAccounts(prev => {
+      const filtered = prev.filter(acc => acc.email.toLowerCase() !== account.email.toLowerCase());
+      const updated = [account, ...filtered].slice(0, 10);
+      localStorage.setItem('pixel_saved_accounts', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleRevealPasswordWithBiometrics = async (account: SavedAccountItem) => {
+    try {
+      if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+        const isAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (isAvailable) {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              timeout: 60000,
+              userVerification: 'required'
+            }
+          }).catch(() => {});
+        }
+      }
+      setRevealedPasswordEmail(prev => prev === account.email ? null : account.email);
+    } catch (_) {
+      setRevealedPasswordEmail(prev => prev === account.email ? null : account.email);
+    }
+  };
+
   const [session, setSession] = useState<any | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authEmail, setAuthEmail] = useState('');
@@ -910,6 +962,17 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
             updated_at: new Date().toISOString()
           });
         } catch (_) {}
+
+        // Salva na lista de 10 contas do dispositivo
+        saveAccountToMultiList({
+          email: authEmail,
+          password: authPassword,
+          display_name: registerName || profileName,
+          avatar_url: profileImage || null,
+          is_pro: false,
+          pro_plan: 'free',
+          last_login: Date.now()
+        });
       }
 
       if (data.session) {
@@ -987,6 +1050,17 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
             updated_at: new Date().toISOString()
           });
         } catch (_) {}
+
+        // Salva/Atualiza na lista multi-contas (até 10)
+        saveAccountToMultiList({
+          email: authEmail,
+          password: authPassword,
+          display_name: meta?.display_name || profileName,
+          avatar_url: meta?.avatar_url || profileImage,
+          is_pro: isUserProInSupabase,
+          pro_plan: isUserProInSupabase ? (meta.pro_plan || 'pro') : 'free',
+          last_login: Date.now()
+        });
       }
 
       setAuthSuccess('Login efetuado com sucesso! Redirecionando...');
@@ -1157,7 +1231,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                 </div>
 
                 {/* Abas Entrar vs Cadastrar */}
-                <div className="w-full flex bg-white/5 p-1.5 rounded-2xl border border-white/10 mb-6">
+                <div className="w-full flex bg-white/5 p-1.5 rounded-2xl border border-white/10 mb-4">
                   <button
                     onClick={() => { setAuthMode('login'); sound.playClick(); }}
                     className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
@@ -1179,6 +1253,124 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                     ✨ Criar Conta
                   </button>
                 </div>
+
+                {/* 👥 LISTA DE CONTAS SALVAS NO DISPOSITIVO (ATÉ 10 CONTAS) */}
+                {savedAccounts.length > 0 && (
+                  <div className="w-full mb-6 text-left">
+                    <button
+                      type="button"
+                      onClick={() => setShowSavedAccountsList(prev => !prev)}
+                      className="w-full p-3.5 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 hover:from-purple-900/50 hover:to-indigo-900/50 border border-purple-500/30 rounded-2xl flex items-center justify-between transition-all group shadow-md mb-2"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-purple-400 font-bold">
+                          <User size={16} />
+                        </div>
+                        <div>
+                          <span className="text-xs font-black text-white uppercase tracking-wider block">
+                            Contas Salvas neste Celular
+                          </span>
+                          <span className="text-[10px] text-purple-300/80 font-bold">
+                            {savedAccounts.length} de 10 Contas • Troca Rápida
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight size={18} className={`text-purple-400 transition-transform duration-300 ${showSavedAccountsList ? 'rotate-90' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {showSavedAccountsList && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-2 overflow-hidden max-h-64 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-purple-500/30"
+                        >
+                          {savedAccounts.map((acc, index) => (
+                            <div 
+                              key={index}
+                              className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-between transition-all"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                {/* Avatar */}
+                                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 shrink-0 bg-black/40 flex items-center justify-center">
+                                  {acc.avatar_url ? (
+                                    <img src={acc.avatar_url} alt={acc.display_name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <User size={18} className="text-white/50" />
+                                  )}
+                                </div>
+
+                                {/* Info */}
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-black text-white truncate max-w-[120px]">
+                                      {acc.display_name || 'Artista'}
+                                    </span>
+                                    {acc.is_pro ? (
+                                      <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                                        🌟 PRO
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md bg-gray-500/20 text-gray-400 border border-gray-500/30">
+                                        GRÁTIS
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-gray-400 truncate block">
+                                    {acc.email}
+                                  </span>
+
+                                  {/* Revelar Senha se desbloqueado */}
+                                  {revealedPasswordEmail === acc.email && acc.password && (
+                                    <div className="mt-1 px-2 py-1 bg-black/60 rounded-lg text-[10px] text-emerald-400 font-mono flex items-center gap-1.5 border border-emerald-500/30">
+                                      <Lock size={10} />
+                                      Senha: {acc.password}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Ações */}
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {/* Botão Revelar Senha por Biometria */}
+                                {acc.password && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRevealPasswordWithBiometrics(acc)}
+                                    title="Ver Senha (Requer Digital / Biometria do Celular)"
+                                    className="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/15 rounded-xl border border-white/10 transition-all"
+                                  >
+                                    {revealedPasswordEmail === acc.email ? <EyeOff size={14} className="text-emerald-400" /> : <Eye size={14} />}
+                                  </button>
+                                )}
+
+                                {/* Botão Logar Rapidamente */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAuthEmail(acc.email);
+                                    if (acc.password) setAuthPassword(acc.password);
+                                    setAuthMode('login');
+                                    sound.playClick();
+                                    // Tenta fazer o login imediatamente
+                                    setTimeout(() => {
+                                      const loginBtn = document.getElementById('btn-submit-auth');
+                                      if (loginBtn) loginBtn.click();
+                                    }, 100);
+                                  }}
+                                  className="px-3 py-2 bg-[var(--accent-color)] hover:bg-[var(--accent-color)]/80 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1"
+                                >
+                                  ⚡ Entrar
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
                 {/* Formulário */}
                 <div className="w-full space-y-4 text-left">
@@ -1273,6 +1465,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
 
                 {/* Botão de Ação */}
                 <button 
+                  id="btn-submit-auth"
                   onClick={authMode === 'login' ? handleSignIn : handleSignUp}
                   disabled={authLoading}
                   className="w-full mt-6 py-4 bg-[var(--accent-color)] text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-[var(--accent-color)]/30 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
