@@ -89,6 +89,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [registerName, setRegisterName] = useState('');
   const [experienceLevel, setExperienceLevel] = useState<'iniciante' | 'intermediario' | 'avancado' | 'mestre'>('iniciante');
   const [selectedBadge, setSelectedBadge] = useState('leaf');
@@ -403,6 +404,26 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     setShowSettings(false);
   };
 
+  const getStorageKey = () => {
+    return session?.user?.id ? `pixel_projects_${session.user.id}` : 'pixel_projects_guest';
+  };
+
+  const loadProjectsForUser = (userId?: string) => {
+    try {
+      const storageKey = userId ? `pixel_projects_${userId}` : 'pixel_projects_guest';
+      const projectsStr = localStorage.getItem(storageKey);
+      if (projectsStr) {
+        const projects = JSON.parse(projectsStr) as ProjectConfig[];
+        projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        setSavedProjects(projects);
+      } else {
+        setSavedProjects([]);
+      }
+    } catch (e) {
+      setSavedProjects([]);
+    }
+  };
+
   const cancelThemePreview = () => {
     // Revert to saved theme
     const savedId = currentThemeId;
@@ -417,7 +438,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     setSavedProjects(updated);
     setSelectedProjects(prev => prev.filter(pid => pid !== id));
     try {
-      localStorage.setItem('pixel_projects', JSON.stringify(updated));
+      localStorage.setItem(getStorageKey(), JSON.stringify(updated));
     } catch (e) {
       console.error("Storage quota exceeded", e);
     }
@@ -429,7 +450,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     setSavedProjects(updated);
     setSelectedProjects([]);
     try {
-      localStorage.setItem('pixel_projects', JSON.stringify(updated));
+      localStorage.setItem(getStorageKey(), JSON.stringify(updated));
     } catch (e) {}
   };
 
@@ -448,12 +469,13 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     const newProject = { 
       ...project, 
       id: generateId(), 
-      name: `${project.name} (CÃ³pia)` 
+      name: `${project.name} (Cópia)`,
+      updatedAt: Date.now()
     };
     
-    const updated = [...savedProjects, newProject];
+    const updated = [newProject, ...savedProjects];
     setSavedProjects(updated);
-    localStorage.setItem('pixel_projects', JSON.stringify(updated));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updated));
     sound.playAction();
   };
 
@@ -794,9 +816,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     sound.playAction();
     
     const newConfig = { id: generateId(), name, width: isCustom ? customWidth : size, height: isCustom ? customHeight : size };
-    const updatedProjects = [...savedProjects, newConfig];
+    const updatedProjects = [newConfig, ...savedProjects];
     setSavedProjects(updatedProjects);
-    localStorage.setItem('pixel_projects', JSON.stringify(updatedProjects));
+    localStorage.setItem(getStorageKey(), JSON.stringify(updatedProjects));
     openProjectWithTransition(newConfig);
   };
 
@@ -850,10 +872,12 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           localStorage.removeItem('wyrm_pro_plan');
           setIsPro(false);
         }
-        // Se já está logado, remove o onboarding de login
+        // Carrega projetos isolados do usuario
+        loadProjectsForUser(session.user.id);
         setOnboardingStep(null);
       } else {
-        // Se não está logado, força o modal de login
+        // Se não está logado, força o modal de login e limpa projetos
+        loadProjectsForUser(undefined);
         setOnboardingStep('auth');
       }
     });
@@ -881,8 +905,10 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           localStorage.removeItem('wyrm_pro_plan');
           setIsPro(false);
         }
+        loadProjectsForUser(session.user.id);
         setOnboardingStep(null);
       } else {
+        loadProjectsForUser(undefined);
         setOnboardingStep('auth');
       }
     });
@@ -983,12 +1009,12 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
         localStorage.setItem('pixel_profile_name', registerName);
       }
 
-      setAuthSuccess(data.session ? 'Conta criada com sucesso! Redirecionando...' : 'Conta criada! Confirme seu e-mail ou entre.');
+      // Ao criar conta, vai para a aba Entrar (Login) com o email/senha preenchidos!
+      setAuthMode('login');
+      setAuthSuccess('Conta criada com sucesso! Digite sua senha ou clique em Entrar para acessar.');
       setTimeout(() => {
         setAuthSuccess(null);
-        setQuizIndex(0);
-        setOnboardingStep('quiz');
-      }, 1500);
+      }, 4000);
     } catch (err: any) {
       setAuthError(err.message || 'Erro ao criar conta no Supabase.');
     } finally {
@@ -1061,17 +1087,15 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           pro_plan: isUserProInSupabase ? (meta.pro_plan || 'pro') : 'free',
           last_login: Date.now()
         });
+
+        // Carrega projetos isolados desta conta
+        loadProjectsForUser(data.user.id);
       }
 
-      setAuthSuccess('Login efetuado com sucesso! Redirecionando...');
-      setTimeout(() => {
-        setAuthSuccess(null);
-        setQuizIndex(0);
-        setOnboardingStep('quiz');
-      }, 1500);
-
-      setAuthSuccess('Login realizado com sucesso! 🎉');
-      setTimeout(() => setAuthSuccess(null), 3000);
+      setAuthSuccess('Login efetuado com sucesso!');
+      // Fecha o modal imediatamente para evitar tela preta!
+      setOnboardingStep(null);
+      setTimeout(() => setAuthSuccess(null), 2000);
     } catch (err: any) {
       setAuthError(err.message || 'Erro ao realizar login.');
     } finally {
@@ -1450,16 +1474,23 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                     />
                   </div>
 
-                  {/* Senha */}
+                  {/* Senha com Olho */}
                   <div className="relative group">
                     <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--accent-color)] transition-colors" />
                     <input 
-                      type="password" 
+                      type={showAuthPassword ? "text" : "password"} 
                       placeholder="Sua Senha" 
                       value={authPassword} 
                       onChange={e => setAuthPassword(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" 
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-12 text-white text-sm outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" 
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthPassword(prev => !prev)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
+                    >
+                      {showAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
 
@@ -2307,75 +2338,107 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                       </div>
                       <div className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-0.5">Quadros</div>
                     </div>
-                    <a
-                      href={CONFIG.DOWNLOAD_APK_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white text-xs font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 no-underline uppercase tracking-wider ml-auto"
-                    >
-                      <Download size={16} /> <span>Baixar APK Android</span>
-                    </a>
+                    {/* Botão Baixar APK (Visível apenas na Web) */}
+                    {!Capacitor.isNativePlatform() && (
+                      <a
+                        href={CONFIG.DOWNLOAD_APK_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white text-xs font-black rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 no-underline uppercase tracking-wider ml-auto"
+                      >
+                        <Download size={16} /> <span>Baixar APK Android</span>
+                      </a>
+                    )}
                   </div>
                 </div>
 
                 {/* Seção de Planos de Assinatura & Acesso Vitalício */}
-                <div className="mt-2 bg-gradient-to-r from-[#181824] via-[#1c1a2e] to-[#181824] rounded-2xl p-5 border border-yellow-500/20 shadow-xl flex flex-col gap-4">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-                    <div>
-                      <div className="flex items-center gap-2 justify-center sm:justify-start">
-                        <Star size={18} className="text-yellow-400 fill-yellow-400" />
-                        <h3 className="text-base font-black text-white uppercase tracking-wider">Planos WyrmPIXEL PRO Pass</h3>
-                      </div>
-                      <p className="text-xs text-white/60 mt-0.5">Desbloqueie exportação em HD/4K, sem marcas d'água e camadas ilimitadas</p>
-                    </div>
-                    <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20 shrink-0">
-                      OFERTA DE LANÇAMENTO
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Opção Mensal (R$ 17,90 / mês) */}
-                    <div 
-                      onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_dRmbJ00FW91e6NU10SaIM01', '_blank'); }}
-                      className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-blue-400/50 transition-all cursor-pointer group flex items-center justify-between"
-                    >
+                {localStorage.getItem('wyrm_pro_plan') === 'lifetime' ? (
+                  <div className="mt-2 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 rounded-2xl p-5 border border-yellow-500/40 shadow-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Star size={24} className="text-yellow-400 fill-yellow-400" />
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Plano Mensal</span>
-                          <span className="text-[10px] text-white/30 line-through font-bold">R$ 29,90</span>
-                        </div>
-                        <div className="text-xl font-black text-white mt-0.5">R$ 17,90 <span className="text-xs text-white/40 font-normal">/ mês</span></div>
-                        <p className="text-[11px] text-white/50 mt-1">Cancele quando quiser</p>
+                        <h3 className="text-base font-black text-white uppercase tracking-wider">PRO VITALÍCIO ATIVADO 👑</h3>
+                        <p className="text-xs text-yellow-300/90 font-medium">Você tem acesso ilimitado a todos os recursos para sempre!</p>
                       </div>
-                      <button className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider shadow-md">
-                        Assinar Stripe
-                      </button>
                     </div>
-
-                    {/* Opção Vitalícia (R$ 49,90 único) */}
-                    <div 
+                  </div>
+                ) : localStorage.getItem('wyrm_pro_plan') === 'monthly' ? (
+                  <div className="mt-2 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 rounded-2xl p-5 border border-blue-500/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Star size={24} className="text-blue-400 fill-blue-400" />
+                      <div>
+                        <h3 className="text-base font-black text-white uppercase tracking-wider">ASSINATURA MENSAL ATIVA ✨</h3>
+                        <p className="text-xs text-blue-300/90 font-medium">Sua conta PRO Mensal está 100% ativa!</p>
+                      </div>
+                    </div>
+                    {/* Botão de upgrade pro Vitalício */}
+                    <button 
                       onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_5kQfZgagw4KYa06fVMaIM02', '_blank'); }}
-                      className="p-4 bg-gradient-to-br from-yellow-400/10 via-amber-500/15 to-yellow-500/10 hover:from-yellow-400/20 rounded-2xl border-2 border-yellow-400/50 transition-all cursor-pointer group flex items-center justify-between relative overflow-hidden shadow-lg"
+                      className="px-4 py-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black rounded-xl shadow-md uppercase tracking-wider shrink-0"
                     >
-                      <div className="absolute top-0 right-0 bg-yellow-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-bl-xl uppercase tracking-widest">
-                        MAIS VENDIDO (80% OFF)
-                      </div>
+                      👑 Mudar para Vitalício (R$ 49,90)
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-2 bg-gradient-to-r from-[#181824] via-[#1c1a2e] to-[#181824] rounded-2xl p-5 border border-yellow-500/20 shadow-xl flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                       <div>
-                        <div className="flex items-center gap-2 pr-12">
-                          <span className="text-[10px] font-black uppercase text-yellow-300 tracking-wider flex items-center gap-1">
-                            👑 Acesso Vitalício
-                          </span>
-                          <span className="text-[10px] text-amber-200/40 line-through font-bold">R$ 299,00</span>
+                        <div className="flex items-center gap-2 justify-center sm:justify-start">
+                          <Star size={18} className="text-yellow-400 fill-yellow-400" />
+                          <h3 className="text-base font-black text-white uppercase tracking-wider">Planos WyrmPIXEL PRO Pass</h3>
                         </div>
-                        <div className="text-xl font-black text-amber-300 mt-0.5">R$ 49,90 <span className="text-xs text-amber-200/60 font-normal">único</span></div>
-                        <p className="text-[11px] text-amber-200/70 mt-1">Pague 1x e use PARA SEMPRE</p>
+                        <p className="text-xs text-white/60 mt-0.5">Desbloqueie exportação em HD/4K, sem marcas d'água e camadas ilimitadas</p>
                       </div>
-                      <button className="px-4 py-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black rounded-xl shadow-md group-hover:scale-105 transition-all uppercase tracking-wider">
-                        Garantir Stripe
-                      </button>
+                      <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20 shrink-0">
+                        OFERTA DE LANÇAMENTO
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Opção Mensal (R$ 17,90 / mês) */}
+                      <div 
+                        onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_dRmbJ00FW91e6NU10SaIM01', '_blank'); }}
+                        className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 hover:border-blue-400/50 transition-all cursor-pointer group flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase text-blue-400 tracking-wider">Plano Mensal</span>
+                            <span className="text-[10px] text-white/30 line-through font-bold">R$ 29,90</span>
+                          </div>
+                          <div className="text-xl font-black text-white mt-0.5">R$ 17,90 <span className="text-xs text-white/40 font-normal">/ mês</span></div>
+                          <p className="text-[11px] text-white/50 mt-1">Cancele quando quiser</p>
+                        </div>
+                        <button className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider shadow-md">
+                          Assinar Stripe
+                        </button>
+                      </div>
+
+                      {/* Opção Vitalícia (R$ 49,90 único) */}
+                      <div 
+                        onClick={() => { sound.playClick(); window.open('https://buy.stripe.com/test_5kQfZgagw4KYa06fVMaIM02', '_blank'); }}
+                        className="p-4 bg-gradient-to-br from-yellow-400/10 via-amber-500/15 to-yellow-500/10 hover:from-yellow-400/20 rounded-2xl border-2 border-yellow-400/50 transition-all cursor-pointer group flex items-center justify-between relative overflow-hidden shadow-lg"
+                      >
+                        <div className="absolute top-0 right-0 bg-yellow-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-bl-xl uppercase tracking-widest">
+                          MAIS VENDIDO (80% OFF)
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 pr-12">
+                            <span className="text-[10px] font-black uppercase text-yellow-300 tracking-wider flex items-center gap-1">
+                              👑 Acesso Vitalício
+                            </span>
+                            <span className="text-[10px] text-amber-200/40 line-through font-bold">R$ 299,00</span>
+                          </div>
+                          <div className="text-xl font-black text-amber-300 mt-0.5">R$ 49,90 <span className="text-xs text-amber-200/60 font-normal">único</span></div>
+                          <p className="text-[11px] text-amber-200/70 mt-1">Pague 1x e use PARA SEMPRE</p>
+                        </div>
+                        <button className="px-4 py-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black rounded-xl shadow-md group-hover:scale-105 transition-all uppercase tracking-wider">
+                          Garantir Stripe
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Seção da Galeria Pessoal do Artista */}
