@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, Plus, Download, Palette, Settings, HelpCircle, X, PlayCircle, BookOpen, Pencil, Layers as LayersIcon, Film, Play, Copy, Sun, Check, Star, Image as ImageIcon, FileImage, User, Home, LogOut, Shield, Award, Mail, Lock, Eye, EyeOff, ChevronRight, Share2, RefreshCw, ArrowRight, Send, ArrowLeft, Instagram, MessageSquare, ExternalLink } from 'lucide-react';
+import { Trash2, Plus, Download, Palette, Settings, HelpCircle, X, PlayCircle, BookOpen, Pencil, Layers as LayersIcon, Film, Play, Copy, Sun, Check, Star, Image as ImageIcon, FileImage, User, Home, LogOut, Shield, Award, Mail, Lock, Eye, EyeOff, ChevronRight, Share2, RefreshCw, ArrowRight, Send, ArrowLeft, Instagram, MessageSquare, ExternalLink, Sparkles } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -956,47 +956,181 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                   </motion.div>
                 )}
 
-                {/* Login / Register Forms */}
-                {onboardingStep === 'auth' && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="w-full flex flex-col items-center">
-                    <button onClick={() => setOnboardingStep('welcome')} className="absolute top-8 left-8 p-2 text-gray-500 hover:text-white transition-colors">
-                      <ArrowLeft size={24} />
-                    </button>
-                    <h3 className="text-xl font-black text-white mb-8 uppercase tracking-widest">
-                      {authMode === 'login' ? 'Acessar Conta' : 'Nova Jornada'}
-                    </h3>
-                    
-                    <div className="w-full space-y-4">
-                      {authMode === 'register' && (
-                        <div className="relative group">
-                          <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--accent-color)] transition-colors" size={20} />
-                          <input type="text" placeholder="Nome de Exibição" value={registerName} onChange={e => setRegisterName(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" />
+        {/* Modal de Autenticação / Cadastro com Seletor de Avatar Integrado */}
+        {onboardingStep === 'auth' && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-2xl overflow-y-auto"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-lg bg-[#0d0d12] rounded-[36px] border border-white/10 shadow-2xl overflow-hidden relative my-auto p-6 md:p-8"
+            >
+              {/* Botão de Fechar */}
+              <button 
+                onClick={() => { setOnboardingStep(null); sound.playClick(); }} 
+                className="absolute top-6 right-6 p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex flex-col items-center text-center">
+                {/* Header Logo */}
+                <div className="flex items-center gap-3 mb-6">
+                  <img src="/logo.png" alt="Logo" className="w-12 h-12 image-pixelated drop-shadow-[0_0_15px_rgba(239,68,68,0.4)]" />
+                  <div className="text-left">
+                    <h2 className="text-xl font-black text-white tracking-tighter uppercase">DRAGON<span className="text-[var(--accent-color)]">PIXEL</span></h2>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Estúdio de Pixel Art</p>
+                  </div>
+                </div>
+
+                {/* Abas Entrar vs Cadastrar */}
+                <div className="w-full flex bg-white/5 p-1.5 rounded-2xl border border-white/10 mb-6">
+                  <button
+                    onClick={() => { setAuthMode('login'); sound.playClick(); }}
+                    className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                      authMode === 'login' 
+                        ? 'bg-[var(--accent-color)] text-white shadow-lg shadow-[var(--accent-color)]/30' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    🔑 Entrar
+                  </button>
+                  <button
+                    onClick={() => { setAuthMode('register'); sound.playClick(); }}
+                    className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                      authMode === 'register' 
+                        ? 'bg-[var(--accent-color)] text-white shadow-lg shadow-[var(--accent-color)]/30' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    ✨ Criar Conta
+                  </button>
+                </div>
+
+                {/* Formulário */}
+                <div className="w-full space-y-4 text-left">
+                  {/* Seletor de Avatar (Visível no Cadastro) */}
+                  {authMode === 'register' && (
+                    <div className="flex flex-col items-center mb-6 p-4 bg-white/5 rounded-2xl border border-white/10">
+                      <label className="text-xs font-black text-white uppercase tracking-wider mb-3 self-start flex items-center gap-2">
+                        <User size={14} className="text-[var(--accent-color)]" />
+                        Escolha seu Avatar de Perfil
+                      </label>
+                      
+                      {/* Avatar Preview Grande */}
+                      <div 
+                        onClick={() => avatarFileInputRef.current?.click()}
+                        className="relative group cursor-pointer w-20 h-20 rounded-full border-2 border-[var(--accent-color)] overflow-hidden bg-black/40 flex items-center justify-center mb-4 transition-transform hover:scale-105"
+                      >
+                        {profileImage ? (
+                          <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={36} className="text-white/40" />
+                        )}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[9px] font-black uppercase text-white">
+                          Trocar Foto
                         </div>
-                      )}
-                      <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--accent-color)] transition-colors" size={20} />
-                        <input type="email" placeholder="Seu E-mail" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" />
                       </div>
-                      <div className="relative group">
-                        <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--accent-color)] transition-colors" />
-                        <input type="password" placeholder="Sua Senha" value={authPassword} onChange={e => setAuthPassword(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" />
+
+                      {/* Lista de Avatares Rápidos */}
+                      <div className="w-full">
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                          {avatars.slice(0, 8).map((url, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                setProfileImage(url);
+                                localStorage.setItem('pixel_profile_image', url);
+                                sound.playClick();
+                              }}
+                              className={`w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 transition-all ${
+                                profileImage === url ? 'border-[var(--accent-color)] scale-110 shadow-lg' : 'border-white/10 hover:border-white/40'
+                              }`}
+                            >
+                              <img src={url} alt={`Avatar ${i+1}`} className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                  )}
 
-                    <button 
-                      onClick={authMode === 'login' ? handleSignIn : handleSignUp}
-                      disabled={authLoading}
-                      className="w-full mt-8 py-5 bg-[var(--accent-color)] text-white font-black uppercase tracking-widest rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                    >
-                      {authLoading ? 'PROCESSANDO...' : authMode === 'login' ? 'ENTRAR' : 'CONTINUAR'}
-                    </button>
-                    
-                    {authError && <p className="mt-4 text-red-400 text-xs font-bold text-center">{authError}</p>}
-                  </motion.div>
-                )}
+                  {/* Nome (Apenas no Cadastro) */}
+                  {authMode === 'register' && (
+                    <div className="relative group">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--accent-color)] transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Seu Nome de Artista / Exibição" 
+                        value={registerName} 
+                        onChange={e => {
+                          setRegisterName(e.target.value);
+                          setProfileName(e.target.value);
+                        }}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" 
+                      />
+                    </div>
+                  )}
+
+                  {/* E-mail */}
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--accent-color)] transition-colors" size={18} />
+                    <input 
+                      type="email" 
+                      placeholder="Seu E-mail" 
+                      value={authEmail} 
+                      onChange={e => setAuthEmail(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" 
+                    />
+                  </div>
+
+                  {/* Senha */}
+                  <div className="relative group">
+                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--accent-color)] transition-colors" />
+                    <input 
+                      type="password" 
+                      placeholder="Sua Senha" 
+                      value={authPassword} 
+                      onChange={e => setAuthPassword(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-white text-sm outline-none focus:border-[var(--accent-color)]/50 focus:bg-white/[0.08] transition-all font-bold" 
+                    />
+                  </div>
+                </div>
+
+                {/* Botão de Ação */}
+                <button 
+                  onClick={authMode === 'login' ? handleSignIn : handleSignUp}
+                  disabled={authLoading}
+                  className="w-full mt-6 py-4 bg-[var(--accent-color)] text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-[var(--accent-color)]/30 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {authLoading ? (
+                    <span>PROCESSANDO...</span>
+                  ) : authMode === 'login' ? (
+                    <><span>ENTRAR NA CONTA</span> <Sparkles size={16} /></>
+                  ) : (
+                    <><span>CRIAR MINHA CONTA</span> <Sparkles size={16} /></>
+                  )}
+                </button>
+                
+                {authError && <p className="mt-3 text-red-400 text-xs font-bold text-center">{authError}</p>}
+                {authSuccess && <p className="mt-3 text-emerald-400 text-xs font-bold text-center">{authSuccess}</p>}
+
+                <button 
+                  onClick={() => { setOnboardingStep(null); sound.playClick(); }}
+                  className="mt-4 text-gray-500 hover:text-white font-bold uppercase tracking-widest text-[10px] transition-all"
+                >
+                  Continuar sem Logar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
               </div>
             </motion.div>
           </motion.div>
@@ -1163,6 +1297,33 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
 
                   {/* Redes Sociais & Controles */}
                   <div className="flex items-center gap-2.5 bg-black/40 p-1.5 rounded-2xl border border-white/10 shadow-inner">
+                    {/* Botão de Login / Perfil */}
+                    {session ? (
+                      <button
+                        onClick={() => { sound.playClick(); setActiveTab('profile'); }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all active:scale-95 group shadow-md"
+                        title="Ver Perfil"
+                      >
+                        <div className="w-6 h-6 rounded-full overflow-hidden border border-[var(--accent-color)] shrink-0">
+                          {profileImage ? (
+                            <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <User size={14} className="text-white/60 m-auto" />
+                          )}
+                        </div>
+                        <span className="text-xs font-bold truncate max-w-[100px] hidden sm:inline">{profileName}</span>
+                        {isPro && <span className="text-[9px] font-black bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1.5 py-0.5 rounded-md uppercase">PRO</span>}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => { sound.playClick(); setAuthMode('login'); setOnboardingStep('auth'); }}
+                        className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--accent-color)] hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-[var(--accent-color)]/20 transition-all active:scale-95"
+                      >
+                        <User size={16} />
+                        <span>Entrar / Cadastrar</span>
+                      </button>
+                    )}
+
                     <a 
                       href={CONFIG.INSTAGRAM_URL} 
                       target="_blank" 
