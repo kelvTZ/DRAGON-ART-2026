@@ -7,6 +7,7 @@ import { ProjectConfig } from '../types';
 
 import StartMenu from '../StartMenu';
 import Editor from '../Editor';
+import { LandingPage } from './LandingPage';
 import { Capacitor } from '@capacitor/core';
 
 import { App as CapApp } from '@capacitor/app';
@@ -22,41 +23,14 @@ try {
 } catch (e) {}
 import "mobile-drag-drop/default.css";
 
-// Simple loading fallback
-function LoadingFallback() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#0a0a0a',
-      color: '#ffffff',
-      fontFamily: '"Press Start 2P", monospace',
-      textAlign: 'center'
-    }}>
-      <div className="animate-pulse-subtle">
-        <img 
-          src="/logo.png" 
-          alt="Dragon Art" 
-          style={{ width: '80px', height: '80px', objectFit: 'contain', imageRendering: 'pixelated', marginBottom: '24px' }} 
-        />
-        <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '32px', letterSpacing: '0.2em' }}>DRAGONART</div>
-      </div>
-      
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-        <div style={{ fontSize: '10px', opacity: 0.5, letterSpacing: '0.1em' }}>Carregando Estúdio...</div>
-      </div>
-    </div>
-  );
-}
-
 export default function App() {
   const [config, setConfig] = useState<ProjectConfig | null>(null);
   const [isPro, setIsPro] = useState(() => {
     return localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true';
+  });
+  const [viewMode, setViewMode] = useState<'landing' | 'app'>(() => {
+    // Se estiver no APK nativo (Capacitor), abre direto no App/Menu. Na Web, abre a Landing Page comercial
+    return Capacitor.isNativePlatform() ? 'app' : 'landing';
   });
   const [userName, setUserName] = useState('Artista Pixel');
   const [showSplash, setShowSplash] = useState(true);
@@ -256,6 +230,11 @@ export default function App() {
             )}
           </AnimatePresence>
         </motion.div>
+      ) : viewMode === 'landing' ? (
+        <LandingPage 
+          onEnterApp={() => setViewMode('app')} 
+          isPro={isPro} 
+        />
       ) : !config ? (
         <StartMenu onStart={handleStartProject} />
       ) : (
