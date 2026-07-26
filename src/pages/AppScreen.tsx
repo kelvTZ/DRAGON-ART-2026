@@ -29,8 +29,10 @@ export default function App() {
     return localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true';
   });
   const [viewMode, setViewMode] = useState<'landing' | 'app'>(() => {
-    // Se estiver no APK nativo (Capacitor), abre direto no App/Menu. Na Web, abre a Landing Page comercial
-    return Capacitor.isNativePlatform() ? 'app' : 'landing';
+    if (typeof window !== 'undefined' && window.location.search.includes('mode=landing')) {
+      return 'landing';
+    }
+    return 'app';
   });
   const [userName, setUserName] = useState('Artista Pixel');
   const [showSplash, setShowSplash] = useState(true);
