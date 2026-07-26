@@ -15,6 +15,7 @@ import { generateId, getAvatarFallback } from './utils';
 
 import { CONFIG } from './config';
 import OnboardingTutorial from './components/OnboardingTutorial';
+import { EbookModal } from './components/EbookModal';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 
 
@@ -39,6 +40,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [profileName, setProfileName] = useState(() => localStorage.getItem('pixel_profile_name') || 'Artista Pixel');
   const [profileImage, setProfileImage] = useState<string | null>(() => localStorage.getItem('pixel_profile_image') || null);
+  const [showEbookModal, setShowEbookModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -1845,11 +1847,20 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                     </a>
                     
                     <button 
+                      onClick={() => { sound.playClick(); setShowEbookModal(true); }} 
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400/20 via-yellow-500/20 to-amber-400/20 hover:from-amber-400/30 text-amber-300 border border-amber-400/40 transition-all active:scale-95 group shadow-lg shadow-amber-500/10" 
+                      title="Abrir o E-Book Oficial (Livro Sagrado do Pixel Art - 46 Capítulos)"
+                    >
+                      <BookOpen size={18} className="group-hover:scale-110 transition-transform text-amber-400" />
+                      <span className="text-xs font-black uppercase tracking-wider hidden sm:inline">Livro E-Book (46 Capítulos)</span>
+                    </button>
+
+                    <button 
                       onClick={() => { sound.playClick(); setShowTutorials(true); }} 
                       className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 transition-all active:scale-95 group" 
                       title="Guia & Tutoriais"
                     >
-                      <BookOpen size={18} className="group-hover:scale-110 transition-transform text-[var(--accent-color)]" />
+                      <Sparkles size={18} className="group-hover:scale-110 transition-transform text-[var(--accent-color)]" />
                       <span className="text-xs font-bold uppercase tracking-wider hidden lg:inline">Aprender</span>
                     </button>
                     
@@ -3088,6 +3099,9 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modal do Livro E-Book de Pixel Art */}
+      <EbookModal isOpen={showEbookModal} onClose={() => setShowEbookModal(false)} />
     </div>
   );
 }

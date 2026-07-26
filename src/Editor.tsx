@@ -88,6 +88,7 @@ import { sound } from "./sound";
 
 import { TopBar } from "./components/editor/TopBar";
 import { BottomBar } from "./components/editor/BottomBar";
+import { EbookModal } from "./components/EbookModal";
 import { FloatingControls } from "./components/editor/FloatingControls";
 import { LayerPanel } from "./components/editor/LayerPanel";
 import { FramePanel, MiniCanvas } from "./components/editor/FramePanel";
@@ -232,6 +233,7 @@ export default function Editor({
   userName?: string;
 }) {
   const isPro = isProProp || (typeof window !== 'undefined' && (localStorage.getItem('wyrm_is_pro') === 'true' || localStorage.getItem('pixel_is_pro') === 'true'));
+  const [showEbookModal, setShowEbookModal] = useState(false);
   const [width, setWidth] = useState(() => Math.max(1, Number(config.width) || 32));
   const [height, setHeight] = useState(() => Math.max(1, Number(config.height) || 32));
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -8841,6 +8843,11 @@ export default function Editor({
         isOpen={isTutorialOpen} 
         onClose={() => setIsTutorialOpen(false)} 
         mode="editor"
+      />
+
+      <EbookModal 
+        isOpen={showEbookModal} 
+        onClose={() => setShowEbookModal(false)} 
       />
     </div>
   );
