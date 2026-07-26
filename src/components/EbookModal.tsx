@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  BookOpen, Search, X, ZoomIn, ChevronLeft, ChevronRight, 
-  Sparkles, Layers, Palette, Eye, Grid, Maximize2, Shield, Flame, 
-  Sun, Wand2, Compass, Cpu, Bookmark
+  BookOpen, X, ZoomIn, ChevronLeft, ChevronRight, 
+  Sparkles, Shield, Flame, 
+  Sun, Wand2, Compass, Cpu, Bookmark, Palette
 } from 'lucide-react';
 import { sound } from '../sound';
 
@@ -19,7 +19,7 @@ export interface EbookChapter {
   tipsDragonArt: string;
 }
 
-const EBOOK_CHAPTERS: EbookChapter[] = [
+export const EBOOK_CHAPTERS: EbookChapter[] = [
   {
     id: 'canvas-size',
     number: 1,
@@ -514,7 +514,7 @@ const EBOOK_CHAPTERS: EbookChapter[] = [
       'Linhas de espuma de onda usam traços horizontais finos de 1px com transparência.',
       'A profundidade da água é indicada por um escurecimento progressivo do azul.'
     ],
-    tipsDragonArt: 'Anime ondas facilmente duplicating quadros e movendo as linhas 1px para a direita a cada frame.'
+    tipsDragonArt: 'Anime ondas facilmente duplicando quadros e movendo as linhas 1px para a direita a cada frame.'
   },
   {
     id: 'wet-floor',
@@ -712,11 +712,312 @@ const EBOOK_CHAPTERS: EbookChapter[] = [
       'Para redes sociais, dimensione sua arte para pelo menos 1080px de largura usando escala vizinho mais próximo (Nearest Neighbor).'
     ],
     tipsDragonArt: 'O botão de Exportar do Dragon Art gera automaticamente arquivos PNG e GIF em 1080p e 4K perfeitos!'
+  },
+  // NOVOS 20 CAPÍTULOS ILUSTRADOS (47 a 66)
+  {
+    id: 'character-progression',
+    number: 47,
+    title: 'Evolução e Progressão Visual de Personagens (LV 1 ao LV 100)',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Character_progression_pixel_art_…_202607252337.jpeg',
+    summary: 'Como fazer o herói evoluir de vestes simples até armaduras lendárias reluzentes.',
+    details: [
+      'Aumente o tamanho dos ombros e a riqueza de detalhes conforme o nível do personagem sobe.',
+      'Adicione auras mágicas e efeitos de luz nos equipamentos de nível alto.',
+      'Mantenha as cores primárias do personagem identificáveis em todas as evoluções.'
+    ],
+    tipsDragonArt: 'Salve variações da mesma base anatômica em camadas separadas no Dragon Art.'
+  },
+  {
+    id: 'masterclass-character-design',
+    number: 48,
+    title: 'Masterclass de Character Design e Conceito Visual',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Masterclass_character_design_ill…_202607252337.jpeg',
+    summary: 'Técnicas avançadas de desenho conceitual para heróis, vilões e NPCs inesquecíveis.',
+    details: [
+      'Formas triangulares transmitem perigo e velocidade; formas circulares transmitem simpatia.',
+      'Trabalhe a regra das 3 cores principais por personagem.',
+      'Defina o centro de interesse do design na cabeça e peitoral.'
+    ],
+    tipsDragonArt: 'Carregue templates de silhueta no WyrmPIXEL para testar formas marcantes.'
+  },
+  {
+    id: 'monster-anatomy',
+    number: 49,
+    title: 'Anatomia de Monstros, Bestas e Criaturas Fantásticas',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_monster_anatomy_tutorial_202607252337.jpeg',
+    summary: 'Desenho de criaturas míticas, gárgulas, dragões, harpias e demônios.',
+    details: [
+      'Misture elementos animais conhecidos (ex: asas de morcego + corpo de felino).',
+      'Exagere dentes, garras e chifres para maior impacto visual.',
+      'Crie contraste entre peles duras de couro e áreas brilhantes emissivas.'
+    ],
+    tipsDragonArt: 'Use a ferramenta de simetria espelhada do WyrmPIXEL para desenhar monstros com rapidez.'
+  },
+  {
+    id: 'antialiasing-precision',
+    number: 50,
+    title: 'Anti-Aliasing de Alta Precisão para Curvas Nítidas',
+    category: 'cores',
+    categoryName: '🎨 Cores & Luz',
+    image: '/ebook/Pixel_art_tutorial_antialiasing_…_202607252337.jpeg',
+    summary: 'Técnicas de suavização em alta precisão sem perder o visual Pixel Art afiado.',
+    details: [
+      'Coloque pixels de suavização apenas nos pontos de ruptura da curva.',
+      'Ajuste a opacidade e luminância proporcionalmente ao fundo.',
+      'Evite suavizar contornos internos para manter o estilo retro.'
+    ],
+    tipsDragonArt: 'Alterne a grade de pixels no WyrmPIXEL para checar a precisão dos pontos de alinhamento.'
+  },
+  {
+    id: 'arms-legs-anatomy',
+    number: 51,
+    title: 'Anatomia e Articulação de Braços e Pernas',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_arms_legs_202607252337.jpeg',
+    summary: 'Como desenhar membros anatômicos articulados em movimento e perspectiva.',
+    details: [
+      'Divida o membro em 3 cilindros anatômicos básicos (Ombro/Braço, Antebraço, Mão).',
+      'Dobre as articulações criando pequenos vales de sombra nos cotovelos e joelhos.',
+      'Destaque bíceps e panturrilhas com clusters curvos.'
+    ],
+    tipsDragonArt: 'Utilize a ferramenta de seleção com rotação do WyrmPIXEL para mover braços e pernas facilmente.'
+  },
+  {
+    id: 'character-archetypes',
+    number: 52,
+    title: 'Arquétipos de Personagens: Guerreiro, Mago e Ladino',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_character_arc…_202607252337.jpeg',
+    summary: 'Identidade visual e silhueta para classes clássicas de RPG.',
+    details: [
+      'Guerreiro: Postura pesada, linhas retas, armaduras de metal e espadas grandes.',
+      'Mago: Capuzes altos, cajados longos, robes fluídos e auras de iluminação.',
+      'Ladino: Silhueta ágil, capuzes ajustados, adagas duplas e cores furtivas.'
+    ],
+    tipsDragonArt: 'O Dragon Art possui ícones e acessórios específicos para cada classe prontos para usar.'
+  },
+  {
+    id: 'character-clothing-armor',
+    number: 53,
+    title: 'Modelagem de Roupas, Armaduras e Tecidos em Movimento',
+    category: 'texturas',
+    categoryName: '🧱 Texturas & Materiais',
+    image: '/ebook/Pixel_art_tutorial_character_clo…_202607252337.jpeg',
+    summary: 'Como fazer vestimentas se adaptarem à pose dinâmica do personagem.',
+    details: [
+      'As roupas seguem o volume dos músculos e do esqueleto por baixo.',
+      'Adicione bordas de costura e fivelas de cinto para riqueza de detalhes.',
+      'Dobre tecidos ao redor das articulações em movimento.'
+    ],
+    tipsDragonArt: 'Desenhe as roupas numa camada separada do corpo do personagem no WyrmPIXEL.'
+  },
+  {
+    id: 'character-facial-expressions',
+    number: 54,
+    title: 'Expressões Faciais Avançadas e Micro-Emoções',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_character_exp…_202607252337.jpeg',
+    summary: 'Micro-expressões de determinação, deboche, choque e fúria em pouca resolução.',
+    details: [
+      'Incline as pupilas e a boca para transmitir ironia e deboche.',
+      'Abra a boca em 2x3 pixels para gritos de batalha heroicos.',
+      'Adicione gotas de suor ou veias de raiva de 1px.'
+    ],
+    tipsDragonArt: 'Use a ferramenta de zoom em 1600% para desenhar detalhes faciais com 1px.'
+  },
+  {
+    id: 'character-perspective-angles',
+    number: 55,
+    title: 'Perspectiva de Personagem: Visão Frontal, 3/4 e Costas',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_character_per…_202607252337.jpeg',
+    summary: 'Desenho de sprites em múltiplos ângulos de câmera para jogos top-down e RPGs.',
+    details: [
+      'Visão 3/4 é a mais recomendada por mostrar volume de frente e perfil ao mesmo tempo.',
+      'Ajuste o comprimento das pernas em visão top-down.',
+      'Mantenha a altura da cabeça idêntica em todas as 4 direções.'
+    ],
+    tipsDragonArt: 'Use a visualização de múltiplos quadros (Grid Timeline) no WyrmPIXEL para comparar os ângulos.'
+  },
+  {
+    id: 'combat-poses',
+    number: 56,
+    title: 'Poses de Combate e Ponto de Equilíbrio Dinâmico',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_character_poses_202607252337.jpeg',
+    summary: 'Construção de posturas de ataque, esquiva, guarda de escudo e magias.',
+    details: [
+      'Afaste os pés para criar uma base ampla de equilíbrio nas poses de combate.',
+      'Incline o tronco na direção do golpe para passar sensação de peso e força.',
+      'Estique o braço livre para trás para balancear o corpo.'
+    ],
+    tipsDragonArt: 'Desenhe a linha de chão no Dragon Art para verificar o pé de apoio.'
+  },
+  {
+    id: 'chibi-vs-heroic-proportions',
+    number: 57,
+    title: 'Proporções Chibi vs. Proporções Heróicas',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_character_pro…_202607252337.jpeg',
+    summary: 'Comparação de estilos de proporção para diferentes tipos de jogos.',
+    details: [
+      'Estilo Chibi (2-3 cabeças): Foco total na fofura, olhos grandes e membros simplificados.',
+      'Estilo Heróico (6-7 cabeças): Foco no realismo, anatomia definida e detalhes de armadura.',
+      'Estilo Retro 16-bit: Equilíbrio entre legibilidade e detalhes musculares.'
+    ],
+    tipsDragonArt: 'O Dragon Art possui guias de proporção de cabeças prontas nas configurações de tela.'
+  },
+  {
+    id: 'clean-outlines-master',
+    number: 58,
+    title: 'Técnicas de Limpeza de Traço e Outlines Cristalinas',
+    category: 'fundamentos',
+    categoryName: '✦ Fundamentos & Linhas',
+    image: '/ebook/Pixel_art_tutorial_clean_line_202607252337.jpeg',
+    summary: 'Como manter contornos nítidos e limpos em qualquer estilo de desenho.',
+    details: [
+      'Substitua linhas serrilhadas por sequências perfeitas (ex: 2-2-2 ou 3-3-3).',
+      'Arredonde cantos removendo pixels excedentes na quina.',
+      'Mantenha a espessura da linha uniforme em todo o contorno.'
+    ],
+    tipsDragonArt: 'Use o pincel Pixel Perfect do WyrmPIXEL para desenhar traços perfeitos de primeira.'
+  },
+  {
+    id: 'character-color-harmony',
+    number: 59,
+    title: 'Harmonia de Cores e Contraste para Personagens',
+    category: 'cores',
+    categoryName: '🎨 Cores & Luz',
+    image: '/ebook/Pixel_art_tutorial_color_palette…_202607252337.jpeg',
+    summary: 'Selecione esquemas de cores marcantes para identificar heróis e vilões.',
+    details: [
+      'Heróis usam cores quentes e saturadas (Vermelho, Dourado, Azul Royal).',
+      'Vilões usam cores frias e ácidas (Roxo Escuro, Verde Veneno, Magenta).',
+      'Garanta que a cor da pele tenha contraste com as vestimentas.'
+    ],
+    tipsDragonArt: 'Crie paletas personalizadas de personagens e salve no banco de paletas do WyrmPIXEL.'
+  },
+  {
+    id: 'epic-capes-movement',
+    number: 60,
+    title: 'Capas Épicas e Movimento Fluído do Vento',
+    category: 'texturas',
+    categoryName: '🧱 Texturas & Materiais',
+    image: '/ebook/Pixel_art_tutorial_drawing_capes_202607252337.jpeg',
+    summary: 'Como desenhar capas esvoaçantes com dobras dinâmicas e sombras realistas.',
+    details: [
+      'A capa se move em ondas de forma senoidal atrás do personagem.',
+      'Destaque as bordas internas rasgadas ou decoradas com linhas mais claras.',
+      'O tom da sombra interna deve ser bem mais escuro que a superfície exterior.'
+    ],
+    tipsDragonArt: 'Anime capas em 6 a 8 quadros com o onion skinning do Dragon Art.'
+  },
+  {
+    id: 'hair-volume-shine',
+    number: 61,
+    title: 'Estilos de Cabelo, Volume e Brilho Especular',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_drawing_hair_202607252337.jpeg',
+    summary: 'Desenho de cabelos curtos, longos, cacheados e espetados estilo anime.',
+    details: [
+      'Agrupe o cabelo em 3 seções: Franja, Laterais e Fundo.',
+      'Adicione uma faixa curva de brilho especular no topo da cabeça.',
+      'Evite desenhar fios de cabelo individuais de 1px soltos sem forma.'
+    ],
+    tipsDragonArt: 'Use a ferramenta de preenchimento com rampa de cor do WyrmPIXEL para dar volume imediato ao cabelo.'
+  },
+  {
+    id: 'hands-feet-pixels',
+    number: 62,
+    title: 'Desenhando Mãos, Gestos e Pés em Poucos Pixels',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_hands_feet_202607252337.jpeg',
+    summary: 'Simplifique mãos e pés em pequenos conjuntos de pixels expressivos.',
+    details: [
+      'Mão fechada (punho) vira um bloco quadriculado de 3x3 ou 4x4 pixels.',
+      'Mão aberta indica os 4 dedos agrupados e o polegar separado.',
+      'Pés usam formato trapezoidal inclinado na direção do chão.'
+    ],
+    tipsDragonArt: 'Consulte o banco de ícones de mãos e botas embutido no Dragon Art.'
+  },
+  {
+    id: 'head-construction-rotation',
+    number: 63,
+    title: 'Construção da Cabeça e Rotação 360°',
+    category: 'personagens',
+    categoryName: '🛡️ Personagens & Armaduras',
+    image: '/ebook/Pixel_art_tutorial_head_construction_202607252337.jpeg',
+    summary: 'Como girar a cabeça do personagem em 8 direções mantendo a coerência.',
+    details: [
+      'Use a esfera base e adicione o queixo em formato de cunha.',
+      'A linha dos olhos fica exatamente na metade da altura da cabeça.',
+      'As orelhas alinham-se entre a linha dos olhos e o nariz.'
+    ],
+    tipsDragonArt: 'Use o grid de simetria e alinhamento do WyrmPIXEL para girar cabeças.'
+  },
+  {
+    id: 'silhouettes-recognition',
+    number: 64,
+    title: 'Silhuetas Marcantes e Reconhecimento Instantâneo',
+    category: 'fundamentos',
+    categoryName: '✦ Fundamentos & Linhas',
+    image: '/ebook/Pixel_art_tutorial_silhouettes_concept_202607252337.jpeg',
+    summary: 'Preencha o personagem totalmente de preto para testar se ele é reconhecível de longe.',
+    details: [
+      'Se a silhueta totalmente preta não for identificável, o design precisa de ajustes.',
+      'Projete armas, capas e chifres para fora da linha do corpo.',
+      'Mantenha espaços vazios entre braços e tronco para clareza.'
+    ],
+    tipsDragonArt: 'Alterne o modo Silhouette View com 1 clique na barra de ferramentas do Dragon Art.'
+  },
+  {
+    id: 'subpixel-micro-animation',
+    number: 65,
+    title: 'Micro-Animação em Subpixel para Respirar e Flutuar',
+    category: 'animacao',
+    categoryName: '🏃 Animação & Movimento',
+    image: '/ebook/Pixel_art_tutorial_sub-pixel_animation_202607252337.jpeg',
+    summary: 'Animações ultra suaves de flutuação e respiração alterando tons de cor.',
+    details: [
+      'Alterne o tom do contorno superior em 1 nível para simular elevação de 0.5px.',
+      'Perfeito para magias flutuantes, poções balançando e respiração de peito.',
+      'Economiza tempo sem precisar redesenhar o sprite inteiro.'
+    ],
+    tipsDragonArt: 'Use a ferramenta de ajuste fino de tom no WyrmPIXEL para criar micro-animações em subpixel.'
+  },
+  {
+    id: 'skeleton-stickman-method',
+    number: 66,
+    title: 'Método do Esqueleto Stickman para Animação de Poses',
+    category: 'animacao',
+    categoryName: '🏃 Animação & Movimento',
+    image: '/ebook/Skeleton_method_character_posing_202607252337.jpeg',
+    summary: 'Rascunhe a estrutura óssea em palitos de 1px antes de desenhar o corpo e roupas.',
+    details: [
+      'Marque articulações de ombros, cotovelos, quadril e joelhos com pontos de 1px.',
+      'Testar a fluidez do salto ou ataque no palito antes de investir tempo nos detalhes.',
+      'Garanta que a coluna vertebral tenha curvatura flexível.'
+    ],
+    tipsDragonArt: 'Utilize a camada de Esqueleto com cor brilhante no WyrmPIXEL e desenhe o personagem por cima em outra camada.'
   }
 ];
 
-const CATEGORIES = [
-  { id: 'todos', label: '📖 Todos os Capítulos (46)', icon: BookOpen },
+export const CATEGORIES = [
+  { id: 'todos', label: '📖 Todos os Capítulos (66)', icon: BookOpen },
   { id: 'fundamentos', label: '✦ Fundamentos & Linhas', icon: Sparkles },
   { id: 'cores', label: '🎨 Cores & Luz', icon: Palette },
   { id: 'texturas', label: '🧱 Texturas & Materiais', icon: Shield },
@@ -734,21 +1035,14 @@ interface EbookModalProps {
 
 export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
   const [selectedCategory, setSelectedCategory] = useState('todos');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeChapterIndex, setActiveChapterIndex] = useState<number | null>(null);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [zoomTitle, setZoomTitle] = useState<string>('');
 
   const filteredChapters = useMemo(() => {
     return EBOOK_CHAPTERS.filter(ch => {
-      const matchCategory = selectedCategory === 'todos' || ch.category === selectedCategory;
-      const matchSearch = searchQuery.trim() === '' || 
-        ch.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        ch.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ch.details.some(d => d.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchCategory && matchSearch;
+      return selectedCategory === 'todos' || ch.category === selectedCategory;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory]);
 
   if (!isOpen) return null;
 
@@ -788,9 +1082,9 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
           {/* Fundo com Brilho Mágico de Ouro */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
 
-          {/* Header do E-Book */}
-          <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 bg-black/40 relative z-10">
-            <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Header do E-Book - SEM BARRA DE PESQUISA */}
+          <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between gap-4 shrink-0 bg-black/40 relative z-10">
+            <div className="flex items-center gap-3">
               <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl text-black font-black shadow-lg shadow-amber-500/20 shrink-0">
                 <BookOpen size={26} />
               </div>
@@ -799,7 +1093,7 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
                   <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30 tracking-widest">
                     LIVRO OFICIAL DRAGON ART
                   </span>
-                  <span className="text-[10px] font-bold text-white/50">46 Capítulos Completos</span>
+                  <span className="text-[10px] font-bold text-white/50">66 Capítulos Ilustrados</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5 uppercase">
                   O Guia Mestre do Pixel Art 🐉📖
@@ -807,32 +1101,15 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Barra de Pesquisa + Botão Fechar */}
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-64">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                <input 
-                  type="text" 
-                  placeholder="Buscar tutoriais, fogo, água..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-10 pr-4 text-xs text-white placeholder-white/40 outline-none focus:border-amber-400/60 focus:bg-white/10 transition-all font-bold"
-                />
-                {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-
-              <button 
-                onClick={() => { sound.playClick(); onClose(); }}
-                className="p-3 bg-white/5 hover:bg-red-500/20 hover:border-red-500/40 text-white/70 hover:text-red-400 rounded-2xl border border-white/10 transition-all active:scale-95 shrink-0"
-                title="Fechar E-Book (Esc)"
-              >
-                <X size={20} />
-              </button>
-            </div>
+            {/* Botão Fechar */}
+            <button 
+              onClick={() => { sound.playClick(); onClose(); }}
+              className="p-3 bg-white/5 hover:bg-red-500/20 hover:border-red-500/40 text-white/70 hover:text-red-400 rounded-2xl border border-white/10 transition-all active:scale-95 shrink-0 flex items-center gap-2 font-bold text-xs"
+              title="Fechar E-Book (Esc)"
+            >
+              <span>Fechar</span>
+              <X size={20} />
+            </button>
           </div>
 
           {/* Categorias (Abas Horizontais) */}
@@ -857,117 +1134,104 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
             })}
           </div>
 
-          {/* Conteúdo Principal: Grid com os 46 Capítulos */}
+          {/* Conteúdo Principal: Grid com os 66 Capítulos */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-            {filteredChapters.length === 0 ? (
-              <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
-                <Search size={48} className="text-white/20" />
-                <p className="text-sm font-bold text-white/60">Nenhum capítulo encontrado para "{searchQuery}".</p>
-                <button 
-                  onClick={() => { setSearchQuery(''); setSelectedCategory('todos'); }}
-                  className="px-4 py-2 bg-amber-400 text-black font-black text-xs rounded-xl uppercase tracking-wider shadow-md"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredChapters.map((chapter) => (
+                <motion.div 
+                  key={chapter.id}
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-[#12121c]/90 hover:bg-[#161624] rounded-3xl border border-white/10 hover:border-amber-400/50 transition-all duration-300 shadow-xl flex flex-col overflow-hidden group relative"
                 >
-                  Ver Todos os 46 Capítulos
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredChapters.map((chapter) => (
-                  <motion.div 
-                    key={chapter.id}
-                    layout
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-[#12121c]/90 hover:bg-[#161624] rounded-3xl border border-white/10 hover:border-amber-400/50 transition-all duration-300 shadow-xl flex flex-col overflow-hidden group relative"
+                  {/* Imagem do Capítulo com Botão de Zoom */}
+                  <div 
+                    className="relative aspect-[4/3] bg-black/60 overflow-hidden cursor-pointer group/img border-b border-white/10"
+                    onClick={() => {
+                      sound.playClick();
+                      setZoomImage(chapter.image);
+                      setZoomTitle(`Capítulo ${chapter.number}: ${chapter.title}`);
+                    }}
                   >
-                    {/* Imagem do Capítulo com Botão de Zoom */}
-                    <div 
-                      className="relative aspect-[4/3] bg-black/60 overflow-hidden cursor-pointer group/img border-b border-white/10"
+                    <img 
+                      src={chapter.image} 
+                      alt={chapter.title} 
+                      className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+
+                    {/* Badge do Número do Capítulo */}
+                    <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-amber-400 text-[10px] font-black px-3 py-1 rounded-full border border-amber-400/40 tracking-wider flex items-center gap-1 shadow-lg">
+                      <Bookmark size={11} className="fill-amber-400" />
+                      CAPÍTULO {chapter.number}
+                    </div>
+
+                    {/* Overlay com Ícone de Ampliar */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white backdrop-blur-[2px]">
+                      <div className="p-3 bg-amber-400 text-black rounded-full shadow-2xl mb-1 group-hover/img:scale-110 transition-transform">
+                        <ZoomIn size={22} />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">CLIQUE PARA AMPLIAR ARTE HD</span>
+                    </div>
+                  </div>
+
+                  {/* Conteúdo Explicativo do Capítulo */}
+                  <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1">
+                        {chapter.categoryName}
+                      </span>
+                      <h3 className="text-base font-black text-white leading-snug group-hover:text-amber-300 transition-colors">
+                        {chapter.title}
+                      </h3>
+                      <p className="text-xs text-gray-300 font-medium leading-relaxed mt-2">
+                        {chapter.summary}
+                      </p>
+                    </div>
+
+                    {/* Detalhes Técnicos em Tópicos */}
+                    <div className="space-y-2 bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                      <span className="text-[9px] font-black text-white/50 uppercase tracking-wider block mb-1">
+                        📌 PONTOS-CHAVE DA TÉCNICA:
+                      </span>
+                      {chapter.details.map((detail, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-[11px] text-gray-300 leading-relaxed font-medium">
+                          <span className="text-amber-400 shrink-0 mt-0.5">•</span>
+                          <span>{detail}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Dica Prática no Dragon Art */}
+                    <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-start gap-2.5">
+                      <Sparkles size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-amber-200/90 font-bold leading-relaxed">
+                        <strong className="text-amber-300">No Dragon Art:</strong> {chapter.tipsDragonArt}
+                      </p>
+                    </div>
+
+                    {/* Botão de Ampliar */}
+                    <button
                       onClick={() => {
                         sound.playClick();
                         setZoomImage(chapter.image);
                         setZoomTitle(`Capítulo ${chapter.number}: ${chapter.title}`);
                       }}
+                      className="w-full py-2.5 bg-white/5 hover:bg-amber-400 hover:text-black text-white font-black text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md"
                     >
-                      <img 
-                        src={chapter.image} 
-                        alt={chapter.title} 
-                        className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-
-                      {/* Badge do Número do Capítulo */}
-                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-amber-400 text-[10px] font-black px-3 py-1 rounded-full border border-amber-400/40 tracking-wider flex items-center gap-1 shadow-lg">
-                        <Bookmark size={11} className="fill-amber-400" />
-                        CAPÍTULO {chapter.number}
-                      </div>
-
-                      {/* Overlay com Ícone de Ampliar */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white backdrop-blur-[2px]">
-                        <div className="p-3 bg-amber-400 text-black rounded-full shadow-2xl mb-1 group-hover/img:scale-110 transition-transform">
-                          <Maximize2 size={20} />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">CLIQUE PARA AMPLIAR ARTE</span>
-                      </div>
-                    </div>
-
-                    {/* Conteúdo Explicativo do Capítulo */}
-                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
-                      <div>
-                        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1">
-                          {chapter.categoryName}
-                        </span>
-                        <h3 className="text-base font-black text-white leading-snug group-hover:text-amber-300 transition-colors">
-                          {chapter.title}
-                        </h3>
-                        <p className="text-xs text-gray-300 font-medium leading-relaxed mt-2">
-                          {chapter.summary}
-                        </p>
-                      </div>
-
-                      {/* Detalhes Técnicos em Tópicos */}
-                      <div className="space-y-2 bg-black/30 p-3.5 rounded-2xl border border-white/5">
-                        <span className="text-[9px] font-black text-white/50 uppercase tracking-wider block mb-1">
-                          📌 PONTOS-CHAVE DA TÉCNICA:
-                        </span>
-                        {chapter.details.map((detail, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-[11px] text-gray-300 leading-relaxed font-medium">
-                            <span className="text-amber-400 shrink-0 mt-0.5">•</span>
-                            <span>{detail}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Dica Prática no Dragon Art */}
-                      <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-start gap-2.5">
-                        <Sparkles size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-amber-200/90 font-bold leading-relaxed">
-                          <strong className="text-amber-300">No Dragon Art:</strong> {chapter.tipsDragonArt}
-                        </p>
-                      </div>
-
-                      {/* Botão de Ampliar */}
-                      <button
-                        onClick={() => {
-                          sound.playClick();
-                          setZoomImage(chapter.image);
-                          setZoomTitle(`Capítulo ${chapter.number}: ${chapter.title}`);
-                        }}
-                        className="w-full py-2.5 bg-white/5 hover:bg-amber-400 hover:text-black text-white font-black text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md"
-                      >
-                        <ZoomIn size={16} /> Ampliar Imagem em HD
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
+                      <ZoomIn size={16} /> Ampliar Imagem em HD
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
           {/* Rodapé com Contador */}
           <div className="p-4 border-t border-white/10 bg-black/60 flex items-center justify-between gap-4 text-xs font-bold text-white/60 shrink-0">
-            <span>Exibindo {filteredChapters.length} de 46 capítulos ilustrados</span>
-            <span className="text-amber-400 font-black">Dragon Art & WyrmPIXEL Book Studio v1.15.0</span>
+            <span>Exibindo {filteredChapters.length} de 66 capítulos ilustrados</span>
+            <span className="text-amber-400 font-black">Dragon Art & WyrmPIXEL Book Studio v1.16.0</span>
           </div>
         </motion.div>
       </div>
@@ -989,10 +1253,11 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
             </div>
             <button 
               onClick={() => { sound.playClick(); setZoomImage(null); }}
-              className="p-3 bg-white/10 hover:bg-red-500 text-white rounded-full transition-all active:scale-95 shadow-2xl"
+              className="p-3 bg-white/10 hover:bg-red-500 text-white rounded-full transition-all active:scale-95 shadow-2xl flex items-center gap-2 font-bold text-xs"
               title="Fechar Zoom"
             >
-              <X size={24} />
+              <span>Fechar</span>
+              <X size={20} />
             </button>
           </div>
 
@@ -1033,7 +1298,7 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
 
           {/* Footer do Zoom */}
           <div className="text-center text-xs font-bold text-white/60 z-10" onClick={e => e.stopPropagation()}>
-            <span>Pressione <kbd className="px-2 py-1 bg-white/10 rounded text-amber-400">ESC</kbd> ou toque fora para sair. Use as setas para navegar pelos 46 capítulos.</span>
+            <span>Pressione <kbd className="px-2 py-1 bg-white/10 rounded text-amber-400">ESC</kbd> ou toque fora para sair. Use as setas para navegar pelos 66 capítulos.</span>
           </div>
         </motion.div>
       )}
