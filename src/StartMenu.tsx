@@ -43,6 +43,10 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
   const [showEbookModal, setShowEbookModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState<string | null>(null);
+  const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Supabase Auth State & Gerenciador de 10 Contas
   const [savedAccounts, setSavedAccounts] = useState<SavedAccountItem[]>(() => {
@@ -84,6 +88,49 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       setRevealedPasswordEmail(prev => prev === account.email ? null : account.email);
     } catch (_) {
       setRevealedPasswordEmail(prev => prev === account.email ? null : account.email);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    sound.playClick();
+    setPasswordChangeSuccess(null);
+    setPasswordChangeError(null);
+
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordChangeError('A nova senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordChangeError('As senhas não coincidem.');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error && !error.message?.includes('session')) {
+          throw error;
+        }
+      }
+      
+      const currentEmail = session?.user?.email || localStorage.getItem('pixel_user_email') || 'suaconta@wyrmpixel.app';
+      setSavedAccounts(prev => prev.map(acc => {
+        if (acc.email === currentEmail) {
+          return { ...acc, password: newPassword };
+        }
+        return acc;
+      }));
+
+      setPasswordChangeSuccess('Senha alterada com sucesso! 🔒✨');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      setPasswordChangeError(err.message || 'Erro ao alterar a senha.');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -1156,29 +1203,6 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!newPassword) return;
-    setAuthLoading(true);
-    setAuthError(null);
-    setAuthSuccess(null);
-    try {
-      if (isSupabaseConfigured() && session?.user) {
-        const { error } = await supabase.auth.updateUser({
-          password: newPassword
-        });
-        if (error) throw error;
-        setAuthSuccess('Senha atualizada no Supabase! 🔒');
-        setNewPassword('');
-      } else {
-        setAuthSuccess('Insira as chaves do Supabase no config.ts para alterar a senha.');
-      }
-      setTimeout(() => setAuthSuccess(null), 3000);
-    } catch (err: any) {
-      setAuthError(err.message || 'Erro ao alterar senha.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-app)] font-sans text-[var(--text-primary)] relative transition-colors duration-300 pb-24 overflow-x-hidden">
@@ -2452,6 +2476,73 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                     </div>
                   </div>
                 )}
+
+                {/* Card de Segurança da Conta & Alteração de Senha */}
+                <div className="mt-4 bg-[#141420]/90 rounded-3xl p-6 border border-white/10 shadow-xl space-y-4">
+                  <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-amber-400/10 border border-amber-400/30 rounded-2xl text-amber-400">
+                        <Lock size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-white uppercase tracking-wider">Segurança da Conta & Senha</h3>
+                        <p className="text-xs text-white/50">E-mail Cadastrado: <strong className="text-amber-300">{session?.user?.email || localStorage.getItem('pixel_user_email') || 'pixelartklk@gmail.com'}</strong></p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                      ✓ CONTA ATIVA
+                    </span>
+                  </div>
+
+                  <form onSubmit={handleChangePassword} className="space-y-4 pt-2">
+                    <h4 className="text-xs font-bold text-white/80 uppercase tracking-wider">Alterar Senha de Acesso</h4>
+
+                    {passwordChangeSuccess && (
+                      <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl flex items-center gap-2">
+                        <span>{passwordChangeSuccess}</span>
+                      </div>
+                    )}
+
+                    {passwordChangeError && (
+                      <div className="p-3 bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-bold rounded-xl flex items-center gap-2">
+                        <span>{passwordChangeError}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-bold text-white/60 uppercase tracking-wider block mb-1">Nova Senha</label>
+                        <input 
+                          type="password" 
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Mínimo 6 caracteres..."
+                          className="w-full bg-white/5 hover:bg-white/10 focus:bg-black/60 border border-white/10 focus:border-amber-400 px-4 py-2.5 rounded-xl text-xs text-white outline-none transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-white/60 uppercase tracking-wider block mb-1">Confirmar Nova Senha</label>
+                        <input 
+                          type="password" 
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repita a nova senha..."
+                          className="w-full bg-white/5 hover:bg-white/10 focus:bg-black/60 border border-white/10 focus:border-amber-400 px-4 py-2.5 rounded-xl text-xs text-white outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isChangingPassword}
+                      className="px-6 py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <Lock size={15} />
+                      <span>{isChangingPassword ? 'Atualizando Senha...' : '🔐 Atualizar Senha'}</span>
+                    </button>
+                  </form>
+                </div>
               </div>
 
               {/* Seção da Galeria Pessoal do Artista */}

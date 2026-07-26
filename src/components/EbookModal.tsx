@@ -1228,30 +1228,45 @@ export const EbookModal: React.FC<EbookModalProps> = ({
                           {chapter.title}
                         </h3>
                         <p className="text-xs text-gray-300 font-medium leading-relaxed mt-2">
-                          {chapter.summary}
+                          {isLocked ? 'Aprenda os segredos avançados desta técnica profissional de Pixel Art no guia mestre.' : chapter.summary}
                         </p>
                       </div>
 
-                      {/* Detalhes Técnicos em Tópicos */}
-                      <div className="space-y-2 bg-black/30 p-3.5 rounded-2xl border border-white/5">
-                        <span className="text-[9px] font-black text-white/50 uppercase tracking-wider block mb-1">
-                          📌 PONTOS-CHAVE DA TÉCNICA:
-                        </span>
-                        {chapter.details.map((detail, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-[11px] text-gray-300 leading-relaxed font-medium">
-                            <span className="text-amber-400 shrink-0 mt-0.5">•</span>
-                            <span>{detail}</span>
+                      {/* Se o Capítulo Estiver Bloqueado: Oculta os detalhes e exibe a tarja PRO */}
+                      {isLocked ? (
+                        <div className="p-4 bg-gradient-to-br from-amber-950/40 via-yellow-950/20 to-black rounded-2xl border border-amber-500/30 text-center space-y-2 my-auto">
+                          <div className="w-10 h-10 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center mx-auto text-amber-400 shadow-md">
+                            <Lock size={18} />
                           </div>
-                        ))}
-                      </div>
+                          <span className="text-[10px] font-black uppercase text-amber-300 tracking-widest block">CONTEÚDO BLOQUEADO</span>
+                          <p className="text-[11px] text-amber-100/70 font-medium leading-tight">
+                            Compre a licença PRO para desbloquear os pontos-chave, dicas práticas e zoom em HD!
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Detalhes Técnicos em Tópicos */}
+                          <div className="space-y-2 bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                            <span className="text-[9px] font-black text-white/50 uppercase tracking-wider block mb-1">
+                              📌 PONTOS-CHAVE DA TÉCNICA:
+                            </span>
+                            {chapter.details.map((detail, idx) => (
+                              <div key={idx} className="flex items-start gap-2 text-[11px] text-gray-300 leading-relaxed font-medium">
+                                <span className="text-amber-400 shrink-0 mt-0.5">•</span>
+                                <span>{detail}</span>
+                              </div>
+                            ))}
+                          </div>
 
-                      {/* Dica Prática no Dragon Art */}
-                      <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-start gap-2.5">
-                        <Sparkles size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-amber-200/90 font-bold leading-relaxed">
-                          <strong className="text-amber-300">No Dragon Art:</strong> {chapter.tipsDragonArt}
-                        </p>
-                      </div>
+                          {/* Dica Prática no Dragon Art */}
+                          <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-start gap-2.5">
+                            <Sparkles size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-amber-200/90 font-bold leading-relaxed">
+                              <strong className="text-amber-300">No Dragon Art:</strong> {chapter.tipsDragonArt}
+                            </p>
+                          </div>
+                        </>
+                      )}
 
                       {/* Botão de Ação */}
                       {isLocked ? (
@@ -1260,7 +1275,7 @@ export const EbookModal: React.FC<EbookModalProps> = ({
                             sound.playClick();
                             setShowProLockAlert(true);
                           }}
-                          className="w-full py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-amber-500/20"
+                          className="w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-amber-500/20"
                         >
                           <Lock size={15} /> Desbloquear Capítulo no PRO 🚀
                         </button>
