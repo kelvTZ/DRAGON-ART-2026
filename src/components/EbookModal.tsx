@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BookOpen, X, ZoomIn, ChevronLeft, ChevronRight, 
   Sparkles, Shield, Flame, 
-  Sun, Wand2, Compass, Cpu, Bookmark, Palette
+  Sun, Wand2, Compass, Cpu, Bookmark, Palette, Lock, Star
 } from 'lucide-react';
 import { sound } from '../sound';
 
@@ -1031,12 +1031,20 @@ export const CATEGORIES = [
 interface EbookModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isPro?: boolean;
+  onOpenProModal?: () => void;
 }
 
-export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
+export const EbookModal: React.FC<EbookModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  isPro = false, 
+  onOpenProModal 
+}) => {
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const [zoomTitle, setZoomTitle] = useState<string>('');
+  const [showProLockAlert, setShowProLockAlert] = useState(false);
 
   const filteredChapters = useMemo(() => {
     return EBOOK_CHAPTERS.filter(ch => {
@@ -1137,94 +1145,141 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
           {/* Conteúdo Principal: Grid com os 66 Capítulos */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredChapters.map((chapter) => (
-                <motion.div 
-                  key={chapter.id}
-                  layout
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-[#12121c]/90 hover:bg-[#161624] rounded-3xl border border-white/10 hover:border-amber-400/50 transition-all duration-300 shadow-xl flex flex-col overflow-hidden group relative"
-                >
-                  {/* Imagem do Capítulo com Botão de Zoom */}
-                  <div 
-                    className="relative aspect-[4/3] bg-black/60 overflow-hidden cursor-pointer group/img border-b border-white/10"
-                    onClick={() => {
-                      sound.playClick();
-                      setZoomImage(chapter.image);
-                      setZoomTitle(`Capítulo ${chapter.number}: ${chapter.title}`);
-                    }}
+              {filteredChapters.map((chapter) => {
+                const isLocked = chapter.number > 10 && !isPro;
+
+                return (
+                  <motion.div 
+                    key={chapter.id}
+                    layout
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`bg-[#12121c]/90 rounded-3xl border transition-all duration-300 shadow-xl flex flex-col overflow-hidden group relative ${
+                      isLocked ? 'border-amber-500/20 hover:border-amber-400/50 opacity-90' : 'hover:bg-[#161624] border-white/10 hover:border-amber-400/50'
+                    }`}
                   >
-                    <img 
-                      src={chapter.image} 
-                      alt={chapter.title} 
-                      className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-
-                    {/* Badge do Número do Capítulo */}
-                    <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-amber-400 text-[10px] font-black px-3 py-1 rounded-full border border-amber-400/40 tracking-wider flex items-center gap-1 shadow-lg">
-                      <Bookmark size={11} className="fill-amber-400" />
-                      CAPÍTULO {chapter.number}
-                    </div>
-
-                    {/* Overlay com Ícone de Ampliar */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white backdrop-blur-[2px]">
-                      <div className="p-3 bg-amber-400 text-black rounded-full shadow-2xl mb-1 group-hover/img:scale-110 transition-transform">
-                        <ZoomIn size={22} />
-                      </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">CLIQUE PARA AMPLIAR ARTE HD</span>
-                    </div>
-                  </div>
-
-                  {/* Conteúdo Explicativo do Capítulo */}
-                  <div className="p-5 flex-1 flex flex-col justify-between gap-4">
-                    <div>
-                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1">
-                        {chapter.categoryName}
-                      </span>
-                      <h3 className="text-base font-black text-white leading-snug group-hover:text-amber-300 transition-colors">
-                        {chapter.title}
-                      </h3>
-                      <p className="text-xs text-gray-300 font-medium leading-relaxed mt-2">
-                        {chapter.summary}
-                      </p>
-                    </div>
-
-                    {/* Detalhes Técnicos em Tópicos */}
-                    <div className="space-y-2 bg-black/30 p-3.5 rounded-2xl border border-white/5">
-                      <span className="text-[9px] font-black text-white/50 uppercase tracking-wider block mb-1">
-                        📌 PONTOS-CHAVE DA TÉCNICA:
-                      </span>
-                      {chapter.details.map((detail, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-[11px] text-gray-300 leading-relaxed font-medium">
-                          <span className="text-amber-400 shrink-0 mt-0.5">•</span>
-                          <span>{detail}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Dica Prática no Dragon Art */}
-                    <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-start gap-2.5">
-                      <Sparkles size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-[10px] text-amber-200/90 font-bold leading-relaxed">
-                        <strong className="text-amber-300">No Dragon Art:</strong> {chapter.tipsDragonArt}
-                      </p>
-                    </div>
-
-                    {/* Botão de Ampliar */}
-                    <button
+                    {/* Imagem do Capítulo com Botão de Zoom / Lock */}
+                    <div 
+                      className="relative aspect-[4/3] bg-black/60 overflow-hidden cursor-pointer group/img border-b border-white/10"
                       onClick={() => {
                         sound.playClick();
-                        setZoomImage(chapter.image);
-                        setZoomTitle(`Capítulo ${chapter.number}: ${chapter.title}`);
+                        if (isLocked) {
+                          setShowProLockAlert(true);
+                        } else {
+                          setZoomImage(chapter.image);
+                          setZoomTitle(`Capítulo ${chapter.number}: ${chapter.title}`);
+                        }
                       }}
-                      className="w-full py-2.5 bg-white/5 hover:bg-amber-400 hover:text-black text-white font-black text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md"
                     >
-                      <ZoomIn size={16} /> Ampliar Imagem em HD
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                      <img 
+                        src={chapter.image} 
+                        alt={chapter.title} 
+                        className={`w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500 ${
+                          isLocked ? 'filter blur-[3px] grayscale brightness-50' : ''
+                        }`}
+                        loading="lazy"
+                      />
+
+                      {/* Badge do Número do Capítulo */}
+                      <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-amber-400 text-[10px] font-black px-3 py-1 rounded-full border border-amber-400/40 tracking-wider flex items-center gap-1 shadow-lg">
+                        <Bookmark size={11} className="fill-amber-400" />
+                        CAPÍTULO {chapter.number}
+                      </div>
+
+                      {/* Badge Grátis vs PRO */}
+                      <div className="absolute top-3 right-3 shadow-lg">
+                        {chapter.number <= 10 ? (
+                          <span className="bg-emerald-500/90 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-emerald-400">
+                            ✓ GRÁTIS
+                          </span>
+                        ) : (
+                          <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-amber-300 flex items-center gap-1">
+                            <Lock size={10} /> 👑 PRO
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Overlay com Ícone de Ampliar ou Lock */}
+                      {isLocked ? (
+                        <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white p-4 text-center">
+                          <div className="p-3 bg-amber-400 text-black rounded-full shadow-2xl mb-2 animate-bounce">
+                            <Lock size={22} />
+                          </div>
+                          <span className="text-xs font-black uppercase tracking-widest text-amber-300">CONTEÚDO EXCLUSIVO PRO</span>
+                          <span className="text-[10px] font-bold text-white/70 mt-1">Acesse todo o E-Book Completo!</span>
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white backdrop-blur-[2px]">
+                          <div className="p-3 bg-amber-400 text-black rounded-full shadow-2xl mb-1 group-hover/img:scale-110 transition-transform">
+                            <ZoomIn size={22} />
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-amber-300">CLIQUE PARA AMPLIAR ARTE HD</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Conteúdo Explicativo do Capítulo */}
+                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                      <div>
+                        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1">
+                          {chapter.categoryName}
+                        </span>
+                        <h3 className="text-base font-black text-white leading-snug group-hover:text-amber-300 transition-colors">
+                          {chapter.title}
+                        </h3>
+                        <p className="text-xs text-gray-300 font-medium leading-relaxed mt-2">
+                          {chapter.summary}
+                        </p>
+                      </div>
+
+                      {/* Detalhes Técnicos em Tópicos */}
+                      <div className="space-y-2 bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                        <span className="text-[9px] font-black text-white/50 uppercase tracking-wider block mb-1">
+                          📌 PONTOS-CHAVE DA TÉCNICA:
+                        </span>
+                        {chapter.details.map((detail, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-[11px] text-gray-300 leading-relaxed font-medium">
+                            <span className="text-amber-400 shrink-0 mt-0.5">•</span>
+                            <span>{detail}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Dica Prática no Dragon Art */}
+                      <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-start gap-2.5">
+                        <Sparkles size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-amber-200/90 font-bold leading-relaxed">
+                          <strong className="text-amber-300">No Dragon Art:</strong> {chapter.tipsDragonArt}
+                        </p>
+                      </div>
+
+                      {/* Botão de Ação */}
+                      {isLocked ? (
+                        <button
+                          onClick={() => {
+                            sound.playClick();
+                            setShowProLockAlert(true);
+                          }}
+                          className="w-full py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 active:scale-95 shadow-xl shadow-amber-500/20"
+                        >
+                          <Lock size={15} /> Desbloquear Capítulo no PRO 🚀
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            sound.playClick();
+                            setZoomImage(chapter.image);
+                            setZoomTitle(`Capítulo ${chapter.number}: ${chapter.title}`);
+                          }}
+                          className="w-full py-2.5 bg-white/5 hover:bg-amber-400 hover:text-black text-white font-black text-xs uppercase tracking-wider rounded-xl border border-white/10 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md"
+                        >
+                          <ZoomIn size={16} /> Ampliar Imagem em HD
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
 
@@ -1298,9 +1353,59 @@ export const EbookModal: React.FC<EbookModalProps> = ({ isOpen, onClose }) => {
 
           {/* Footer do Zoom */}
           <div className="text-center text-xs font-bold text-white/60 z-10" onClick={e => e.stopPropagation()}>
-            <span>Pressione <kbd className="px-2 py-1 bg-white/10 rounded text-amber-400">ESC</kbd> ou toque fora para sair. Use as setas para navegar pelos 66 capítulos.</span>
+            <span>Pressione <kbd className="px-2 py-1 bg-white/10 rounded text-amber-400">ESC</kbd> ou toque fora para sair. Use as setas para navegar pelos capítulos desbloqueados.</span>
           </div>
         </motion.div>
+      )}
+
+      {/* Modal / Alerta de Bloqueio PRO do E-Book */}
+      {showProLockAlert && (
+        <div className="fixed inset-0 z-[8000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="w-full max-w-md bg-gradient-to-b from-[#1c1824] via-[#14101d] to-[#0c0a12] p-6 rounded-[32px] border-2 border-amber-400 shadow-[0_0_50px_rgba(245,158,11,0.3)] text-center relative overflow-hidden"
+          >
+            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-black shadow-xl animate-bounce">
+              <Lock size={32} />
+            </div>
+
+            <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-400/20 px-3 py-1 rounded-full border border-amber-400/40 tracking-widest inline-block mb-2">
+              RECURSO EXCLUSIVO PRO 👑
+            </span>
+
+            <h3 className="text-xl font-black text-white uppercase tracking-tight leading-snug">
+              Acesse Todo o E-Book Completo! 📖
+            </h3>
+
+            <p className="text-xs text-amber-100/80 font-medium leading-relaxed my-3">
+              Você já aproveitou os <strong>10 Capítulos Gratuitos</strong>! Os capítulos de <strong>11 a 66</strong> contêm técnicas avançadas de Character Design, Iluminação, Anatomia e Animação exclusivas para membros <strong>WyrmPIXEL PRO Vitalício</strong>!
+            </p>
+
+            <div className="space-y-2 mt-5">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setShowProLockAlert(false);
+                  onClose();
+                  if (onOpenProModal) onOpenProModal();
+                }}
+                className="w-full py-4 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-amber-500/25 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Star size={18} className="fill-black" />
+                <span>Desbloquear Acesso Vitalício PRO</span>
+              </button>
+
+              <button
+                onClick={() => { sound.playClick(); setShowProLockAlert(false); }}
+                className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white font-bold text-xs rounded-xl transition-all"
+              >
+                Continuar nos Capítulos Gratuitos (1 a 10)
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );

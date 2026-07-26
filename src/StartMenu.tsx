@@ -3170,7 +3170,12 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
       </AnimatePresence>
 
       {/* Modal do Livro E-Book de Pixel Art */}
-      <EbookModal isOpen={showEbookModal} onClose={() => setShowEbookModal(false)} />
+      <EbookModal 
+        isOpen={showEbookModal} 
+        onClose={() => setShowEbookModal(false)} 
+        isPro={isPro}
+        onOpenProModal={() => setShowProModal(true)}
+      />
     </div>
   );
 }

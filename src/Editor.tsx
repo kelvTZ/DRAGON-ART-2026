@@ -8848,6 +8848,8 @@ export default function Editor({
       <EbookModal 
         isOpen={showEbookModal} 
         onClose={() => setShowEbookModal(false)} 
+        isPro={isPro}
+        onOpenProModal={() => setShowUpgradeModal(true)}
       />
     </div>
   );
