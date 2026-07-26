@@ -1101,7 +1101,7 @@ export const EbookModal: React.FC<EbookModalProps> = ({
                   <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/30 tracking-widest">
                     LIVRO OFICIAL DRAGON ART
                   </span>
-                  <span className="text-[10px] font-bold text-white/50">66 Capítulos Ilustrados</span>
+                  <span className="text-[10px] font-bold text-amber-300/80 bg-white/5 px-2.5 py-0.5 rounded-full border border-white/10">5 Caps Grátis • 61 Caps PRO</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5 uppercase">
                   O Guia Mestre do Pixel Art 🐉📖
@@ -1146,7 +1146,7 @@ export const EbookModal: React.FC<EbookModalProps> = ({
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredChapters.map((chapter) => {
-                const isLocked = chapter.number > 10 && !isPro;
+                const isLocked = chapter.number > 5 && !isPro;
 
                 return (
                   <motion.div 

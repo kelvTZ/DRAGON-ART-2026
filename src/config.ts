@@ -8,7 +8,7 @@ export const CONFIG = {
   STRIPE_PRO_LINK: "https://buy.stripe.com/test_5kQfZgagw4KYa06fVMaIM02",
   
   // INFORMAÇÕES DA PLATAFORMA
-  VERSION: "1.19.0",
+  VERSION: "1.20.0",
   APP_NAME: "WyrmPIXEL",
   PLATFORM_NAME: "WyrmPIXEL Studio",
   

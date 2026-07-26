@@ -1888,74 +1888,7 @@ export default function StartMenu({ onStart }: { onStart: (config: ProjectConfig
                 </div>
               </div>
 
-              {/* SEÇÃO EM GRANDE DESTAQUE: LIVRO E-BOOK PIXEL ART (66 CAPÍTULOS) */}
-              <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 my-6">
-                <div className="relative rounded-[32px] bg-gradient-to-r from-amber-950/80 via-[#181205] to-[#120f1c] border-2 border-amber-500/40 p-6 sm:p-8 shadow-[0_0_60px_rgba(245,158,11,0.2)] overflow-hidden">
-                  
-                  {/* Fundo com efeito de luz em degradê */}
-                  <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 blur-3xl rounded-full pointer-events-none" />
-
-                  <div className="relative z-10 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
-                    {/* Texto & Chamada Principal */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-black uppercase text-amber-300 bg-amber-400/20 px-3 py-1 rounded-full border border-amber-400/40 tracking-widest flex items-center gap-1 shadow-md">
-                          <Star size={12} className="fill-amber-400" /> E-BOOK EXCLUSIVO DRAGON ART
-                        </span>
-                        <span className="text-[10px] font-bold text-amber-200/70 bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
-                          66 Capítulos Ilustrados • Zoom HD
-                        </span>
-                      </div>
-
-                      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight uppercase leading-tight drop-shadow-md">
-                        📖 O Livro Sagrado do Pixel Art 🐉
-                      </h2>
-                      <p className="text-xs sm:text-sm text-amber-100/80 font-medium leading-relaxed max-w-2xl">
-                        Aprenda técnicas profissionais de <strong className="text-amber-300">Character Design, Anatomia de Monstros, Iluminação, Dithering, VFX de Fogo e Água, Cenários Isométricos e Animação em Subpixel</strong>. Clique em qualquer imagem para ampliação imediata em HD!
-                      </p>
-
-                      <div className="pt-2 flex items-center gap-3 flex-wrap">
-                        <button
-                          onClick={() => { sound.playClick(); setShowEbookModal(true); }}
-                          className="px-6 py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-black font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-xl shadow-amber-500/25 active:scale-95 transition-all flex items-center gap-2"
-                        >
-                          <BookOpen size={20} />
-                          <span>Abrir Livro Completo (66 Capítulos)</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Vitrine Miniatura com 4 Capítulos para Zoom Direto */}
-                    <div className="w-full lg:w-[420px] shrink-0 bg-black/40 p-4 rounded-2xl border border-amber-500/20">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-300/80 block mb-2 flex items-center justify-between">
-                        <span>🔍 Prévia Interativa (Clique p/ Zoom):</span>
-                        <span className="text-white/40">4 de 66</span>
-                      </span>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {EBOOK_CHAPTERS.slice(0, 4).map((ch) => (
-                          <div 
-                            key={ch.id}
-                            onClick={() => {
-                              sound.playClick();
-                              setZoomedImage(ch.image);
-                            }}
-                            className="group relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 hover:border-amber-400 cursor-pointer shadow-md"
-                          >
-                            <img src={ch.image} alt={ch.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-1 text-center backdrop-blur-[1px]">
-                              <ZoomIn size={18} className="text-amber-400 mb-0.5" />
-                              <span className="text-[8px] font-black text-white uppercase tracking-wider leading-tight line-clamp-1">{ch.title}</span>
-                            </div>
-                            <div className="absolute bottom-1 left-1 bg-black/80 text-amber-300 text-[7px] font-black px-1.5 py-0.5 rounded">
-                              CAP. {ch.number}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Fim do Carousel */}
 
               {/* Main Grid */}
               <div className="flex-1 max-w-6xl mx-auto w-full p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
