@@ -910,7 +910,8 @@ export default function Editor({
     hand: "h",
     text: "t",
     undo: "z",
-    redo: "y",
+    redo: "ctrl+y",
+    rotate: "y",
     grid: "k",
     play: " ",
     clear: "delete",
@@ -932,7 +933,8 @@ export default function Editor({
     hand: "Mover (Mão)",
     text: "Texto",
     undo: "Desfazer (Ctrl+)",
-    redo: "Refazer (Ctrl+)",
+    redo: "Refazer (Ctrl+Y)",
+    rotate: "Rotacionar Folha (Segurar Tecla + Scroll/Mouse)",
     grid: "Malha",
     play: "Animação",
     clear: "Limpar Camada",
@@ -961,7 +963,7 @@ export default function Editor({
     { name: "Edição", keys: ["undo", "redo", "clear", "newFrame"] },
     {
       name: "Visualização",
-      keys: ["grid", "play", "zoomIn", "zoomOut", "resetView"],
+      keys: ["grid", "rotate", "play", "zoomIn", "zoomOut", "resetView"],
     },
     { name: "Sistema", keys: ["save", "sound"] },
   ];
@@ -1343,9 +1345,12 @@ export default function Editor({
   };
 
   const isSpacePressed = useRef(false);
+  const isRotateKeyPressed = useRef(false);
+  const [isRotateKeyDown, setIsRotateKeyDown] = useState(false);
   const isDraggingText = useRef(false);
   const textDragOffset = useRef({ x: 0, y: 0 });
   const [isSpaceDown, setIsSpaceDown] = useState(false);
+  const [sizeAdjustHUD, setSizeAdjustHUD] = useState<{ visible: boolean; size: number; tool: string } | null>(null);
 
   const [textInput, setTextInput] = useState("");
   const [textPos, setTextPos] = useState<{ x: number; y: number } | null>(null);
@@ -1421,6 +1426,67 @@ export default function Editor({
       3000
     );
   };
+
+  const isToolLongPress = useRef(false);
+  const toolPointerStart = useRef<{ y: number; startSize: number; tool: string } | null>(null);
+
+  const handleToolPointerDown = (tool: Tool, e: React.PointerEvent) => {
+    toolPointerStart.current = {
+      y: e.clientY,
+      startSize: tool === "eraser" ? eraserSize : brushSize,
+      tool: tool === "eraser" ? "Borracha" : "Lápis",
+    };
+    
+    if (longPressToolTimer.current) clearTimeout(longPressToolTimer.current);
+    longPressToolTimer.current = setTimeout(() => {
+      isToolLongPress.current = true;
+      sound.playClick();
+      if (window.navigator.vibrate) window.navigator.vibrate(30);
+    }, 350);
+  };
+
+  const handleToolPointerMoveDrag = useCallback((e: PointerEvent) => {
+    if (isToolLongPress.current && toolPointerStart.current) {
+      const dy = e.clientY - toolPointerStart.current.y;
+      const deltaSize = Math.round(-dy / 12);
+      const newSize = Math.max(1, Math.min(64, toolPointerStart.current.startSize + deltaSize));
+      
+      if (currentTool === "eraser") {
+        setEraserSize(newSize);
+      } else {
+        setBrushSize(newSize);
+      }
+      
+      setSizeAdjustHUD({
+        visible: true,
+        size: newSize,
+        tool: toolPointerStart.current.tool,
+      });
+    }
+  }, [currentTool, brushSize, eraserSize]);
+
+  const handleToolPointerUp = useCallback(() => {
+    if (longPressToolTimer.current) {
+      clearTimeout(longPressToolTimer.current);
+      longPressToolTimer.current = null;
+    }
+    isToolLongPress.current = false;
+    toolPointerStart.current = null;
+    setTimeout(() => setSizeAdjustHUD(null), 800);
+  }, []);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => handleToolPointerMoveDrag(e);
+    const onUp = () => handleToolPointerUp();
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [handleToolPointerMoveDrag, handleToolPointerUp]);
 
   const selectTool = useCallback(
     (tool: Tool, playSound = true) => {
@@ -1705,6 +1771,10 @@ export default function Editor({
           e.preventDefault();
           toggleSound();
           setToolIndicator({ tool: "Som" as any, timestamp: Date.now() });
+        } else if (key === (shortcuts.rotate || "y")) {
+          e.preventDefault();
+          isRotateKeyPressed.current = true;
+          setIsRotateKeyDown(true);
         } else if (key === shortcuts.zoomIn || key === "+") {
           e.preventDefault();
           handleZoomIn();
@@ -1728,6 +1798,11 @@ export default function Editor({
       if (e.code === "Space") {
         isSpacePressed.current = false;
         setIsSpaceDown(false);
+      }
+      const key = e.key.toLowerCase();
+      if (key === (shortcuts.rotate || "y")) {
+        isRotateKeyPressed.current = false;
+        setIsRotateKeyDown(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -5566,23 +5641,7 @@ export default function Editor({
     "soft",
   ]);
 
-  const isToolLongPress = useRef(false);
 
-  const handleToolPointerDown = (tool: "pencil" | "eraser") => {
-    isToolLongPress.current = false;
-    longPressTimer.current = setTimeout(() => {
-      isToolLongPress.current = true;
-      setActiveSizeSlider(tool);
-      selectTool(tool);
-    }, 3000);
-  };
-
-  const handleToolPointerUp = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  };
 
   const handleImportReference = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -5838,6 +5897,14 @@ export default function Editor({
         onClick={() => {
           if (activePanel && activePanel !== "frames") setActivePanel(null);
           if (showQuickPalette) setShowQuickPalette(false);
+        }}
+        onWheel={(e) => {
+          if (isRotateKeyPressed.current) {
+            e.preventDefault();
+            e.stopPropagation();
+            const delta = e.deltaY > 0 ? 5 : -5;
+            setRotation((r) => (r + delta + 360) % 360);
+          }
         }}
         onPointerDownCapture={(e) => {
           activePointers.current.set(e.pointerId, {
@@ -8465,7 +8532,71 @@ export default function Editor({
         )}
       </AnimatePresence>
 
-      {/* Floating Tool Switcher UI */}
+      {/* Indicador Flutuante de Rotação da Folha */}
+      <AnimatePresence>
+        {(rotation !== 0 || isRotateKeyDown) && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[300] bg-black/90 backdrop-blur-md border border-amber-400/40 text-amber-300 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3"
+          >
+            <RotateCw size={18} className="animate-spin text-amber-400" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                {isRotateKeyDown ? 'Gire no Scroll do Mouse / Arrasto' : 'Rotação Ativa'}
+              </span>
+              <span className="text-sm font-black text-white">
+                {Math.round(rotation)}°
+              </span>
+            </div>
+            <button
+              onClick={() => { sound.playClick(); setRotation(0); }}
+              className="px-2.5 py-1 bg-white/10 hover:bg-amber-400 hover:text-black text-white text-[10px] font-black uppercase tracking-wider rounded-xl border border-white/20 transition-all active:scale-95"
+              title="Resetar Rotação para 0°"
+            >
+              Reset 0°
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Indicador Flutuante de Ajuste Dinâmico de Tamanho por Arrasto */}
+      <AnimatePresence>
+        {sizeAdjustHUD?.visible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed inset-0 pointer-events-none z-[400] flex items-center justify-center"
+          >
+            <div className="bg-black/90 backdrop-blur-2xl p-6 rounded-3xl border-2 border-amber-400/60 shadow-[0_0_50px_rgba(245,158,11,0.3)] flex flex-col items-center gap-3">
+              <div 
+                className="rounded-full bg-amber-400/30 border-2 border-amber-400 transition-all flex items-center justify-center"
+                style={{
+                  width: Math.max(16, Math.min(120, sizeAdjustHUD.size * 3)),
+                  height: Math.max(16, Math.min(120, sizeAdjustHUD.size * 3)),
+                }}
+              >
+                <div className="w-2 h-2 bg-amber-300 rounded-full" />
+              </div>
+              <div className="text-center">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
+                  Ajustando {sizeAdjustHUD.tool}
+                </span>
+                <span className="text-2xl font-black text-white tracking-tight">
+                  {sizeAdjustHUD.size}px
+                </span>
+                <span className="text-[9px] font-bold text-white/50 block mt-0.5">
+                  Arraste ↑ Cima / ↓ Baixo
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Tool Switcher UI (Sem Corte na Tela & Organizado) */}
       <AnimatePresence>
         {showFloatingToolSwitcher && (
           <motion.div
@@ -8474,8 +8605,8 @@ export default function Editor({
             exit={{ scale: 0, opacity: 0 }}
             className="fixed z-[100] pointer-events-none"
             style={{
-              left: floatingToolSwitcherPos.x,
-              top: floatingToolSwitcherPos.y - 80,
+              left: Math.max(120, Math.min(window.innerWidth - 120, floatingToolSwitcherPos.x)),
+              top: Math.max(80, Math.min(window.innerHeight - 100, floatingToolSwitcherPos.y - 80)),
             }}
           >
             <div className="relative flex gap-4 p-4 bg-[#1a1a1a] border-4 border-[var(--accent-color)] rounded-none shadow-[8px_8px_0_rgba(0,0,0,0.5)] -translate-x-1/2 -translate-y-1/2">
